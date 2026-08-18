@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Sidebar, MobileNav } from "@/components/app/sidebar";
 import { isSupabaseConfigured } from "@/lib/env";
 import { SetupRequired } from "@/components/app/setup-required";
+import { CommandPalette } from "@/components/app/command-palette";
 
 /**
  * Authenticated shell. The proxy already redirects anonymous users, but this
@@ -24,6 +25,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       <Sidebar />
       <div className="flex min-w-0 flex-1 flex-col pb-14 md:pb-0">{children}</div>
       <MobileNav />
+      {/* Mounted once in the shell so the shortcut works on every page and
+          there is exactly one keyboard listener. */}
+      <CommandPalette />
     </div>
   );
 }

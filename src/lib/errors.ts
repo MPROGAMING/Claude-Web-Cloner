@@ -69,6 +69,18 @@ export function toAppError(error: unknown): AppError {
   // Zod rejections are the caller's fault, not ours. Surface the first issue's
   // path so a plugin or client author can see which field was wrong, but never
   // echo the received value back.
+  // Provider credit exhaustion is the user's problem to fix, not an internal
+  // fault, so it gets a message that says what to do instead of "something went
+  // wrong on our side".
+  const raw = error instanceof Error ? error.message : String(error ?? "");
+  if (/requires more credits|insufficient_quota|quota exceeded|billing/i.test(raw)) {
+    return new AppError(
+      "provider_error",
+      "The AI provider account is out of credit. Top it up to keep generating.",
+      402,
+    );
+  }
+
   if (isZodError(error)) {
     const issue = error.issues[0];
     const path = issue?.path?.length ? issue.path.join(".") : "request body";

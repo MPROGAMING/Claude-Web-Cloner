@@ -238,6 +238,10 @@ export function Workspace({
           trigger={
             <button
               type="button"
+              // The label is hidden below `sm`, which would leave an icon-only
+              // button with no accessible name on exactly the devices most
+              // Roblox creators use.
+              aria-label={blueprint?.approved ? "Open the approved game plan" : "Plan the game"}
               className={cn(
                 "flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-[0.75rem] font-medium transition-colors focus-ember",
                 blueprint?.approved

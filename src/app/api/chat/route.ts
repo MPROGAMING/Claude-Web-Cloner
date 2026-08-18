@@ -423,6 +423,11 @@ export async function POST(request: Request) {
           messages: modelMessages,
           tools,
           stopWhen: isStepCount(budget.maxSteps),
+          // The output ceiling was declared in the budget and never applied, so
+          // every request asked for the model's full 65k window. That is both
+          // the cost-control gap section 19 asked for and a hard failure on any
+          // account whose remaining balance cannot cover the reservation.
+          maxOutputTokens: budget.maxOutputTokens,
           onError: ({ error }) => {
             logger.error("ai.stream.error", { requestId, error: String(error) });
           },

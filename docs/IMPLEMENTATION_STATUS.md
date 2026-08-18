@@ -272,3 +272,22 @@ partial requirement (§12 repair loop is model-driven, not server-driven) in
 Commands:
 - `npm run agent:verify` — full agent acceptance against a running dev server
 - `npm run verify:security` — live RLS/grants, now including the agent tables
+
+## Overnight session — 18/19 Aug 2026
+
+Game Blueprint shipped: idea -> 4-6 clarifying questions -> sectioned plan ->
+explicit approval, verified 24/24 against real model calls. An approved plan is
+binding context on every later build turn.
+
+Landing page won a blind A/B against live lemonade.gg after a real hero composer
+was added. Command palette (Cmd/Ctrl+K) added. Studio integration proven against
+a real place (607,544 terrain cells written and verified by query).
+
+Fixed: the output-token budget was declared but never passed to streamText;
+provider credit exhaustion reported as an internal fault; an icon-only button
+with no accessible name.
+
+304 tests, 37 live security checks, clean build.
+Full detail: `docs/OVERNIGHT-BUILD-REPORT.md`.
+
+Commands added: `npm run blueprint:verify`.

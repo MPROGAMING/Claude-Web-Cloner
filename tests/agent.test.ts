@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it, vi } from "vitest";
 
 vi.mock("server-only", () => ({}));
@@ -999,5 +1000,38 @@ describe("undo of a self-correcting run", () => {
     expect(inverse).toHaveLength(1);
     expect(inverse[0].kind).toBe("update");
     expect(inverse[0].content).toBe("ORIGINAL");
+  });
+});
+
+describe("output budget is actually enforced", () => {
+  /**
+   * The budget declared a maxOutputTokens ceiling that the chat route never
+   * passed to the model, so every request reserved the model's full window.
+   * On an account with a low balance the provider refuses the reservation
+   * outright, which surfaced as a dead run rather than a budget message.
+   */
+  it("declares a ceiling well below a frontier model's full window", () => {
+    for (const kind of [
+      "explanation",
+      "code_generation",
+      "multi_file_implementation",
+    ] as const) {
+      const budget = budgetFor(kind);
+      expect(budget.maxOutputTokens).toBeGreaterThan(0);
+      expect(budget.maxOutputTokens).toBeLessThan(65_536);
+    }
+  });
+
+  it("scales the ceiling with the size of the work", () => {
+    expect(budgetFor("explanation").maxOutputTokens).toBeLessThan(
+      budgetFor("multi_file_implementation").maxOutputTokens,
+    );
+  });
+
+  it("is wired into the chat route, not just declared", () => {
+    // Reading the route source is crude, but the alternative is spending real
+    // provider credit to discover the ceiling was dropped again.
+    const route = readFileSync("src/app/api/chat/route.ts", "utf8");
+    expect(route).toMatch(/maxOutputTokens:\s*budget\.maxOutputTokens/);
   });
 });
