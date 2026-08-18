@@ -21,12 +21,12 @@ export const INTENT_KEY = "blockwright:intent";
 
 /** Real Roblox mechanics, phrased the way a creator would ask for them. */
 const EXAMPLES = [
-  "a round-based zombie survival with a safe lobby between waves",
-  "a tycoon where players buy droppers and upgrade a conveyor",
-  "a farming game where crops grow on a timer and sell for coins",
-  "a sword fighting arena with server-authoritative damage",
-  "an obby with checkpoints, coins and a shop for trails",
-  "a horror map where the lights fail and a monster hunts you",
+  "a zombie survival where you barricade a house between waves",
+  "a tycoon where you buy droppers and upgrade the conveyor",
+  "a farming game where crops grow while you're offline",
+  "a sword fight arena where nobody can cheat their damage",
+  "an obby with checkpoints and a shop for trails",
+  "a horror map where the lights go out and something hunts you",
 ];
 
 export function HeroComposer() {

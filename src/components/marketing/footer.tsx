@@ -70,8 +70,7 @@ export function MarketingFooter() {
               >
                 Game-icons.net
               </a>{" "}
-              (CC BY 3.0). Provider logos are trademarks of their respective owners, shown for
-              identification only.
+              (CC BY 3.0).
             </p>
           </div>
         </div>

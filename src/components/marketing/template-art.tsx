@@ -82,14 +82,22 @@ export function TemplateArt({
         }}
       />
 
-      {/* Oversized, cropped glyph — reads as artwork rather than as an icon. */}
+      {/* Two passes. The huge ghost bleeds off the edge and reads as texture,
+          which is what a bleed is for. The focal glyph stays fully inside the
+          card: previously a single oversized glyph was sliced flat by the card
+          edge on every card, which reads as a broken image rather than a crop. */}
+      <Icon
+        aria-hidden
+        className="absolute -bottom-8 -left-6 size-[9rem] opacity-[0.13]"
+        style={{ color: "oklch(1 0 0)" }}
+      />
       <Icon
         aria-hidden
         className={cn(
-          "absolute -right-3 -top-2 size-[7.5rem] opacity-90 drop-shadow-[0_2px_10px_rgba(0,0,0,0.35)]",
+          "absolute right-3 top-1/2 size-[4.25rem] -translate-y-1/2 opacity-95 drop-shadow-[0_2px_10px_rgba(0,0,0,0.4)]",
           !priority && "animate-rise",
         )}
-        style={{ color: "oklch(1 0 0 / 0.92)" }}
+        style={{ color: "oklch(1 0 0 / 0.95)" }}
       />
 
       {/* Bottom fade so overlaid text keeps its contrast. */}

@@ -21,15 +21,23 @@ import { StatusDot } from "@/components/ui/status-dot";
 const PROMPT =
   "Create a simulator where players collect crystals, sell them, buy backpacks and unlock new islands.";
 
+/**
+ * The build sequence.
+ *
+ * Deliberately short. The panel is sized for its finished state, so a long
+ * timeline means a visitor arrives at a mostly-empty box and watches it fill —
+ * which reads as broken, not as animated. It now starts part-built and lands
+ * inside three seconds.
+ */
 const STEPS = [
-  { label: "Read the project", ms: 700 },
-  { label: "Planned 6 build steps", ms: 1500 },
-  { label: "Created src/shared/GameConfig.luau", ms: 2400 },
-  { label: "Created src/server/CurrencyService.luau", ms: 3300 },
-  { label: "Created src/server/CrystalNodes.server.luau", ms: 4200 },
-  { label: "Created src/ui/ShopPanel.luau", ms: 5100 },
-  { label: "Validated 7 scripts — clean", ms: 6000 },
-  { label: "Synced to Roblox Studio", ms: 6800 },
+  { label: "Read the project", ms: 0 },
+  { label: "Planned 6 build steps", ms: 420 },
+  { label: "Created src/shared/GameConfig.luau", ms: 860 },
+  { label: "Created src/server/CurrencyService.luau", ms: 1300 },
+  { label: "Created src/server/CrystalNodes.server.luau", ms: 1740 },
+  { label: "Created src/ui/ShopPanel.luau", ms: 2180 },
+  { label: "Validated 7 scripts — clean", ms: 2620 },
+  { label: "Synced to Roblox Studio", ms: 3020 },
 ];
 
 const FILES = [
@@ -89,7 +97,7 @@ export function WorkspacePreview({ className }: { className?: string }) {
         timer = window.setInterval(() => {
           const next = Date.now() - start;
           setElapsed(next);
-          if (next > 8000) window.clearInterval(timer);
+          if (next > 3600) window.clearInterval(timer);
         }, 80);
       },
       { threshold: 0.25 },
@@ -104,8 +112,11 @@ export function WorkspacePreview({ className }: { className?: string }) {
 
   const visibleSteps = STEPS.filter((s) => elapsed >= s.ms);
   const activeStep = STEPS.find((s) => elapsed < s.ms);
-  const visibleFiles = Math.min(FILES.length, Math.floor(elapsed / 620));
-  const codeChars = Math.max(0, Math.floor((elapsed - 2400) / 3.2));
+  // Three files are present on arrival, so the tree is never an empty column.
+  const visibleFiles = Math.min(FILES.length, 3 + Math.floor(elapsed / 300));
+  // The code pane starts with content rather than an empty viewer under a
+  // filename, and fills quickly enough to feel like typing rather than waiting.
+  const codeChars = Math.max(120, Math.floor((elapsed + 400) / 1.5));
 
   return (
     <div
@@ -207,7 +218,14 @@ export function WorkspacePreview({ className }: { className?: string }) {
               CurrencyService.luau
             </span>
           </div>
-          <pre className="overflow-hidden p-3 font-mono text-[0.625rem] leading-[1.7] text-foreground/75">
+          {/*
+            The pane is narrower than the source lines, so every line was being
+            guillotined at a hard vertical edge mid-glyph — on the one panel
+            meant to prove the product works, which made it read as a rendering
+            failure. Wrapping keeps the code intact, and the fade at the bottom
+            edge shows there is more rather than pretending the file ends there.
+          */}
+          <pre className="overflow-hidden whitespace-pre-wrap break-words p-3 font-mono text-[0.625rem] leading-[1.7] text-foreground/75 [mask-image:linear-gradient(to_bottom,black_78%,transparent)]">
             <code>
               {CODE.slice(0, codeChars)}
               {codeChars < CODE.length && codeChars > 0 && (
