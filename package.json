@@ -32,7 +32,8 @@
     "brain:stats": "node --import ./scripts/roblox-brain/lib/register-hooks.mjs scripts/roblox-brain/stats.mjs",
     "brain:eval": "node --import ./scripts/roblox-brain/lib/register-hooks.mjs scripts/roblox-brain/evaluate.mjs",
     "brain:verify-generation": "node --import ./scripts/roblox-brain/lib/register-hooks.mjs scripts/roblox-brain/verify-generation.mjs",
-    "agent:verify": "node scripts/roblox-brain/verify-agent.mjs"
+    "agent:verify": "node scripts/roblox-brain/verify-agent.mjs",
+    "blueprint:verify": "node scripts/roblox-brain/verify-blueprint.mjs"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^4.0.39",

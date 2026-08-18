@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { INTENT_KEY } from "@/components/marketing/hero-composer";
 import { Check, Loader2, Plus, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -25,10 +26,27 @@ import { cn } from "@/lib/utils";
  * seeds the composer with the template's prompt on the next screen — the
  * template never writes files itself, the agent does.
  */
+/** "Make a tycoon where players buy droppers" -> "Tycoon Where Players Buy Droppers" */
+function deriveProjectName(idea: string): string {
+  const cleaned = idea
+    // Strip the request framing and any leading article, whether or not a verb
+    // was used: "make me a tycoon…" and "a tycoon…" should both name "Tycoon…".
+    .replace(/^\s*(make|build|create|i want|i'd like|give me)\s+(me\s+)?/i, "")
+    .replace(/^\s*(a|an|the)\s+/i, "")
+    .split(/[.!?\n]/)[0]
+    .trim();
+
+  const words = cleaned.split(/\s+/).slice(0, 6).join(" ");
+  return words
+    ? words.replace(/\b\w/g, (c) => c.toUpperCase()).slice(0, 60)
+    : "New project";
+}
+
 export function NewProjectDialog({
   trigger,
   defaultTemplate,
   defaultOpen = false,
+  adoptIntent = false,
   onDismiss,
 }: {
   /** Base UI composes via `render`, which needs a single element, not ReactNode. */
@@ -36,13 +54,37 @@ export function NewProjectDialog({
   defaultTemplate?: string;
   /** Used by the gallery, which opens the dialog from a card rather than a trigger. */
   defaultOpen?: boolean;
+  /** Pick up an idea typed on the landing page and pre-fill from it. */
+  adoptIntent?: boolean;
   onDismiss?: () => void;
 }) {
   const [open, setOpen] = useState(defaultOpen);
   const [templateSlug, setTemplateSlug] = useState<string | undefined>(defaultTemplate);
-  const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
+  /**
+   * Adopt the idea typed on the landing page.
+   *
+   * Read once and cleared, so a refresh or a later visit does not resurrect an
+   * idea the user has moved on from. Lazy initial state rather than an effect:
+   * the value is known at first render, and writing it in an effect would be a
+   * derived-state write the React Compiler rejects.
+   */
+  const [intent] = useState(() => {
+    if (!adoptIntent || typeof window === "undefined") return "";
+    try {
+      const stored = window.sessionStorage.getItem(INTENT_KEY) ?? "";
+      if (stored) window.sessionStorage.removeItem(INTENT_KEY);
+      return stored;
+    } catch {
+      return "";
+    }
+  });
+
+  // A first-line summary makes a usable project name; the full idea is the
+  // description, and the workspace seeds the first prompt from it.
+  const [name, setName] = useState(() => (intent ? deriveProjectName(intent) : ""));
+  const [description, setDescription] = useState(intent);
   const [pending, startTransition] = useTransition();
+
 
   const selectTemplate = (slug: string | undefined) => {
     setTemplateSlug(slug);

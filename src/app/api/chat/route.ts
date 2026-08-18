@@ -22,6 +22,7 @@ import { getConnection } from "@/lib/studio/service";
 import { preRetrieveForTurn, toPublicCitations } from "@/lib/knowledge/pre-retrieval";
 import { getBrainGenerationConfig, resolveChatModelId } from "@/lib/knowledge/generation-config";
 import { classifyRequest } from "@/lib/agent/classifier";
+import { blueprintSchema, blueprintToContext } from "@/lib/blueprint/schema";
 import { AgentStateMachine } from "@/lib/agent/state-machine";
 import { ChangesetBuilder, toPreview as toChangesetPreview } from "@/lib/agent/changesets";
 import { budgetFor } from "@/lib/agent/budgets";
@@ -173,6 +174,21 @@ export async function POST(request: Request) {
     ]);
 
     const studioConnected = studioConnection?.status === "connected";
+
+    // An approved blueprint is settled context: the creator already reviewed and
+    // accepted these decisions, so the agent follows them instead of re-deciding
+    // — and instead of asking the same questions on every turn.
+    const { data: approvedPlan } = await supabase
+      .from("game_blueprints")
+      .select("blueprint")
+      .eq("project_id", project.id)
+      .eq("status", "approved")
+      .maybeSingle();
+
+    const parsedPlan = approvedPlan?.blueprint
+      ? blueprintSchema.safeParse(approvedPlan.blueprint)
+      : null;
+    const planContext = parsedPlan?.success ? blueprintToContext(parsedPlan.data) : null;
 
     // --- Agent run -----------------------------------------------------------
     // Classification decides the pipeline and the budget before a single token
@@ -402,6 +418,7 @@ export async function POST(request: Request) {
             classification: classification.kind,
             requiresPlan: classification.requiresPlan,
             maxSteps: budget.maxSteps,
+            blueprintContext: planContext,
           }),
           messages: modelMessages,
           tools,

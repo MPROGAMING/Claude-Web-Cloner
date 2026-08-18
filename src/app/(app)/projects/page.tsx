@@ -11,8 +11,15 @@ import { liveProjectIds } from "@/lib/studio/liveness";
 
 export const metadata: Metadata = { title: "Projects" };
 
-export default async function ProjectsPage() {
+export default async function ProjectsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ start?: string }>;
+}) {
   const { supabase, user } = await requireUser();
+  // `?start=1` arrives from the landing hero: the visitor typed an idea, signed
+  // in, and should land with the project dialog already open on it.
+  const { start } = await searchParams;
 
   const [profile, balance, projects] = await Promise.all([
     getProfile(),
@@ -65,7 +72,7 @@ export default async function ProjectsPage() {
         <PageHeader
           title="Projects"
           description="Every project keeps its own files, conversation history and Studio pairing."
-          actions={<NewProjectDialog />}
+          actions={<NewProjectDialog defaultOpen={start === "1"} adoptIntent />}
         />
 
         <Tabs defaultValue="active" className="mt-8">

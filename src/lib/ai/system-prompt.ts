@@ -28,6 +28,8 @@ export interface PromptContext {
   classification?: string;
   requiresPlan?: boolean;
   maxSteps?: number;
+  /** An approved Game Blueprint, already rendered by blueprintToContext. */
+  blueprintContext?: string | null;
 }
 
 function agentBlock(ctx: PromptContext): string {
@@ -65,6 +67,20 @@ function agentBlock(ctx: PromptContext): string {
         "submit_plan for a question or a single small change.",
       ];
 
+  const plan = ctx.blueprintContext
+    ? [
+        "",
+        "# The approved plan",
+        "",
+        "The creator has reviewed and approved the plan below. Treat it as settled:",
+        "build toward it, and do not re-ask questions it already answers. If the",
+        "request genuinely conflicts with it, say so and ask which should win —",
+        "do not quietly redesign an approved decision.",
+        "",
+        ctx.blueprintContext,
+      ]
+    : [];
+
   return [
     "# How this run works",
     "",
@@ -92,6 +108,7 @@ function agentBlock(ctx: PromptContext): string {
     "Run validate_scripts after writing, and security_review before you finish any",
     "build that touches remotes or player state. Fix what they report — do not",
     "explain the error to the user and leave it in place.",
+    ...plan,
   ].join("\n");
 }
 

@@ -16,6 +16,7 @@ import { getTemplate } from "@/lib/templates";
 import { touchProject } from "@/lib/actions/projects";
 import type { BlockwrightUIMessage } from "@/lib/ai/types";
 import { createClient } from "@/lib/supabase/server";
+import { blueprintSchema, type BlueprintIssue } from "@/lib/blueprint/schema";
 
 export async function generateMetadata({
   params,
@@ -50,14 +51,39 @@ export default async function ProjectWorkspacePage({
   const project = await getProject(id);
   if (!project) notFound();
 
-  const [profile, balance, files, conversations, connection, catalog] = await Promise.all([
-    getProfile(),
-    getCreditBalance(),
-    listProjectFiles(project.id),
-    listConversations(project.id),
-    getConnection(supabase, project.id, user.id),
-    listClientModels(),
-  ]);
+  const [profile, balance, files, conversations, connection, catalog, blueprintRow] =
+    await Promise.all([
+      getProfile(),
+      getCreditBalance(),
+      listProjectFiles(project.id),
+      listConversations(project.id),
+      getConnection(supabase, project.id, user.id),
+      listClientModels(),
+      // The most recent plan, approved or still in review, so reopening the
+      // dialog resumes where the creator left off instead of starting over.
+      supabase
+        .from("game_blueprints")
+        .select("id, blueprint, issues, status")
+        .eq("project_id", project.id)
+        .in("status", ["draft", "approved"])
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+    ]);
+
+  const parsedBlueprint = blueprintRow.data?.blueprint
+    ? blueprintSchema.safeParse(blueprintRow.data.blueprint)
+    : null;
+
+  const approvedBlueprint =
+    blueprintRow.data && parsedBlueprint?.success
+      ? {
+          id: blueprintRow.data.id,
+          blueprint: parsedBlueprint.data,
+          issues: (blueprintRow.data.issues ?? []) as BlueprintIssue[],
+          approved: blueprintRow.data.status === "approved",
+        }
+      : undefined;
 
   // Every project has a conversation; create one if an older row is missing it.
   const conversationId = conversations[0]?.id ?? (await createConversationFor(project.id, user.id));
@@ -87,8 +113,16 @@ export default async function ProjectWorkspacePage({
       balance={balance?.balance ?? 0}
       email={user.email ?? ""}
       displayName={profile?.display_name}
-      seededPrompt={initialMessages.length === 0 ? template?.prompt : undefined}
+      // On an untouched project the composer opens on the idea the project was
+      // created from — a template's prompt, or the description the user typed on
+      // the landing page. Once there is a conversation, it seeds nothing.
+      seededPrompt={
+        initialMessages.length === 0
+          ? (template?.prompt ?? project.description ?? undefined)
+          : undefined
+      }
       studioConnected={connection?.status === "connected"}
+      blueprint={approvedBlueprint}
     />
   );
 }

@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { LinkButton } from "@/components/ui/link-button";
 import { WorkspacePreview } from "@/components/marketing/workspace-preview";
+import { HeroComposer } from "@/components/marketing/hero-composer";
 import { ModelWall } from "@/components/marketing/model-wall";
 import { StudioFlow } from "@/components/marketing/studio-flow";
 import { TemplateStrip } from "@/components/marketing/template-strip";
@@ -39,31 +40,26 @@ export default function LandingPage() {
               For Roblox creators
             </span>
 
-            <h1 className="mt-6 text-[2.5rem] font-semibold leading-[1.04] sm:text-6xl">
+            <h1 className="mt-6 text-[2.75rem] font-semibold leading-[0.98] tracking-[-0.03em] sm:text-[4.25rem]">
               Describe the mechanic.
               <br />
               <span className="text-muted-foreground">Get the working game.</span>
             </h1>
 
-            <p className="mx-auto mt-6 max-w-xl text-base leading-relaxed text-muted-foreground sm:text-[1.0625rem]">
-              Blockwright is an AI build partner that writes real Luau, organises
-              your project properly, checks its own work, and pushes it straight
-              into Roblox Studio.
+            <p className="mx-auto mt-5 max-w-lg text-[0.9375rem] leading-relaxed text-muted-foreground sm:text-base">
+              Real Luau, organised properly, checked against the Roblox docs, and
+              pushed straight into Studio.
             </p>
 
-            <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
-              <LinkButton href="/sign-up" size="lg" className="h-10 px-5 text-sm">
-                Start building free
-                <ArrowRight className="size-4" data-icon="inline-end" />
-              </LinkButton>
-              <LinkButton href="#how" size="lg" variant="outline" className="h-10 px-5 text-sm">
+            {/* The product's core action, in the hero. */}
+            <HeroComposer />
+
+            <div className="mt-6 flex items-center justify-center">
+              <LinkButton href="#how" size="lg" variant="ghost" className="h-9 px-4 text-[0.8125rem] text-muted-foreground">
                 See how it works
+                <ArrowRight className="size-3.5" data-icon="inline-end" />
               </LinkButton>
             </div>
-
-            <p className="mt-4 font-mono text-[0.6875rem] text-muted-foreground">
-              2,000 credits on signup · no card required
-            </p>
           </div>
 
           <div className="relative mt-14 sm:mt-20">

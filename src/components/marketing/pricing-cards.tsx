@@ -1,6 +1,5 @@
 import { Check } from "lucide-react";
 import { CREDIT_PACKS, formatCredits } from "@/lib/credits/pricing";
-import { Button } from "@/components/ui/button";
 import { LinkButton } from "@/components/ui/link-button";
 import { cn } from "@/lib/utils";
 
@@ -84,21 +83,25 @@ export function PricingCards({ className }: { className?: string }) {
               </li>
             </ul>
 
-            <Button
+            {/* No payment provider is configured, so there is nothing honest for a
+                purchase button to do. Rather than show a disabled control, the
+                card leads where the credits actually come from today: a free
+                account with a starting balance. */}
+            <LinkButton
+              href="/sign-up"
               variant={pack.highlight ? "default" : "outline"}
               className="mt-6 w-full"
-              disabled
             >
-              Checkout coming soon
-            </Button>
+              Start with free credits
+            </LinkButton>
           </div>
         ))}
       </div>
 
       <p className="mx-auto max-w-xl text-center text-xs leading-relaxed text-muted-foreground">
-        Credits are metered from the token usage each provider reports. A message
-        that fails before reaching a provider costs nothing. Pack pricing is
-        configurable and not yet purchasable.
+        Credits are metered from the token usage each provider reports — a message
+        that fails before reaching a provider costs nothing. Packs are priced but
+        not yet purchasable; every account starts with free credits.
       </p>
     </div>
   );

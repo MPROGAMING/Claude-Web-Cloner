@@ -10,6 +10,7 @@ import {
   ArrowDown,
   ArrowLeft,
   Files,
+  Map,
   MessageSquarePlus,
   PanelRightClose,
   PanelRightOpen,
@@ -24,6 +25,8 @@ import { GenerationStatus, GenerationSummary } from "@/components/workspace/gene
 import { FileTree } from "@/components/workspace/file-tree";
 import { CodeViewer } from "@/components/workspace/code-viewer";
 import { StudioPanel } from "@/components/workspace/studio-panel";
+import { BlueprintDialog } from "@/components/blueprint/blueprint-dialog";
+import type { Blueprint, BlueprintIssue } from "@/lib/blueprint/schema";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { StatusDot } from "@/components/ui/status-dot";
 import { CreditBadge } from "@/components/app/credit-badge";
@@ -55,6 +58,7 @@ export function Workspace({
   seededPrompt,
   studioConnected,
   catalogFetchedAt,
+  blueprint,
 }: {
   project: Project;
   conversationId: string;
@@ -67,6 +71,12 @@ export function Workspace({
   seededPrompt?: string;
   studioConnected: boolean;
   catalogFetchedAt?: string;
+  blueprint?: {
+    id: string;
+    blueprint: Blueprint;
+    issues: BlueprintIssue[];
+    approved: boolean;
+  };
 }) {
   const router = useRouter();
 
@@ -217,6 +227,29 @@ export function Workspace({
             {studioConnected && " · Studio live"}
           </p>
         </div>
+
+        {/* The plan is a first-class object, not a wizard you pass through once:
+            it stays reachable so decisions can be revisited. */}
+        <BlueprintDialog
+          projectId={project.id}
+          projectName={project.name}
+          seedIdea={project.description ?? undefined}
+          existing={blueprint}
+          trigger={
+            <button
+              type="button"
+              className={cn(
+                "flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-[0.75rem] font-medium transition-colors focus-ember",
+                blueprint?.approved
+                  ? "border-[var(--success)]/30 bg-[var(--success)]/10 text-[var(--success)] hover:bg-[var(--success)]/15"
+                  : "border-border text-muted-foreground hover:bg-accent hover:text-foreground",
+              )}
+            >
+              <Map className="size-3.5" />
+              <span className="hidden sm:inline">{blueprint?.approved ? "Plan" : "Plan the game"}</span>
+            </button>
+          }
+        />
 
         {studioConnected && (
           <span className="hidden items-center gap-1.5 rounded-md border border-[var(--signal)]/30 bg-[var(--signal)]/10 px-2 py-1 text-[0.6875rem] font-medium text-[var(--signal)] sm:inline-flex">

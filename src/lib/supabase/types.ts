@@ -363,6 +363,25 @@ export type AgentChangesetRow = {
   applied_at: string | null;
 };
 
+export type GameBlueprintRow = {
+  id: string;
+  project_id: string;
+  owner_id: string;
+  idea: string;
+  questions: unknown[];
+  answers: unknown[];
+  blueprint: unknown | null;
+  issues: unknown[];
+  status: "questions" | "draft" | "approved" | "superseded";
+  version: number;
+  input_tokens: number;
+  output_tokens: number;
+  credits_charged: number;
+  created_at: string;
+  updated_at: string;
+  approved_at: string | null;
+};
+
 type TableDef<Row, Insert = Partial<Row>, Update = Partial<Row>> = {
   Row: Row;
   Insert: Insert;
@@ -396,6 +415,7 @@ export type Database = {
       agent_steps: TableDef<AgentStep, Omit<AgentStep, "id" | "created_at">>;
       agent_tool_calls: TableDef<AgentToolCall, Omit<AgentToolCall, "id" | "created_at">>;
       agent_changesets: TableDef<AgentChangesetRow>;
+      game_blueprints: TableDef<GameBlueprintRow, Partial<GameBlueprintRow>>;
     };
     Views: Record<never, never>;
     Functions: {
