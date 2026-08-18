@@ -1,173 +1,165 @@
-# AI Website Cloner Template
+<div align="center">
 
-<a href="https://github.com/JCodesMore/ai-website-cloner-template/blob/master/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT License" /></a> <a href="https://github.com/JCodesMore/ai-website-cloner-template/stargazers"><img src="https://img.shields.io/github/stars/JCodesMore/ai-website-cloner-template?style=flat" alt="Stars" /></a> <a href="https://discord.gg/hrTSX5yTpB"><img src="https://img.shields.io/discord/1400896964597383279?label=discord" alt="Discord" /></a> <img src="https://img.shields.io/endpoint?url=https://gittokens.rsamf.com/badge/JCodesMore/ai-website-cloner-template" alt="tokens" />
+# Blockwright
 
-> English README | [中文说明](README.zh-CN.md)
+**An AI build partner for Roblox creators.**
+Describe a mechanic — get working Luau, organised into a real project, applied
+straight into Roblox Studio.
 
-A reusable template for reverse-engineering any website into a clean, modern Next.js codebase using AI coding agents. 
+</div>
 
-**Recommended: [Claude Code](https://docs.anthropic.com/en/docs/claude-code) with Opus 5 for best results** — but works with a variety of AI coding agents.
+---
 
-Point it at a URL, run `/clone-website`, and your AI agent will inspect the site, extract design tokens and assets, write component specs, and dispatch parallel builders to reconstruct every section.
+## What it does
 
-## Demo
+You type:
 
-[![Watch the demo](docs/design-references/comparison.png)](https://youtu.be/O669pVZ_qr0)
+> Create a simulator where players collect crystals, sell them, buy backpacks
+> and unlock new islands.
 
-> Click the image above to watch the full demo on YouTube.
+Blockwright plans the build, writes the Luau into a properly structured project
+(`ServerScriptService` / `ReplicatedStorage` / `StarterGui` …), statically checks
+its own output for the mistakes models actually make in Roblox code, fixes what
+it finds, and — if the Studio plugin is paired — pushes the scripts into the
+place you have open.
 
-## Quick Start
+Not "here is some code". The project exists when it is done.
 
-> **Important:** Start by making your own copy with GitHub's **Use this template** button. Do not clone this template repository directly for your website project, and do not open pull requests here with your generated website.
+## Requirements
 
-1. **Create your own repository from this template**
+- **Node 22+** (24 LTS or 26 recommended — the AI SDK v7 requires 22+)
+- A **Supabase** project
+- At least one AI provider API key
 
-   On the GitHub page for this project, click **Use this template**, then click **Create a new repository**.
+## Setup
 
-   Give your new repository a name, choose whether it should be public or private, then click **Create repository**. If GitHub shows an **Include all branches** option, you can leave it off.
-
-   This gives you your own separate project to work in, so your website changes stay in your account instead of coming back to the main template.
-
-2. **Open your new repository on your computer**
-
-   After GitHub creates your copy, open that new repository. Click **Code** and open or clone your new repository with your preferred coding tool.
-
-   If you use the terminal, the command will look like this:
-
-   ```bash
-   git clone https://github.com/YOUR-USERNAME/YOUR-NEW-REPOSITORY.git
-   cd YOUR-NEW-REPOSITORY
-   ```
-
-3. **Install dependencies**
-   ```bash
-   npm install
-   ```
-4. **Start your AI agent** — Claude Code recommended:
-   ```bash
-   claude --chrome
-   ```
-5. **Run the skill**:
-   ```
-   /clone-website <target-url1> [<target-url2> ...]
-   ```
-6. **Customize** (optional) — after the base clone is built, modify as needed
-
-> Using a different agent? Open `AGENTS.md` for project instructions — most agents pick it up automatically.
-
-## Supported Platforms
-
-| Agent                                                         | Status                     |
-| ------------------------------------------------------------- | -------------------------- |
-| [Claude Code](https://docs.anthropic.com/en/docs/claude-code) | **Recommended** — Opus 5   |
-| [Codex CLI](https://github.com/openai/codex)                  | Supported                  |
-| [OpenCode](https://opencode.ai/)                              | Supported                  |
-| [GitHub Copilot](https://github.com/features/copilot)         | Supported                  |
-| [Cursor](https://cursor.com/)                                 | Supported                  |
-| [Windsurf](https://codeium.com/windsurf)                      | Supported                  |
-| [Gemini CLI](https://github.com/google-gemini/gemini-cli)     | Supported                  |
-| [Cline](https://github.com/cline/cline)                       | Supported                  |
-| [Roo Code](https://github.com/RooCodeInc/Roo-Code)            | Supported                  |
-| [Continue](https://continue.dev/)                             | Supported                  |
-| [Amazon Q](https://aws.amazon.com/q/developer/)               | Supported                  |
-| [Augment Code](https://www.augmentcode.com/)                  | Supported                  |
-| [Aider](https://aider.chat/)                                  | Supported                  |
-
-## Prerequisites
-
-- [Node.js](https://nodejs.org/) 24+
-- An AI coding agent (see [Supported Platforms](#supported-platforms))
-
-## Tech Stack
-
-- **Next.js 16** — App Router, React 19, TypeScript strict
-- **shadcn/ui** — Radix primitives + Tailwind CSS v4
-- **Tailwind CSS v4** — oklch design tokens
-- **Lucide React** — default icons (replaced by extracted SVGs during cloning)
-
-## How It Works
-
-The `/clone-website` skill runs a multi-phase pipeline:
-
-1. **Reconnaissance** — screenshots, design token extraction, interaction sweep (scroll, click, hover, responsive)
-2. **Foundation** — updates fonts, colors, globals, downloads all assets
-3. **Component Specs** — writes detailed spec files (`docs/research/components/`) with exact computed CSS values, states, behaviors, and content
-4. **Parallel Build** — dispatches builder agents in git worktrees, one per section/component
-5. **Assembly & QA** — merges worktrees, wires up the page, runs visual diff against the original
-
-Each builder agent receives the full component specification inline — exact `getComputedStyle()` values, interaction models, multi-state content, responsive breakpoints, and asset paths. No guessing.
-
-## Use Cases
-
-- **Platform migration** — rebuild a site you own from WordPress/Webflow/Squarespace into a modern Next.js codebase
-- **Lost source code** — your site is live but the repo is gone, the developer left, or the stack is legacy. Get the code back in a modern format
-- **Learning** — deconstruct how production sites achieve specific layouts, animations, and responsive behavior by working with real code
-
-## Not Intended For
-
-- **Phishing or impersonation** — this project must not be used for deceptive purposes, impersonation, or any activity that breaks the law.
-- **Passing off someone's design as your own** — logos, brand assets, and original copy belong to their owners.
-- **Violating terms of service** — some sites explicitly prohibit scraping or reproduction. Check first.
-
-## Project Structure
-
+```bash
+npm install
+cp .env.example .env.local
 ```
-src/
-  app/              # Next.js routes
-  components/       # React components
-    ui/             # shadcn/ui primitives
-    icons.tsx       # Extracted SVG icons
-  lib/utils.ts      # cn() utility
-  types/            # TypeScript interfaces
-  hooks/            # Custom React hooks
-public/
-  images/           # Downloaded images from target
-  videos/           # Downloaded videos from target
-  seo/              # Favicons, OG images
-docs/
-  research/         # Extraction output & component specs
-  design-references/ # Screenshots
-scripts/
-  sync-agent-rules.sh  # Regenerate agent instruction files
-  sync-skills.mjs      # Regenerate /clone-website for all platforms
-AGENTS.md           # Agent instructions (single source of truth)
-CLAUDE.md           # Claude Code config (imports AGENTS.md)
-GEMINI.md           # Gemini CLI config (imports AGENTS.md)
+
+Fill in `.env.local`:
+
+| Variable | Required | Notes |
+| -------- | -------- | ----- |
+| `NEXT_PUBLIC_SITE_URL` | yes | `http://localhost:3000` in development |
+| `NEXT_PUBLIC_SUPABASE_URL` | yes | Supabase → Project Settings → API |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | yes | same page |
+| `SUPABASE_SERVICE_ROLE_KEY` | Studio only | **server-only**; required *only* for the Roblox Studio bridge. Auth, projects, chat and credits all work without it. |
+| `ANTHROPIC_API_KEY` | one of | Claude Sonnet 4.5 / Opus 4.5 / Haiku 4.5 |
+| `OPENAI_API_KEY` | one of | GPT-5 / GPT-5 mini |
+| `GOOGLE_GENERATIVE_AI_API_KEY` | one of | Gemini 2.5 Pro / Flash |
+| `OPENROUTER_API_KEY` | one of | GPT-5.6 Luna, Gemini 3.7 Flash, Hy3, Kimi K3, GLM 5.2, plus the live free tier |
+| `NEXT_PUBLIC_AUTH_PROVIDERS` | no | Comma-separated OAuth providers you enabled in Supabase |
+
+Models whose provider has no key are shown in the picker as unavailable, naming
+the key that is missing — they are never silently hidden.
+
+**OpenRouter** adds the requested models plus a free tier that is discovered
+live: the catalog is fetched at runtime, free status is read from real pricing,
+and a model that becomes paid stops showing FREE on the next refresh. No code
+change is needed when the free list moves.
+
+Then create the schema: open the Supabase SQL editor and run
+[`supabase/migrations/0001_init.sql`](supabase/migrations/0001_init.sql). It
+creates every table, all RLS policies, the credit functions, and the trigger
+that grants 2,000 credits on signup.
+
+```bash
+npm run dev
 ```
+
+Without Supabase credentials the marketing pages still render and the app area
+shows a setup screen rather than crashing.
 
 ## Commands
 
 ```bash
-npm run dev    # Start dev server
-npm run build  # Production build
-npm run lint   # ESLint check
-npm run typecheck # TypeScript check
-npm run check  # Run lint + typecheck + build
+npm run dev              # dev server (Turbopack)
+npm run build            # production build
+npm run lint             # ESLint + React Compiler rules
+npm run typecheck        # tsc --noEmit
+npm run test             # vitest
+npm run check            # all four
+npm run verify:security  # live RLS + privilege checks against your Supabase project
 ```
 
-### If using docker
+`verify:security` signs in as two real users and attempts every cross-tenant
+access the schema is supposed to refuse. Run it after any migration — unit tests
+prove our logic, this proves Postgres is enforcing it.
 
-```bash
-docker compose up app --build # build and run the app
-docker compose up dev --build # run the app in dev mode on port 3001
-```
+## Roblox Studio plugin
 
-## Updating for Other Platforms
+See [`roblox-plugin/README.md`](roblox-plugin/README.md).
 
-Two source-of-truth files power all platform support. Edit the source, then run the sync script:
+Short version: drop `roblox-plugin/Blockwright.server.lua` into your local
+Roblox `Plugins` folder, restart Studio, then in the web app open a project →
+**Connect Roblox Studio** → paste the six-character code into the plugin.
 
-| What                   | Source of truth                         | Sync command                       |
-| ---------------------- | --------------------------------------- | ---------------------------------- |
-| Project instructions   | `AGENTS.md`                             | `bash scripts/sync-agent-rules.sh` |
-| `/clone-website` skill | `.claude/skills/clone-website/SKILL.md` | `node scripts/sync-skills.mjs`     |
+The plugin only ever executes allowlisted verbs (`sync_files`, `inspect_place`,
+`create_folder`, `remove_instance`). It is never sent code to run.
 
-Each script regenerates the platform-specific copies automatically. Agents that read the source files natively need no regeneration.
+## Deploying
 
+Vercel-ready as-is.
 
-## Star History
+1. Import the repo.
+2. Set the same environment variables in Project Settings → Environment
+   Variables. `SUPABASE_SERVICE_ROLE_KEY` and the provider keys must **not** be
+   prefixed with `NEXT_PUBLIC_`.
+3. Set `NEXT_PUBLIC_SITE_URL` to the deployed URL.
+4. In Supabase → Authentication → URL Configuration, add
+   `https://your-app.vercel.app/auth/callback` as a redirect URL.
+5. In the Studio plugin, change the server URL box to your deployed URL.
 
-[![Star History Chart](https://api.star-history.com/svg?repos=JCodesMore/ai-website-cloner-template&type=Date)](https://star-history.com/#JCodesMore/ai-website-cloner-template&Date)
+## Documentation
 
-## License
+| Document | What it covers |
+| -------- | -------------- |
+| [`docs/PRODUCT_SPEC.md`](docs/PRODUCT_SPEC.md) | What the product is, its principles, feature surface, scope boundaries |
+| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | Layer boundaries, security model, AI SDK v7 gotchas, the Studio bridge |
+| [`docs/DESIGN_SYSTEM.md`](docs/DESIGN_SYSTEM.md) | Tokens, type scale, component rules, motion, accessibility |
+| [`docs/IMPLEMENTATION_STATUS.md`](docs/IMPLEMENTATION_STATUS.md) | What is done, what is unverified, known gaps, next work |
 
-MIT
+## Model catalog
+
+| Model | Routed via | Free | Context |
+| ----- | ---------- | ---- | ------- |
+| Claude Sonnet 4.5 / Opus 4.5 / Haiku 4.5 | Anthropic (direct) | No | 200K |
+| GPT-5 / GPT-5 mini | OpenAI (direct) | No | 400K |
+| Gemini 2.5 Pro / Flash | Google (direct) | No | 1M |
+| GPT-5.6 Luna | OpenRouter | No | 1.05M |
+| Gemini 3.7 Flash | OpenRouter | No | 1M |
+| Hy3 | OpenRouter | No | 262K |
+| Kimi K3 | OpenRouter | No | 1M |
+| GLM 5.2 | OpenRouter | No | 1M |
+| Free Models Router | OpenRouter | **Yes** | 200K |
+| …plus every currently-free OpenRouter model | OpenRouter | **Yes** | varies |
+
+All slugs, prices and capabilities were verified against the live OpenRouter
+catalog — see `docs/IMPLEMENTATION_STATUS.md` for the verification table.
+
+## Credits
+
+`npm run verify:security` proves tenant isolation and credit integrity against
+your live database (24 assertions).
+
+## Stack
+
+Next.js 16 (App Router, Turbopack) · React 19 · TypeScript strict ·
+Tailwind v4 · shadcn/ui on Base UI · Vercel AI SDK v7 · OpenRouter ·
+Supabase (Postgres, Auth, RLS) · Vitest
+
+## Credits and licences
+
+- Provider logos — [`@lobehub/icons`](https://icons.lobehub.com) (MIT)
+- Game genre icons — [Game-icons.net](https://game-icons.net) (CC BY 3.0)
+- UI icons — [Lucide](https://lucide.dev) (ISC)
+
+Provider names and logos are trademarks of their respective owners, shown for
+identification only.
+
+## Licence
+
+MIT. Not affiliated with, endorsed by, or sponsored by Roblox Corporation.
+Roblox and Luau are trademarks of their respective owners.

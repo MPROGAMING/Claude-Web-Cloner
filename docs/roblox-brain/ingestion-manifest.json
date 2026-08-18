@@ -1,0 +1,753 @@
+{
+  "$schema": "https://blockwright.local/schemas/roblox-brain/ingestion-manifest/v1",
+  "manifest_version": 1,
+  "generated_at": "2026-08-18T18:45:00Z",
+  "source_lock": "docs/roblox-brain/source-lock.json",
+  "status": "specification-only",
+  "note": "Declares WHAT would be ingested and HOW it should be parsed. No ingestion, chunking, embedding or indexing has occurred.",
+  "sources": [
+    {
+      "id": "creator-docs.engine-api",
+      "repository": "creator-docs",
+      "title": "Roblox Engine API (structured)",
+      "include": [
+        "content/en-us/reference/engine/**/*.yaml"
+      ],
+      "exclude": [],
+      "source_type": "engine-api-yaml",
+      "authority": "canonical",
+      "license": "CC-BY-4.0",
+      "priority": 1,
+      "parsing_strategy": {
+        "mode": "structured-field-level",
+        "must_not_flatten_to_prose": true,
+        "unit": "one knowledge unit per API member (class, property, method, event, callback, enum item)",
+        "partition_by": [
+          "class",
+          "enum",
+          "datatype",
+          "library",
+          "global"
+        ],
+        "preserve_fields": [
+          "name",
+          "summary",
+          "description",
+          "inherits",
+          "descendants",
+          "tags",
+          "deprecation_message",
+          "security",
+          "properties",
+          "methods",
+          "events",
+          "callbacks",
+          "code_samples",
+          "thread_safety",
+          "capabilities",
+          "serialization",
+          "category",
+          "simulationAccess"
+        ],
+        "derived_metadata": {
+          "deprecated": "true when deprecation_message is non-empty or tags contain Deprecated",
+          "topic": "engine.<partition>.<name>"
+        }
+      },
+      "canonical_url_pattern": "https://create.roblox.com/docs/reference/engine/{partition}/{name}"
+    },
+    {
+      "id": "creator-docs.cloud-openapi",
+      "repository": "creator-docs",
+      "title": "Open Cloud OpenAPI specification",
+      "include": [
+        "content/en-us/reference/cloud/openapi.json"
+      ],
+      "exclude": [],
+      "source_type": "openapi",
+      "authority": "canonical",
+      "license": "CC-BY-4.0",
+      "priority": 1,
+      "parsing_strategy": {
+        "mode": "operation-level",
+        "unit": "one knowledge unit per API operation",
+        "preserve_fields": [
+          "http_method",
+          "path",
+          "operation_id",
+          "summary",
+          "description",
+          "parameters",
+          "request_body",
+          "responses",
+          "authentication",
+          "security_scopes",
+          "schemas"
+        ],
+        "schema_handling": "resolve $ref against components.schemas; attach the resolved schema to its operation rather than emitting schemas as standalone units",
+        "expected_scale": {
+          "paths": 690,
+          "component_schemas": 1119
+        }
+      },
+      "notes": "Byte-identical in size to the live copy at create.roblox.com/docs/cloud/openapi.json. The local file is preferred because it carries a commit SHA."
+    },
+    {
+      "id": "creator-docs.cloud-reference",
+      "repository": "creator-docs",
+      "title": "Open Cloud reference (prose)",
+      "include": [
+        "content/en-us/reference/cloud/**/*.md"
+      ],
+      "exclude": [],
+      "source_type": "guide-md",
+      "authority": "canonical",
+      "license": "CC-BY-4.0",
+      "priority": 3,
+      "parsing_strategy": {
+        "mode": "heading-aware",
+        "preserve_code_blocks": true
+      },
+      "corrections": [
+        {
+          "removed_glob": "content/en-us/reference/cloud/**/*.yaml",
+          "reason": "Matches zero files. This tree contains JSON OpenAPI specs, not YAML. Caught by validate-manifest.mjs check 'include-exists'.",
+          "replacement": "creator-docs.cloud-service-openapi"
+        }
+      ]
+    },
+    {
+      "id": "creator-docs.cloud-service-openapi",
+      "repository": "creator-docs",
+      "title": "Open Cloud per-service OpenAPI specifications",
+      "include": [
+        "content/en-us/reference/cloud/*/v*.json",
+        "content/en-us/reference/cloud/cloud.docs.json"
+      ],
+      "exclude": [
+        "content/en-us/reference/cloud/openapi.json"
+      ],
+      "source_type": "openapi",
+      "authority": "canonical",
+      "license": "CC-BY-4.0",
+      "priority": 2,
+      "parsing_strategy": {
+        "mode": "operation-level",
+        "unit": "one knowledge unit per API operation",
+        "preserve_fields": [
+          "http_method",
+          "path",
+          "operation_id",
+          "summary",
+          "description",
+          "parameters",
+          "request_body",
+          "responses",
+          "authentication",
+          "security_scopes",
+          "schemas"
+        ],
+        "schema_handling": "resolve $ref against components.schemas; attach resolved schema to its operation"
+      },
+      "discovered_specs": [
+        {
+          "path": "cloud.docs.json",
+          "openapi": "3.0.0",
+          "paths": 60,
+          "title": "Cloud API"
+        },
+        {
+          "path": "assets/v1.json",
+          "openapi": "3.0.1",
+          "paths": 8,
+          "title": "Assets API"
+        },
+        {
+          "path": "datastores-api/v1.json",
+          "openapi": "3.0.1",
+          "paths": 6,
+          "title": "Standard data stores"
+        },
+        {
+          "path": "datastores-api/ordered-v1.json",
+          "openapi": "3.0.1",
+          "paths": null,
+          "title": "Ordered data stores"
+        },
+        {
+          "path": "developer-products-api/v1.json",
+          "openapi": "3.0.1",
+          "paths": 4,
+          "title": "developer-products-api"
+        },
+        {
+          "path": "game-passes-http-service/v1.json",
+          "openapi": "3.0.1",
+          "paths": 4,
+          "title": "game-passes-http-service"
+        },
+        {
+          "path": "secrets-store-service/v1.json",
+          "openapi": "3.0.4",
+          "paths": 3,
+          "title": "SecretsStoreService"
+        },
+        {
+          "path": "open-eval-api/v1.json",
+          "openapi": "3.0.4",
+          "paths": 2,
+          "title": "OpenEvalApi"
+        },
+        {
+          "path": "toolbox-service/v1.json",
+          "openapi": "3.0.1",
+          "paths": 2,
+          "title": "Toolbox.Service"
+        },
+        {
+          "path": "asset-permissions-api/v1.json",
+          "openapi": "3.0.4",
+          "paths": 1,
+          "title": "Roblox.AssetPermissionsApi"
+        },
+        {
+          "path": "messaging-service/v1.json",
+          "openapi": "3.0.1",
+          "paths": 1,
+          "title": "Messaging Service"
+        },
+        {
+          "path": "universes-api/v1.json",
+          "openapi": "3.0.1",
+          "paths": 1,
+          "title": "Place publishing"
+        }
+      ],
+      "notes": "Discovered during Step 3 validation; not present in the original brief. Each is a real OpenAPI document (3.0.0-3.0.4). Some overlap the aggregate openapi.json - deduplicate by (method, path) at ingestion, preferring the aggregate spec, and treat these as per-service detail."
+    },
+    {
+      "id": "creator-docs.cloud-guides",
+      "repository": "creator-docs",
+      "title": "Open Cloud and cloud services guides",
+      "include": [
+        "content/en-us/cloud/**/*.md",
+        "content/en-us/cloud-services/**/*.md"
+      ],
+      "exclude": [],
+      "source_type": "guide-md",
+      "authority": "canonical",
+      "license": "CC-BY-4.0",
+      "priority": 2,
+      "parsing_strategy": {
+        "mode": "heading-aware",
+        "preserve_code_blocks": true
+      }
+    },
+    {
+      "id": "creator-docs.tutorials",
+      "repository": "creator-docs",
+      "title": "Roblox tutorials",
+      "include": [
+        "content/en-us/tutorials/**/*.md"
+      ],
+      "exclude": [],
+      "source_type": "tutorial-md",
+      "authority": "canonical",
+      "license": "CC-BY-4.0",
+      "priority": 1,
+      "parsing_strategy": {
+        "mode": "heading-aware",
+        "preserve_code_blocks": true,
+        "preserve_step_order": true
+      }
+    },
+    {
+      "id": "creator-docs.scripting",
+      "repository": "creator-docs",
+      "title": "Roblox runtime and scripting",
+      "include": [
+        "content/en-us/scripting/**/*.md"
+      ],
+      "exclude": [],
+      "source_type": "guide-md",
+      "authority": "canonical",
+      "license": "CC-BY-4.0",
+      "priority": 1,
+      "parsing_strategy": {
+        "mode": "heading-aware",
+        "preserve_code_blocks": true
+      },
+      "semantic_tags": {
+        "content/en-us/scripting/attributes.md": "roblox.instance-attributes"
+      },
+      "notes": "scripting/attributes.md is about Roblox INSTANCE attributes and must never be conflated with site reference/attributes.md (Luau type attributes). See overlap rule OV-005."
+    },
+    {
+      "id": "creator-docs.ai-assistant",
+      "repository": "creator-docs",
+      "title": "Roblox AI and Assistant guidance",
+      "include": [
+        "content/en-us/assistant/**/*.md",
+        "content/en-us/ai/**/*.md",
+        "content/en-us/generative-AI.md",
+        "content/en-us/ai-data-sharing.md"
+      ],
+      "exclude": [],
+      "source_type": "guide-md",
+      "authority": "canonical",
+      "license": "CC-BY-4.0",
+      "priority": 1,
+      "parsing_strategy": {
+        "mode": "heading-aware",
+        "preserve_code_blocks": true
+      },
+      "notes": "Directly informs how Blockwright's own agent should behave on-platform."
+    },
+    {
+      "id": "creator-docs.engine-topics",
+      "repository": "creator-docs",
+      "title": "Creator-facing engine topic areas",
+      "include": [
+        "content/en-us/physics/**/*.md",
+        "content/en-us/ui/**/*.md",
+        "content/en-us/players/**/*.md",
+        "content/en-us/parts/**/*.md",
+        "content/en-us/animation/**/*.md",
+        "content/en-us/input/**/*.md",
+        "content/en-us/sound/**/*.md",
+        "content/en-us/effects/**/*.md",
+        "content/en-us/environment/**/*.md",
+        "content/en-us/characters/**/*.md",
+        "content/en-us/studio/**/*.md"
+      ],
+      "exclude": [],
+      "source_type": "guide-md",
+      "authority": "canonical",
+      "license": "CC-BY-4.0",
+      "priority": 2,
+      "parsing_strategy": {
+        "mode": "heading-aware",
+        "preserve_code_blocks": true
+      }
+    },
+    {
+      "id": "creator-docs.luau-intro",
+      "repository": "creator-docs",
+      "title": "Luau material for Roblox creators",
+      "include": [
+        "content/en-us/luau/**/*.md"
+      ],
+      "exclude": [],
+      "source_type": "language-reference-md",
+      "authority": "secondary",
+      "license": "CC-BY-4.0",
+      "priority": 3,
+      "parsing_strategy": {
+        "mode": "heading-aware",
+        "preserve_code_blocks": true
+      },
+      "notes": "SECONDARY by rule OV-001. Beginner-facing Roblox framing. The Luau site is canonical for language semantics and wins any conflict. Retains value for Roblox-only material such as luau-csharp-comparison.md and native-code-gen.md."
+    },
+    {
+      "id": "site.language-reference",
+      "repository": "site",
+      "title": "Luau language reference",
+      "include": [
+        "src/content/docs/reference/**/*.md",
+        "src/content/docs/types/**/*.md",
+        "src/content/docs/getting-started/**/*.md",
+        "src/content/docs/index.mdx"
+      ],
+      "exclude": [],
+      "source_type": "language-reference",
+      "authority": "canonical",
+      "license": "MIT",
+      "priority": 1,
+      "parsing_strategy": {
+        "mode": "heading-aware",
+        "preserve_code_blocks": true,
+        "preserve_grammar_blocks": true
+      },
+      "semantic_tags": {
+        "src/content/docs/reference/attributes.md": "luau.type-attributes"
+      },
+      "high_value_paths": [
+        "src/content/docs/reference/grammar.md",
+        "src/content/docs/reference/library.md",
+        "src/content/docs/reference/api.md",
+        "src/content/docs/reference/attributes.md"
+      ],
+      "notes": "CANONICAL for Luau language semantics by rule OV-001. grammar.md is the formal grammar and the most authoritative syntax artifact across all three repositories. reference/attributes.md is about LUAU TYPE attributes - see OV-005."
+    },
+    {
+      "id": "site.guides",
+      "repository": "site",
+      "title": "Luau guides",
+      "include": [
+        "src/content/docs/guides/**/*.md"
+      ],
+      "exclude": [],
+      "source_type": "guide-md",
+      "authority": "canonical",
+      "license": "MIT",
+      "priority": 2,
+      "parsing_strategy": {
+        "mode": "heading-aware",
+        "preserve_code_blocks": true
+      }
+    },
+    {
+      "id": "site.news",
+      "repository": "site",
+      "title": "Luau recaps and announcements",
+      "include": [
+        "src/content/news/**/*.md"
+      ],
+      "exclude": [],
+      "source_type": "news-md",
+      "authority": "historical",
+      "license": "MIT",
+      "priority": 5,
+      "parsing_strategy": {
+        "mode": "date-aware",
+        "preserve_code_blocks": true,
+        "content_date_required": true,
+        "content_date_source": "filename prefix YYYY-MM-DD",
+        "retrieval_weight": "low"
+      },
+      "notes": "Included, not excluded, but down-weighted. Spans 2019-2025 and much of it describes behaviour that has since changed. MUST carry content_date so a 2019 recap is never presented as current."
+    }
+  ],
+  "reference_only": [
+    {
+      "id": "luau.compiler",
+      "repository": "luau",
+      "role": "reference-only",
+      "ingested": false,
+      "reason": "Compiler implementation, not documentation. Contains no docs/ or examples/ directory. Pinned for provenance only.",
+      "excluded_paths": [
+        "VM/**",
+        "Compiler/**",
+        "CodeGen/**",
+        "Inliner/**",
+        "Analysis/**",
+        "Ast/**",
+        "Bytecode/**",
+        "Config/**",
+        "Require/**",
+        "Common/**",
+        "CLI/**",
+        "extern/**",
+        "tests/**",
+        "bench/**",
+        "fuzz/**",
+        "tools/**"
+      ],
+      "machine_readable_definitions_found": false,
+      "machine_readable_search_note": "No .ebnf, .bnf or grammar JSON exists at the repository root. The formal grammar lives in site/src/content/docs/reference/grammar.md, which IS ingested.",
+      "potential_future_use": {
+        "purpose": "symbol validation only, never prose",
+        "candidates": [
+          "Analysis/ - authoritative built-in type names",
+          "Ast/ - authoritative AST node kinds"
+        ],
+        "status": "not in scope for the knowledge corpus"
+      }
+    }
+  ],
+  "global_excludes": {
+    "note": "Applied to every source. An exclude always wins over an include.",
+    "binary_media": [
+      "**/*.png",
+      "**/*.jpg",
+      "**/*.jpeg",
+      "**/*.gif",
+      "**/*.webp",
+      "**/*.mp4",
+      "**/*.wav",
+      "**/*.fbx",
+      "**/*.zip",
+      "**/*.pdf",
+      "**/*.rbxl",
+      "**/*.rbxm",
+      "**/*.woff",
+      "**/*.woff2",
+      "**/*.svg",
+      "**/*.ico"
+    ],
+    "creator_docs": [
+      "content/en-us/includes/**",
+      "content/en-us/education/**",
+      "content/en-us/creator-programs/**",
+      "content/en-us/ip-licensing/**",
+      "content/en-us/affiliates.md",
+      "content/en-us/creator-rewards.md",
+      "tools/**",
+      ".github/**",
+      "node_modules/**",
+      "package-lock.json"
+    ],
+    "site_machinery": [
+      "src/components/**",
+      "src/pages/**",
+      "src/layouts/**",
+      "src/plugins/**",
+      "src/styles/**",
+      "src/fonts/**",
+      "src/assets/**",
+      "src/lib/**",
+      "public/**",
+      "dist/**",
+      ".astro/**",
+      "node_modules/**",
+      "package-lock.json",
+      "astro.config.mjs",
+      "tsconfig.json"
+    ],
+    "rationale": {
+      "content/en-us/includes/**": "Transclusion fragments. Without their host page they are sentence fragments and produce incoherent chunks.",
+      "binary_media": "~27 MB of the creator-docs repo. Not text. Present only as LFS pointer stubs in this clone.",
+      "education/creator-programs/ip-licensing/affiliates/creator-rewards": "Programme, legal and business content with no bearing on code generation.",
+      "tools/**": "Repository build-check scripts, not knowledge."
+    }
+  },
+  "taxonomy_only": {
+    "note": "Retained as a topic taxonomy for chunk tagging. NOT ingested as knowledge.",
+    "paths": [
+      "content/en-us/reference/../../common/navigation/**/*.yaml"
+    ],
+    "resolved_path": "content/common/navigation/**/*.yaml",
+    "repository": "creator-docs",
+    "ingested": false
+  },
+  "overlap_rules": [
+    {
+      "id": "OV-001",
+      "topic": "Luau language semantics",
+      "canonical": {
+        "source_id": "site.language-reference",
+        "path": "src/content/docs/**"
+      },
+      "secondary": {
+        "source_id": "creator-docs.luau-intro",
+        "path": "content/en-us/luau/**"
+      },
+      "resolution": "On any conflict about language semantics, the Luau site wins. creator-docs Luau pages are retained as beginner-facing Roblox framing.",
+      "enforcement": "authority field + retrieval re-ranking"
+    },
+    {
+      "id": "OV-002",
+      "topic": "Roblox Engine API",
+      "canonical": {
+        "source_id": "creator-docs.engine-api",
+        "path": "content/en-us/reference/engine/**/*.yaml"
+      },
+      "secondary": null,
+      "resolution": "The structured YAML is the only complete source. Live .md pages are a lossy projection and are not ingested.",
+      "enforcement": "sole source"
+    },
+    {
+      "id": "OV-003",
+      "topic": "Roblox runtime and scripting",
+      "canonical": {
+        "source_id": "creator-docs.scripting",
+        "path": "content/en-us/scripting/**"
+      },
+      "secondary": null,
+      "resolution": "Sole source. Distinct from language documentation: covers services, events, security, capabilities and the scheduler.",
+      "enforcement": "sole source"
+    },
+    {
+      "id": "OV-004",
+      "topic": "Roblox datatypes",
+      "canonical": {
+        "source_id": "creator-docs.engine-api",
+        "path": "content/en-us/reference/engine/datatypes/**"
+      },
+      "secondary": {
+        "source_id": "site.language-reference",
+        "path": "src/content/docs/types/roblox-types.md"
+      },
+      "resolution": "Engine YAML is authoritative for datatype members. The site page supplies type-system framing and is context, not truth.",
+      "enforcement": "authority field"
+    },
+    {
+      "id": "OV-005",
+      "topic": "Attributes - NAME COLLISION",
+      "canonical": null,
+      "resolution": "These are two unrelated subjects that share a word. They MUST receive different semantic tags and must never be merged, deduplicated or treated as the same topic by a retriever.",
+      "distinct_subjects": [
+        {
+          "path": "content/en-us/scripting/attributes.md",
+          "repository": "creator-docs",
+          "subject": "Roblox Instance attributes",
+          "semantic_tag": "roblox.instance-attributes"
+        },
+        {
+          "path": "src/content/docs/reference/attributes.md",
+          "repository": "site",
+          "subject": "Luau language and type attributes",
+          "semantic_tag": "luau.type-attributes"
+        }
+      ],
+      "severity_if_violated": "high",
+      "enforcement": "mandatory distinct semantic_tag"
+    }
+  ],
+  "parser_registry": {
+    "engine-api-yaml": {
+      "mode": "structured-field-level",
+      "unit": "API member",
+      "flatten_to_prose": false,
+      "description": "Preserve typed fields as discrete data. The structure is the value: it is what answers 'what parameters does this method take'."
+    },
+    "openapi": {
+      "mode": "operation-level",
+      "unit": "API operation",
+      "flatten_to_prose": false,
+      "description": "One unit per HTTP operation, preserving method, path, summary, parameters, request body, responses, authentication and resolved schemas."
+    },
+    "tutorial-md": {
+      "mode": "heading-aware",
+      "unit": "heading section",
+      "preserve_code_blocks": true,
+      "preserve_step_order": true
+    },
+    "guide-md": {
+      "mode": "heading-aware",
+      "unit": "heading section",
+      "preserve_code_blocks": true
+    },
+    "language-reference": {
+      "mode": "heading-aware",
+      "unit": "heading section",
+      "preserve_code_blocks": true,
+      "preserve_grammar_blocks": true
+    },
+    "language-reference-md": {
+      "mode": "heading-aware",
+      "unit": "heading section",
+      "preserve_code_blocks": true
+    },
+    "news-md": {
+      "mode": "date-aware",
+      "unit": "heading section",
+      "content_date_required": true,
+      "retrieval_weight": "low"
+    }
+  },
+  "metadata_schema": {
+    "note": "Required on every future knowledge document. Not yet implemented - no chunks exist.",
+    "fields": {
+      "source_id": {
+        "type": "string",
+        "required": true,
+        "example": "creator-docs:engine/classes/Players#PlayerAdded"
+      },
+      "source_repository": {
+        "type": "enum",
+        "required": true,
+        "values": [
+          "creator-docs",
+          "luau",
+          "site"
+        ]
+      },
+      "source_url": {
+        "type": "string",
+        "required": true,
+        "note": "Canonical public URL, resolved from the live llms.txt index"
+      },
+      "source_commit": {
+        "type": "string",
+        "required": true,
+        "length": 40,
+        "note": "Reproducibility anchor from source-lock.json"
+      },
+      "source_path": {
+        "type": "string",
+        "required": true,
+        "note": "Repository-relative path"
+      },
+      "source_type": {
+        "type": "enum",
+        "required": true,
+        "values": [
+          "engine-api-yaml",
+          "openapi",
+          "tutorial-md",
+          "guide-md",
+          "language-reference",
+          "language-reference-md",
+          "news-md"
+        ]
+      },
+      "authority": {
+        "type": "enum",
+        "required": true,
+        "values": [
+          "canonical",
+          "secondary",
+          "historical"
+        ]
+      },
+      "license": {
+        "type": "enum",
+        "required": true,
+        "values": [
+          "CC-BY-4.0",
+          "MIT"
+        ],
+        "note": "CC-BY-4.0 requires attribution to travel with surfaced content"
+      },
+      "retrieved_at": {
+        "type": "iso8601",
+        "required": true
+      },
+      "content_date": {
+        "type": "iso8601",
+        "required": true,
+        "note": "When the content was authored upstream. MUST stay distinct from retrieved_at."
+      },
+      "category": {
+        "type": "string",
+        "required": true,
+        "example": "engine-api"
+      },
+      "topic": {
+        "type": "string",
+        "required": true,
+        "example": "engine.classes.Players"
+      },
+      "priority": {
+        "type": "integer",
+        "required": true,
+        "range": [
+          1,
+          5
+        ]
+      },
+      "deprecated": {
+        "type": "boolean",
+        "required": true,
+        "default": false
+      },
+      "chunk_index": {
+        "type": "integer",
+        "required": true
+      },
+      "chunk_total": {
+        "type": "integer",
+        "required": true
+      }
+    }
+  },
+  "validation_corrections": [
+    {
+      "date": "2026-08-18",
+      "check": "include-exists",
+      "finding": "content/en-us/reference/cloud/**/*.yaml matched zero files",
+      "action": "Removed the glob; added creator-docs.cloud-service-openapi covering 12 per-service OpenAPI JSON specs that were otherwise unaccounted for."
+    }
+  ]
+}

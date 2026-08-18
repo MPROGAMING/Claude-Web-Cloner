@@ -1,0 +1,234 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
+import {
+  Check,
+  FileCode2,
+  Folder,
+  Loader2,
+  Plug,
+  Sparkles,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+import { StatusDot } from "@/components/ui/status-dot";
+
+/**
+ * A scripted replay of a real generation, built from the same tokens and
+ * components as the product. It is explicitly a *preview*, not a live demo —
+ * the timings are fixed and nothing is claimed to be running.
+ */
+
+const PROMPT =
+  "Create a simulator where players collect crystals, sell them, buy backpacks and unlock new islands.";
+
+const STEPS = [
+  { label: "Read the project", ms: 700 },
+  { label: "Planned 6 build steps", ms: 1500 },
+  { label: "Created src/shared/GameConfig.luau", ms: 2400 },
+  { label: "Created src/server/CurrencyService.luau", ms: 3300 },
+  { label: "Created src/server/CrystalNodes.server.luau", ms: 4200 },
+  { label: "Created src/ui/ShopPanel.luau", ms: 5100 },
+  { label: "Validated 7 scripts — clean", ms: 6000 },
+  { label: "Synced to Roblox Studio", ms: 6800 },
+];
+
+const FILES = [
+  { path: "src/server", type: "dir" as const, depth: 0 },
+  { path: "CurrencyService.luau", type: "file" as const, depth: 1 },
+  { path: "CrystalNodes.server.luau", type: "file" as const, depth: 1 },
+  { path: "IslandUnlocks.server.luau", type: "file" as const, depth: 1 },
+  { path: "src/shared", type: "dir" as const, depth: 0 },
+  { path: "GameConfig.luau", type: "file" as const, depth: 1 },
+  { path: "Remotes.luau", type: "file" as const, depth: 1 },
+  { path: "src/ui", type: "dir" as const, depth: 0 },
+  { path: "ShopPanel.luau", type: "file" as const, depth: 1 },
+];
+
+const CODE = `--!strict
+local Players = game:GetService("Players")
+local DataStoreService = game:GetService("DataStoreService")
+
+local GameConfig = require(script.Parent.Parent.shared.GameConfig)
+
+local CurrencyService = {}
+local store = DataStoreService:GetDataStore("Wallets_v1")
+local wallets: { [number]: number } = {}
+
+function CurrencyService.award(player: Player, amount: number)
+	assert(amount > 0, "award expects a positive amount")
+	wallets[player.UserId] = (wallets[player.UserId] or 0) + amount
+	CurrencyService.changed:Fire(player, wallets[player.UserId])
+end`;
+
+const FINISHED = 99_999;
+
+export function WorkspacePreview({ className }: { className?: string }) {
+  const [elapsed, setElapsed] = useState(0);
+  const ref = useRef<HTMLDivElement>(null);
+
+  // Only animate once the preview is actually on screen, and skip straight to
+  // the finished state when the visitor prefers reduced motion. Both decisions
+  // are made inside the observer/timer callbacks rather than in an effect body,
+  // so there is no cascading render on mount.
+  useEffect(() => {
+    const node = ref.current;
+    if (!node) return;
+
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      const id = window.setTimeout(() => setElapsed(FINISHED), 0);
+      return () => window.clearTimeout(id);
+    }
+
+    let timer: number | undefined;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry.isIntersecting) return;
+        observer.disconnect();
+
+        const start = Date.now();
+        timer = window.setInterval(() => {
+          const next = Date.now() - start;
+          setElapsed(next);
+          if (next > 8000) window.clearInterval(timer);
+        }, 80);
+      },
+      { threshold: 0.25 },
+    );
+    observer.observe(node);
+
+    return () => {
+      observer.disconnect();
+      if (timer) window.clearInterval(timer);
+    };
+  }, []);
+
+  const visibleSteps = STEPS.filter((s) => elapsed >= s.ms);
+  const activeStep = STEPS.find((s) => elapsed < s.ms);
+  const visibleFiles = Math.min(FILES.length, Math.floor(elapsed / 620));
+  const codeChars = Math.max(0, Math.floor((elapsed - 2400) / 3.2));
+
+  return (
+    <div
+      ref={ref}
+      className={cn(
+        "overflow-hidden rounded-xl border border-border bg-surface shadow-[var(--shadow-overlay)]",
+        className,
+      )}
+      aria-label="Preview of the Blockwright workspace"
+      role="img"
+    >
+      {/* window chrome */}
+      <div className="flex h-10 items-center gap-2 border-b border-hairline bg-surface-sunken px-3.5">
+        <span className="flex gap-1.5">
+          <span className="size-2.5 rounded-full bg-foreground/15" />
+          <span className="size-2.5 rounded-full bg-foreground/15" />
+          <span className="size-2.5 rounded-full bg-foreground/15" />
+        </span>
+        <span className="ml-2 truncate font-mono text-[0.6875rem] text-muted-foreground">
+          Crystal Islands
+        </span>
+        <span className="ml-auto inline-flex items-center gap-1.5 rounded-md border border-[var(--signal)]/30 bg-[var(--signal)]/10 px-2 py-0.5 text-[0.625rem] font-medium text-[var(--signal)]">
+          <StatusDot tone="live" pulse={elapsed > 6800} />
+          Studio connected
+        </span>
+      </div>
+
+      <div className="grid min-h-[24rem] grid-cols-1 md:grid-cols-[minmax(0,1fr)_15rem] lg:grid-cols-[10.5rem_minmax(0,1fr)_16rem]">
+        {/* file tree */}
+        <div className="hidden border-r border-hairline bg-surface-sunken/60 p-3 lg:block">
+          <p className="label-meta mb-2.5">Files</p>
+          <ul className="space-y-0.5">
+            {FILES.slice(0, visibleFiles).map((file) => (
+              <li
+                key={file.path}
+                className="animate-rise"
+                style={{ paddingLeft: file.depth * 10 }}
+              >
+                <span
+                  className={cn(
+                    "flex items-center gap-1.5 truncate rounded py-0.5 text-[0.6875rem]",
+                    file.type === "dir"
+                      ? "font-medium text-muted-foreground"
+                      : "text-foreground/80",
+                  )}
+                >
+                  {file.type === "dir" ? (
+                    <Folder className="size-3 shrink-0 text-muted-foreground" />
+                  ) : (
+                    <FileCode2 className="size-3 shrink-0 text-[var(--ember)]/70" />
+                  )}
+                  <span className="truncate">
+                    {file.type === "dir" ? file.path : file.path}
+                  </span>
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        {/* conversation */}
+        <div className="flex min-w-0 flex-col gap-3 p-4">
+          <div className="ml-auto max-w-[85%] rounded-xl rounded-br-sm bg-surface-raised px-3.5 py-2.5 text-[0.8125rem] leading-relaxed">
+            {PROMPT}
+          </div>
+
+          <div className="space-y-2.5">
+            {visibleSteps.map((step) => (
+              <div
+                key={step.label}
+                className="flex animate-rise items-center gap-2 text-[0.75rem] text-muted-foreground"
+              >
+                <Check className="size-3 shrink-0 text-[var(--success)]" strokeWidth={2.5} />
+                <span className="truncate">{step.label}</span>
+              </div>
+            ))}
+            {activeStep && (
+              <div className="flex items-center gap-2 text-[0.75rem] text-foreground">
+                <Loader2 className="size-3 shrink-0 animate-spin text-[var(--ember)]" />
+                <span className="truncate">{activeStep.label}…</span>
+              </div>
+            )}
+          </div>
+
+          {elapsed > 6800 && (
+            <p className="animate-rise text-[0.8125rem] leading-relaxed text-foreground/85">
+              Built the collect → sell → upgrade loop. Crystals respawn on a
+              timer, the shop validates every purchase server-side, and island
+              unlocks are gated on total coins earned.
+            </p>
+          )}
+        </div>
+
+        {/* code preview */}
+        <div className="hidden min-w-0 border-t border-hairline bg-surface-sunken/60 md:block md:border-l md:border-t-0">
+          <div className="flex items-center gap-1.5 border-b border-hairline px-3 py-2">
+            <FileCode2 className="size-3 text-[var(--ember)]/70" />
+            <span className="truncate font-mono text-[0.625rem] text-muted-foreground">
+              CurrencyService.luau
+            </span>
+          </div>
+          <pre className="overflow-hidden p-3 font-mono text-[0.625rem] leading-[1.7] text-foreground/75">
+            <code>
+              {CODE.slice(0, codeChars)}
+              {codeChars < CODE.length && codeChars > 0 && (
+                <span className="ml-px inline-block h-2.5 w-1 animate-caret bg-[var(--ember)] align-middle" />
+              )}
+            </code>
+          </pre>
+        </div>
+      </div>
+
+      {/* composer */}
+      <div className="flex items-center gap-2 border-t border-hairline bg-surface-sunken px-3.5 py-2.5">
+        <Sparkles className="size-3.5 shrink-0 text-muted-foreground" />
+        <span className="flex-1 truncate text-[0.75rem] text-muted-foreground">
+          Ask for a change…
+        </span>
+        <span className="inline-flex items-center gap-1 rounded-md border border-border px-1.5 py-0.5 font-mono text-[0.625rem] text-muted-foreground">
+          <Plug className="size-2.5" />
+          Sonnet 4.5
+        </span>
+      </div>
+    </div>
+  );
+}

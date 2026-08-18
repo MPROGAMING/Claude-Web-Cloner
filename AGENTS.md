@@ -8,62 +8,141 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 <!-- END:nextjs-agent-rules -->
 
-# Website Reverse-Engineer Template
+# Blockwright
 
-## What This Is
-A reusable template for reverse-engineering any website into a clean, modern Next.js codebase using AI coding agents. The Next.js + shadcn/ui + Tailwind v4 base is pre-scaffolded — just run `/clone-website <url1> [<url2> ...]`.
+An AI build partner for Roblox creators. The user describes a mechanic;
+the agent plans it, writes real Luau into a structured project, validates its
+own output, and syncs it into Roblox Studio through a dedicated plugin.
 
-## Tech Stack
-- **Framework:** Next.js 16 (App Router, React 19, TypeScript strict)
-- **UI:** shadcn/ui (Radix primitives, Tailwind CSS v4, `cn()` utility)
-- **Icons:** Lucide React (default — will be replaced/supplemented by extracted SVGs)
-- **Styling:** Tailwind CSS v4 with oklch design tokens
-- **Deployment:** Vercel
+**Read `docs/ARCHITECTURE.md` before changing anything in `src/lib/`.**
 
 ## Commands
-- `npm run dev` — Start dev server
-- `npm run build` — Production build
-- `npm run lint` — ESLint check
-- `npm run typecheck` — TypeScript check
-- `npm run check` — Run lint + typecheck + build
 
-## Code Style
-- TypeScript strict mode, no `any`
-- Named exports, PascalCase components, camelCase utils
-- Tailwind utility classes, no inline styles
-- 2-space indentation
-- Responsive: mobile-first
+```bash
+npm run dev        # dev server (Turbopack)
+npm run build      # production build
+npm run lint       # ESLint + React Compiler rules
+npm run typecheck  # tsc --noEmit
+npm run test       # vitest
+npm run check      # lint + typecheck + test + build
+```
 
-## Design Principles
-- **Pixel-perfect emulation** — match the target's spacing, colors, typography exactly
-- **No personal aesthetic changes during emulation phase** — match 1:1 first, customize later
-- **Real content** — use actual text and assets from the target site, not placeholders
-- **Beauty-first** — every pixel matters
+## Stack
 
-## Project Structure
+Next.js 16 (App Router) · React 19 · TypeScript strict · Tailwind v4 ·
+shadcn/ui on **Base UI** (not Radix) · Vercel AI SDK **v7** · Supabase · Vitest
+
+## Things that will bite you
+
+These are the mistakes that are easy to make here and expensive to debug.
+
+**Next.js 16**
+- `middleware.ts` is now **`proxy.ts`**, exporting `proxy()`. Node runtime only.
+- `params`, `searchParams`, `cookies()`, `headers()` are all **async**.
+- Turbopack is the default for `dev` and `build`.
+
+**AI SDK v7** — a lot was renamed. See the table in `docs/ARCHITECTURE.md`.
+The two that cause the most confusion:
+- `system:` → **`instructions:`**, `onFinish` → **`onEnd`**, `fullStream` → **`stream`**, `stepCountIs` → **`isStepCount`**.
+- `convertToModelMessages` is **async** and needs `{ tools }`.
+
+**Postgres grants** — a new function is **never** born private, and there are
+**two** separate reasons why. Both have bitten this repo.
+
+1. `CREATE FUNCTION` grants EXECUTE to `PUBLIC`, and every role inherits it, so
+   `REVOKE ... FROM anon, authenticated` alone does **nothing**.
+2. Supabase additionally ships `ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT
+   EXECUTE ON FUNCTIONS TO anon, authenticated, service_role`. Once a
+   `pg_default_acl` entry exists Postgres applies it **instead of** the built-in
+   PUBLIC default, so the function is born holding three *explicit* role grants
+   and no PUBLIC entry at all — and `REVOKE ... FROM public, anon` then reads as
+   correct, reviews as correct, and still leaves `authenticated` with EXECUTE.
+
+So the rule is: **`REVOKE ... FROM public, anon, authenticated`, then grant back
+only the roles you actually want.** Naming all three is not redundant.
+
+PostgREST publishes every `public`-schema function at `/rest/v1/rpc/<name>`,
+which turns a missed revoke into an internet endpoint. #1 made `grant_credits`
+an unauthenticated credit-minting endpoint; #2 left `knowledge_pending_chunks`
+callable by any signed-in user (no escalation — it is INVOKER and those tables
+are already readable — but unintended, and the next server-only function would
+have leaked the same way). Fixed in `0006`.
+
+Neither is visible by reading the migration, so both are pinned two ways:
+`tests/migration-safety.test.ts` replays creation + grants + revokes with the
+Supabase defaults **seeded on CREATE**, and `npm run verify:security` probes the
+RPCs live as a real signed-in user. Trust the live probe over the SQL.
+
+**Supabase types** — `lib/supabase/types.ts` is hand-maintained and its row
+shapes must be **type aliases, not interfaces**. An interface has no implicit
+index signature, so it fails postgrest-js's `Record<string, unknown>`
+constraint and every query silently resolves to `never`. If you change the SQL,
+change that file in the same commit.
+
+**Base UI** — navigation uses `<LinkButton href>` from
+`components/ui/link-button.tsx`, never `<Button render={<Link/>}>`. Base UI's
+Button asserts native button semantics and will warn (correctly) at runtime.
+Compose with the `render` prop, not `asChild`.
+
+**React Compiler lint** — `setState` inside an effect is an error, not a
+warning. If you hit it, the state is almost certainly derived; use `useMemo`,
+a lazy initial value, or move the write into the callback that learns the news.
+
+## Code style
+
+- TypeScript strict, no `any`.
+- Named exports; PascalCase components; camelCase utils.
+- Tailwind utilities only — no inline styles, no ad-hoc colours. Extend
+  `src/app/globals.css` instead (see `docs/DESIGN_SYSTEM.md`).
+- 2-space indent, mobile-first responsive.
+- Server-only modules import `"server-only"` at the top.
+- Comment *why*, not *what*. No decorative banners.
+
+## Security rules that are not negotiable
+
+- Provider API keys and the Supabase service-role key are **server-only**.
+  Never import them into a client component.
+- Use `lib/supabase/server.ts` (user-scoped, RLS applies) by default.
+  `lib/supabase/admin.ts` bypasses RLS and is for the **Roblox Studio bridge
+  only** — do not widen its use. Credits and AI logging were deliberately moved
+  off it, and the app runs fully without a service-role key.
+- `consume_credits` takes no user id (it reads `auth.uid()`), which is why it is
+  safe for `authenticated`. `grant_credits` takes one, so it stays server-only.
+  Preserve that asymmetry.
+- After any migration, run `npm run verify:security` against a live project.
+- Every path the model proposes goes through `validateProjectPath`.
+- Studio commands are allowlisted verbs. Never send the plugin code to execute.
+- Internal error detail is logged, never returned to the browser.
+
+## Structure
+
 ```
 src/
-  app/              # Next.js routes
-  components/       # React components
-    ui/             # shadcn/ui primitives
-    icons.tsx       # Extracted SVG icons as React components
+  app/
+    (marketing)/   landing, pricing
+    (auth)/        sign-in, sign-up, callback
+    (app)/         dashboard, projects, templates, activity, credits, settings
+    api/           chat, studio/{pair,poll,status}, projects/[id]/files
+  components/      ui/ (shadcn) · app/ · marketing/ · workspace/ · brand/
   lib/
-    utils.ts        # cn() utility (shadcn)
-  types/            # TypeScript interfaces
-  hooks/            # Custom React hooks
-public/
-  images/           # Downloaded images from target site
-  videos/           # Downloaded videos from target site
-  seo/              # Favicons, OG images, webmanifest
+    ai/            registry, providers, tools, system-prompt, types
+    credits/       pricing (pure) · service (server)
+    roblox/        project-model, luau-validator
+    studio/        protocol, service, liveness
+    supabase/      client, server, admin, types
+    actions/       server actions
+    data/          server-component queries
+  proxy.ts
+supabase/migrations/
+roblox-plugin/
 docs/
-  research/         # Inspection output (design tokens, components, layout)
-  design-references/ # Screenshots and visual references
-scripts/            # Asset download scripts
+tests/
 ```
 
-## MOST IMPORTANT NOTES
-- When launching Claude Code agent teams, ALWAYS have each teammate work in their own worktree branch and merge everyone's work at the end, resolving any merge conflicts smartly since you are basically serving the orchestrator role and have full context to our goals, work given, work achieved, and desired outcomes.
-- After editing `AGENTS.md`, run `bash scripts/sync-agent-rules.sh` to regenerate platform-specific instruction files.
-- After editing `.claude/skills/clone-website/SKILL.md`, run `node scripts/sync-skills.mjs` to regenerate the skill for all platforms.
+## Working notes
 
-@docs/research/INSPECTION_GUIDE.md
+- After editing `AGENTS.md`, run `bash scripts/sync-agent-rules.sh`.
+- Keep `docs/IMPLEMENTATION_STATUS.md` current — it is how the next session
+  learns what is verified versus merely written.
+- Do not introduce Redux, an ORM, or MCP into the web app. The stack is
+  deliberately small.

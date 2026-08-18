@@ -1,0 +1,113 @@
+{
+  "$schema": "https://blockwright.local/schemas/roblox-brain/source-lock/v1",
+  "lock_version": 1,
+  "generated_at": "2026-08-18T18:45:00Z",
+  "generated_by": "Roblox Brain Step 3",
+  "description": "Pinned source commits for the Roblox Brain knowledge system. Every knowledge artifact produced downstream must reference one of these commits so an answer can be traced to an exact version and a refresh can be expressed as a diff between two known points.",
+  "policy": {
+    "resolution": "pinned",
+    "note": "Commits are recorded verbatim from Step 2 and are NOT resolved forward to branch tips. Advancing a pin is a deliberate, reviewed action.",
+    "verified_against_disk": true,
+    "verification_date": "2026-08-18T18:45:00Z"
+  },
+  "repositories": [
+    {
+      "name": "creator-docs",
+      "local_path": "~/Documents/Blockwright-Sources/creator-docs",
+      "remote": "https://github.com/Roblox/creator-docs.git",
+      "branch": "main",
+      "commit": "bac0b51429b324e4cc2dd76c93b94e8f64d0a2e0",
+      "commit_date": "2026-08-18T10:14:10Z",
+      "commit_subject": "update Open Source Docs from Roblox internal teams",
+      "history_depth": 2128,
+      "retrieved_at": "2026-08-18T18:32:00Z",
+      "license": {
+        "content": "CC-BY-4.0",
+        "code": "MIT",
+        "attribution_required": true,
+        "note": "Content is CC BY 4.0 and REQUIRES attribution. Any surfaced text must carry it."
+      },
+      "clone_method": "git clone --filter=blob:none (partial clone)",
+      "lfs": {
+        "required": true,
+        "blobs_excluded": true,
+        "skip_smudge_used": true,
+        "env": "GIT_LFS_SKIP_SMUDGE=1",
+        "gitattributes_lfs_rules": 10,
+        "rationale": "A normal clone reaches 8.6 GB because LFS pulls every image and video. Step 1 classified all binary media as never-ingest, so blobs are intentionally excluded. Result: 66 MB with the full ~21 MB text corpus intact.",
+        "consequence": "Media files in this working tree are LFS pointer stubs, NOT real binaries. Tooling must not assume a .png here is an image.",
+        "recovery": "git lfs pull --include='<path>' for specific assets if a later feature requires them."
+      },
+      "size_on_disk": "66 MB",
+      "working_tree_clean": true
+    },
+    {
+      "name": "luau",
+      "local_path": "~/Documents/Blockwright-Sources/luau",
+      "remote": "https://github.com/luau-lang/luau.git",
+      "branch": "master",
+      "commit": "6dafc0dd9909efe534c825d1b1184644e1f7a4e4",
+      "commit_date": "2026-08-14T15:48:18-07:00",
+      "commit_subject": "Also run all the tests with the old solver. (#2652)",
+      "history_depth": 1720,
+      "latest_tag": "0.734",
+      "retrieved_at": "2026-08-18T18:29:00Z",
+      "license": {
+        "content": "MIT",
+        "code": "MIT",
+        "attribution_required": false,
+        "note": "MIT (c) 2019-2025 Roblox Corporation. Bundles lua_LICENSE.txt for upstream Lua (c) 1994-2019 Lua.org, PUC-Rio."
+      },
+      "clone_method": "git clone --filter=blob:none (partial clone)",
+      "lfs": {
+        "required": false,
+        "blobs_excluded": false,
+        "skip_smudge_used": false,
+        "gitattributes_lfs_rules": 0,
+        "rationale": "Repository does not use Git LFS."
+      },
+      "size_on_disk": "25 MB",
+      "working_tree_clean": true,
+      "ingestion_role": "reference-only",
+      "ingestion_note": "Compiler implementation, not documentation. Contains no docs/ or examples/ directory. Pinned for provenance and future symbol validation only; contributes zero documents to the corpus."
+    },
+    {
+      "name": "site",
+      "local_path": "~/Documents/Blockwright-Sources/site",
+      "remote": "https://github.com/luau-lang/site.git",
+      "branch": "master",
+      "commit": "28edb95d3c67e8c140181efdc027d44b534d5106",
+      "commit_date": "2026-08-03T01:06:29-07:00",
+      "commit_subject": "Update intro to use type annotation style used everywhere else (#109)",
+      "history_depth": 355,
+      "retrieved_at": "2026-08-18T18:29:00Z",
+      "license": {
+        "content": "MIT",
+        "code": "MIT",
+        "attribution_required": false,
+        "note": "MIT (c) 2019-2026 Roblox Corporation."
+      },
+      "clone_method": "git clone --filter=blob:none (partial clone)",
+      "lfs": {
+        "required": false,
+        "blobs_excluded": false,
+        "skip_smudge_used": false,
+        "gitattributes_lfs_rules": 0,
+        "rationale": "Repository does not use Git LFS."
+      },
+      "size_on_disk": "6.1 MB",
+      "working_tree_clean": true
+    }
+  ],
+  "live_endpoints": {
+    "note": "Indexes only. Used for coverage auditing and canonical URL mapping, never as a content source. Not downloaded or retained.",
+    "verified_at": "2026-08-18T18:38:00Z",
+    "endpoints": [
+      { "url": "https://create.roblox.com/docs/llms.txt", "status": 200, "role": "page-inventory" },
+      { "url": "https://create.roblox.com/docs/reference/engine/llms.txt", "status": 200, "role": "engine-url-mapping" },
+      { "url": "https://create.roblox.com/docs/cloud/llms.txt", "status": 200, "role": "cloud-url-mapping" },
+      { "url": "https://create.roblox.com/docs/cloud/openapi.json", "status": 200, "role": "duplicate-of-local", "note": "Byte-identical size to the local copy; use the local file, which carries a commit." },
+      { "url": "https://create.roblox.com/docs.md", "status": 404, "role": "does-not-exist", "note": "Working equivalent is /docs/index.md." }
+    ]
+  }
+}

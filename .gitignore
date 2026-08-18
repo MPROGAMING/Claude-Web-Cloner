@@ -47,3 +47,10 @@ next-env.d.ts
 
 # Local temp files
 temp/
+
+# Roblox Brain corpus — 34MB / 5,464 files of *derived* output. It is rebuilt
+# deterministically from the pinned commits in source-lock.json by
+# scripts/roblox-brain/normalize-corpus.mjs, so the provenance (source-lock,
+# ingestion-manifest, coverage report and step reports) is versioned and the
+# bulk is not.
+docs/roblox-brain/corpus/
