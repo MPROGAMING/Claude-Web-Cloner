@@ -146,6 +146,16 @@ docs/
 tests/
 ```
 
+## Handing this project to another AI
+
+`docs/PROJECT-CONTEXT-FOR-AI.md` is a single self-contained file that explains
+the whole project — stack, architecture, data model, the traps in §7, the
+security rules, and what is genuinely unfinished. Paste that one file into
+another assistant instead of uploading the repository.
+
+Keep it current when architecture changes. Its numbers were extracted from the
+codebase, not remembered, and it is only useful while that stays true.
+
 ## Working notes
 
 - After editing `AGENTS.md`, run `bash scripts/sync-agent-rules.sh`.
