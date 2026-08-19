@@ -2,7 +2,7 @@
 
 Updated as work happens. Every value here is real; nothing is aspirational.
 
-**Last updated:** 19 Aug 2026, 10:16 — Studio bridge verified inside Roblox Studio
+**Last updated:** 19 Aug 2026, 11:05 — horror demo built through the real pipeline
 
 ---
 
@@ -65,9 +65,63 @@ npm run studio:verify     # 16/16
 |---|---|---|---|
 | Project Memory | builder agent | — | **merged, migration applied, probed live** |
 | Notifications + run history | builder agent | — | **merged, migration applied, probed live** |
+| Horror demo place | this session | DOORS | **built + playtested + 2 bugs fixed** |
 | Mini-IDE (diff view, editing, tabs) | builder agent | Cursor | running |
-| Horror demo place | this session | DOORS | next |
-| Cube-backed world generation | this session | — | next |
+| Blind critic vs Lemonade | critic agent | Lemonade.gg | running |
+
+---
+
+## Horror demo — built through Blockwright's own pipeline
+
+The place (corridor, six numbered doors, sconces, two Cube-generated wardrobes,
+an entity) was authored in Studio. The **game logic was not** — it came from a
+prompt through the product:
+
+    prompt -> preview run (free router) -> 13 operations / 7 files
+          -> approval gate -> apply -> plugin sync -> 7/7 real Instances
+
+Placement was correct on arrival: `EntityLoop` and `MainServer` as Scripts in
+ServerScriptService, `HidingClient`/`HUD` as LocalScripts under
+StarterPlayerScripts, `Config`/`Remotes` as ModuleScripts in ReplicatedStorage.
+
+Then I pressed Play, and it did not run. Two real bugs:
+
+1. **The agent had no idea where its files end up.** It wrote
+   `ReplicatedStorage:WaitForChild("Remotes")` — what the repo layout suggests —
+   but the bridge parents everything under a `Blockwright` folder, so it yielded
+   forever. Nothing in the system prompt described the mapping. Now stated with
+   worked require paths, pinned by a test against `inferService`.
+2. **The validator passed a file that does not parse.**
+   `doorLabel backgroundColor3 = Color3.new(0,0,0)` — a dropped dot. Studio
+   refuses the whole script, so one missing character silenced the entire HUD.
+   Now an error, with a keyword guard and tests for the statements that legally
+   begin with two bare words.
+
+**Lighting was measured, not eyeballed.** A histogram script reports the
+rendered frame; the first pass was 95.8% of pixels below luminance 10 (mean
+1.8) — black. The final scene is mean 29-36 with ~55% in deep shadow and lit
+pools at p75+, which is the shape a horror interior should have.
+
+**Not proven:** that a model *follows* the new placement guidance. Two free-router
+runs produced 13 operations and then zero; it is too inconsistent to test a
+prompt change through. Needs a real model.
+
+---
+
+## Vercel
+
+Project **blockwright** created and linked to `MPROGAMING/Claude-Web-Cloner`
+(`prj_aWBELXzNIMJ5SODDfSejeTb7yN9o`). 21 commits pushed to master.
+
+**Blocked:** the Vercel token cannot create or list deployments —
+`403 forbidden: You don't have permission to create a Production Deployment`.
+That needs the account owner to grant deploy rights or press deploy themselves.
+
+Verified locally instead: **the app builds with no environment variables at
+all**, so the marketing site deploys and works standalone; the authenticated app
+shows its setup-required state until secrets are added. No secret has ever been
+committed — `.env.example` carries empty values and the only key-shaped strings
+in the tree are deliberately fake test fixtures.
 
 ---
 
@@ -84,7 +138,7 @@ npm run studio:verify     # 16/16
 
 | | |
 |---|---|
-| Tests | 380 passing, 17 files |
+| Tests | 386 passing, 17 files |
 | `npm run check` | clean — 0 errors |
 | `npm run verify:security` | **44/44 live** — includes project_memory and notifications |
 | `npm run agent:verify` | 44/44 live (free router) |
