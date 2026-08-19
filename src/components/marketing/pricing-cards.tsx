@@ -14,12 +14,23 @@ const FREE_FEATURES = [
   "Full file history",
 ];
 
-export function PricingCards({ className }: { className?: string }) {
+export function PricingCards({
+  className,
+  headingLevel: Heading = "h3",
+}: {
+  className?: string;
+  /**
+   * The level for each plan name. h3 is right under the landing page's h2
+   * section heading; /pricing makes its section heading the page h1, so there
+   * the plans are h2 and passing h3 would leave a gap in the outline.
+   */
+  headingLevel?: "h2" | "h3";
+}) {
   return (
     <div className={cn("space-y-6", className)}>
       <div className="grid items-stretch gap-5 md:grid-cols-3">
         <div className="flex flex-col rounded-xl border border-border bg-surface p-6">
-          <h3 className="text-sm font-semibold">Free</h3>
+          <Heading className="text-sm font-semibold">Free</Heading>
           <p className="mt-3">
             <span className="font-display text-3xl font-semibold">2,000</span>
             <span className="ml-1.5 text-sm text-muted-foreground">credits</span>
@@ -53,7 +64,7 @@ export function PricingCards({ className }: { className?: string }) {
                 Most credits per dollar
               </span>
             )}
-            <h3 className="text-sm font-semibold">{pack.name}</h3>
+            <Heading className="text-sm font-semibold">{pack.name}</Heading>
             <p className="mt-3">
               <span className="font-display text-3xl font-semibold">
                 {formatCredits(pack.credits)}

@@ -27,6 +27,24 @@ npm run test       # vitest
 npm run check      # lint + typecheck + test + build
 ```
 
+Against a running dev server:
+
+```bash
+npm run a11y -- http://localhost:3000/ --theme dark --width 390
+npm run verify:security     # RLS + RPC grants, against the live project
+npm run agent:verify -- --model openrouter:openrouter/free   # end to end, free
+npm run blueprint:verify    # needs a real model; the free router cannot hold
+                            # a strict schema across a long response
+```
+
+`a11y` drives headless Chrome and measures the rendered result — contrast after
+every CSS variable and opacity has resolved, accessible names after Base UI has
+composed them, and touch targets under an emulated coarse pointer. Static
+analysis cannot answer any of those. Touch-target rules key on `pointer:
+coarse`, not on width: a 32px button is fine with a trackpad at 390px and bad
+with a finger at 1024px. Use `.tap-target` / `.tap-row` from `globals.css` for
+controls that need a thumb-sized floor.
+
 ## Stack
 
 Next.js 16 (App Router) · React 19 · TypeScript strict · Tailwind v4 ·

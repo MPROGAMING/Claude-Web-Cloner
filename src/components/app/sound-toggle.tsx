@@ -38,7 +38,7 @@ export function SoundToggle({ className }: { className?: string }) {
             aria-pressed={on}
             aria-label={on ? "Turn interface sounds off" : "Turn interface sounds on"}
             className={cn(
-              "rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-ember",
+              "tap-target flex items-center justify-center rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-ember",
               className,
             )}
           >

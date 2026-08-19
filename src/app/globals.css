@@ -313,6 +313,31 @@
     @apply outline-none focus-visible:ring-3 focus-visible:ring-ring focus-visible:border-ember;
   }
 
+  /* A thumb-sized hit area, on touch devices only.
+     The app's controls are deliberately dense — 24 to 32px — which is right
+     for a mouse and unusable with a finger. The criterion is the pointer, not
+     the viewport: a 28px icon button is fine with a trackpad at 390px and bad
+     with a finger at 1024px, so this keys on `pointer: coarse` and the desktop
+     layout does not move by a pixel. min-* rather than fixed sizes, so only
+     the controls actually under the floor grow. */
+  /* Written as plain nested CSS rather than `@apply pointer-coarse:*`, which
+     Tailwind v4 silently drops inside a custom utility — the classes appeared
+     on the elements and no rule was ever emitted, so the controls stayed 28px
+     while the markup claimed otherwise. */
+  .tap-target {
+    @media (pointer: coarse) {
+      min-height: 2.75rem;
+      min-width: 2.75rem;
+    }
+  }
+  /* For controls in a row where only the height is short — tabs, filter pills
+     — widening them too would break the row. */
+  .tap-row {
+    @media (pointer: coarse) {
+      min-height: 2.75rem;
+    }
+  }
+
   /* Cards that lift on hover. One class so the timing never drifts between
      surfaces, and reduced-motion users get the colour change only. */
   .lift {

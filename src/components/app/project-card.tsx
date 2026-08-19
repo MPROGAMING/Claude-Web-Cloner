@@ -96,7 +96,7 @@ export function ProjectCard({
                 <button
                   type="button"
                   aria-label={`Actions for ${project.name}`}
-                  className="relative z-10 -mr-1 -mt-1 rounded-md p-1.5 text-muted-foreground opacity-0 transition-opacity hover:bg-accent hover:text-foreground focus-visible:opacity-100 group-hover:opacity-100 focus-ember"
+                  className="tap-target relative z-10 -mr-1 -mt-1 flex items-center justify-center rounded-md p-1.5 text-muted-foreground opacity-0 transition-opacity hover:bg-accent hover:text-foreground focus-visible:opacity-100 group-hover:opacity-100 focus-ember"
                 >
                   <MoreHorizontal className="size-4" />
                 </button>

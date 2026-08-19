@@ -269,7 +269,7 @@ export function ModelSelector({
             disabled={disabled}
             aria-label={`Model: ${selected.name}`}
             className={cn(
-              "inline-flex max-w-full items-center gap-1.5 rounded-lg border border-border bg-surface pl-1.5 pr-2 text-[0.8125rem] font-medium",
+              "tap-row inline-flex max-w-full items-center gap-1.5 rounded-lg border border-border bg-surface pl-1.5 pr-2 text-[0.8125rem] font-medium",
               "transition-[background-color,border-color,transform] duration-150",
               "hover:bg-accent active:scale-[0.98] disabled:opacity-50 focus-ember",
               compact ? "h-7" : "h-8",

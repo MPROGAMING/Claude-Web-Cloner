@@ -22,7 +22,7 @@ export function CreditBadge({ balance, className }: { balance: number; className
           <Link
             href="/credits"
             className={cn(
-              "inline-flex h-8 items-center gap-1.5 rounded-lg border px-2.5 text-[0.8125rem] font-medium tabular-nums transition-[background-color,border-color,transform] duration-150 active:scale-[0.97] focus-ember",
+              "tap-row inline-flex h-8 items-center gap-1.5 rounded-lg border px-2.5 text-[0.8125rem] font-medium tabular-nums transition-[background-color,border-color,transform] duration-150 active:scale-[0.97] focus-ember",
               tone === "normal" &&
                 "border-border bg-surface text-foreground hover:bg-accent",
               tone === "low" &&

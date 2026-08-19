@@ -35,7 +35,11 @@ export function MarketingHeader({ signedIn }: { signedIn: boolean }) {
       )}
     >
       <div className="mx-auto flex h-16 max-w-6xl items-center gap-8 px-5 sm:px-8">
-        <Link href="/" className="rounded-md focus-ember" aria-label="Blockwright home">
+        <Link
+          href="/"
+          className="flex items-center rounded-md pointer-coarse:min-h-11 focus-ember"
+          aria-label="Blockwright home"
+        >
           <Logo />
         </Link>
 
@@ -70,7 +74,7 @@ export function MarketingHeader({ signedIn }: { signedIn: boolean }) {
 
         <button
           type="button"
-          className="ml-auto rounded-md p-2 text-muted-foreground md:hidden focus-ember"
+          className="ml-auto flex size-11 items-center justify-center rounded-md text-muted-foreground md:hidden focus-ember"
           onClick={() => setOpen((v) => !v)}
           aria-expanded={open}
           aria-label={open ? "Close menu" : "Open menu"}

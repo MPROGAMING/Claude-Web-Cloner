@@ -23,7 +23,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   return (
     <div className="flex min-h-dvh">
       <Sidebar />
-      <div className="flex min-w-0 flex-1 flex-col pb-14 md:pb-0">{children}</div>
+      {/* A landmark, not a div: without it there is nothing for a screen
+          reader to skip the sidebar and jump to, on every page in the app. */}
+      <main className="flex min-w-0 flex-1 flex-col pb-14 md:pb-0">{children}</main>
       <MobileNav />
       {/* Mounted once in the shell so the shortcut works on every page and
           there is exactly one keyboard listener. */}

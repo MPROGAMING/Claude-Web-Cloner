@@ -31,7 +31,7 @@ export function UserMenu({
           <button
             type="button"
             aria-label="Account menu"
-            className="rounded-full outline-none focus-visible:ring-3 focus-visible:ring-ring"
+            className="tap-target flex items-center justify-center rounded-full outline-none focus-visible:ring-3 focus-visible:ring-ring"
           >
             <Avatar className="size-8">
               <AvatarFallback className="bg-surface-raised text-[0.6875rem] font-semibold">

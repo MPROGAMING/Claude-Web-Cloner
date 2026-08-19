@@ -31,7 +31,7 @@ export function Topbar({
     >
       <Link
         href="/dashboard"
-        className="rounded-md focus-ember md:hidden"
+        className="tap-target flex items-center justify-center rounded-md focus-ember md:hidden"
         aria-label="Blockwright home"
       >
         <LogoMark className="size-6" />

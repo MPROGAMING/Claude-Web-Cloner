@@ -96,7 +96,7 @@ export default async function DashboardPage() {
             {projects.length > 0 && (
               <Link
                 href="/projects"
-                className="inline-flex items-center gap-1 text-[0.8125rem] text-muted-foreground transition-colors hover:text-foreground"
+                className="tap-row inline-flex items-center gap-1 text-[0.8125rem] text-muted-foreground transition-colors hover:text-foreground"
               >
                 All projects
                 <ArrowRight className="size-3.5" />
@@ -132,7 +132,7 @@ export default async function DashboardPage() {
               <h2 className="text-sm font-semibold">Start from a template</h2>
               <Link
                 href="/templates"
-                className="inline-flex items-center gap-1 text-[0.8125rem] text-muted-foreground transition-colors hover:text-foreground"
+                className="tap-row inline-flex items-center gap-1 text-[0.8125rem] text-muted-foreground transition-colors hover:text-foreground"
               >
                 All {TEMPLATES.length}
                 <ArrowRight className="size-3.5" />

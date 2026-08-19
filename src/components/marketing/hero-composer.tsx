@@ -101,7 +101,7 @@ export function HeroComposer() {
             type="button"
             onClick={submit}
             disabled={!value.trim() || pending}
-            className="ml-auto flex h-9 items-center gap-2 rounded-lg bg-foreground px-4 text-[0.8125rem] font-medium text-background transition-[opacity,transform] hover:opacity-90 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40 focus-ember"
+            className="ml-auto flex h-9 items-center gap-2 rounded-lg bg-foreground px-4 pointer-coarse:min-h-11 text-[0.8125rem] font-medium text-background transition-[opacity,transform] hover:opacity-90 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40 focus-ember"
           >
             {pending ? (
               <>

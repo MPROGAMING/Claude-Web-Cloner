@@ -21,11 +21,18 @@ export function SectionHeading({
   title,
   description,
   align = "center",
+  as: Heading = "h2",
 }: {
   eyebrow: string;
   title: string;
   description?: string;
   align?: "center" | "left";
+  /**
+   * The heading level. h2 is right on a page whose hero already owns the h1,
+   * which is every page except the ones built entirely out of Sections —
+   * /pricing had no h1 at all and started at h2, so its outline began mid-air.
+   */
+  as?: "h1" | "h2";
 }) {
   return (
     <div className={cn("max-w-2xl", align === "center" && "mx-auto text-center")}>
@@ -45,9 +52,9 @@ export function SectionHeading({
         <span aria-hidden className="size-1.5 rounded-[2px] bg-[var(--ember)]" />
         {eyebrow}
       </span>
-      <h2 className="mt-3 text-3xl font-bold leading-[1.03] tracking-[-0.03em] sm:text-[2.75rem]">
+      <Heading className="mt-3 text-3xl font-bold leading-[1.03] tracking-[-0.03em] sm:text-[2.75rem]">
         {title}
-      </h2>
+      </Heading>
       {description && (
         <p className="mt-5 text-base leading-relaxed text-muted-foreground">{description}</p>
       )}

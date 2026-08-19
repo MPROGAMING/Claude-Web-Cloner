@@ -38,11 +38,12 @@ export default function PricingPage() {
     <>
       <Section className="pb-0">
         <SectionHeading
+          as="h1"
           eyebrow="Pricing"
           title="One balance, every model"
           description="No seats, no per-project fees. You pay for the generation you actually run."
         />
-        <PricingCards className="mt-12" />
+        <PricingCards className="mt-12" headingLevel="h2" />
       </Section>
 
       <Section className="border-t border-border">

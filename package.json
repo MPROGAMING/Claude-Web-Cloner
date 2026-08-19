@@ -2,7 +2,7 @@
   "name": "blockwright",
   "version": "0.1.0",
   "private": true,
-  "description": "An AI build partner for Roblox creators — describe a mechanic, get working Luau in Roblox Studio.",
+  "description": "An AI build partner for Roblox creators \u2014 describe a mechanic, get working Luau in Roblox Studio.",
   "license": "MIT",
   "keywords": [
     "roblox",
@@ -33,7 +33,8 @@
     "brain:eval": "node --import ./scripts/roblox-brain/lib/register-hooks.mjs scripts/roblox-brain/evaluate.mjs",
     "brain:verify-generation": "node --import ./scripts/roblox-brain/lib/register-hooks.mjs scripts/roblox-brain/verify-generation.mjs",
     "agent:verify": "node scripts/roblox-brain/verify-agent.mjs",
-    "blueprint:verify": "node scripts/roblox-brain/verify-blueprint.mjs"
+    "blueprint:verify": "node scripts/roblox-brain/verify-blueprint.mjs",
+    "a11y": "node scripts/a11y.mjs"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^4.0.39",
