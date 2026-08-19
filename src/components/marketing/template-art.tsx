@@ -80,17 +80,17 @@ export function TemplateArt({
           style={{ objectPosition: template.banner.focal ?? "50% 50%" }}
         />
 
-        {/* The source art is lit against a flat neutral background, which reads
-            as muted next to the saturated cards this is measured against. A
-            soft wash of the template's own accent, in `overlay` so the scene's
-            own light and shade survive it, gives the card its genre colour
-            without tinting the props into mud. */}
+        {/* A light accent wash ties the card to its genre colour. Kept weak on
+            purpose: at 0.55 it recoloured the art rather than tinting it — the
+            racing circuit's red and white came out green, which is the one
+            thing sourcing real artwork was supposed to avoid. This is enough to
+            unify the row and not enough to argue with the picture. */}
         <span
           aria-hidden
           className="absolute inset-0 mix-blend-overlay"
           style={{
             backgroundImage: `linear-gradient(135deg, ${from}, ${to})`,
-            opacity: 0.55,
+            opacity: 0.2,
           }}
         />
 
