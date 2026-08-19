@@ -7,6 +7,7 @@ import {
   Folder,
   Loader2,
   Plug,
+  ShieldCheck,
   Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -20,6 +21,31 @@ import { StatusDot } from "@/components/ui/status-dot";
 
 const PROMPT =
   "Create a simulator where players collect crystals, sell them, buy backpacks and unlock new islands.";
+
+/**
+ * The tree listed six scripts while the step list and the footer both claimed
+ * seven. It also had no client folder at all, which is not what this build
+ * would actually produce — a shop and a HUD need something running on the
+ * player. Nine files now, and every count on the panel is derived from this
+ * array rather than typed out again somewhere else.
+ */
+const FILES = [
+  { path: "src/server", type: "dir" as const, depth: 0 },
+  { path: "CurrencyService.luau", type: "file" as const, depth: 1 },
+  { path: "CrystalNodes.server.luau", type: "file" as const, depth: 1 },
+  { path: "IslandUnlocks.server.luau", type: "file" as const, depth: 1 },
+  { path: "ShopService.luau", type: "file" as const, depth: 1 },
+  { path: "src/client", type: "dir" as const, depth: 0 },
+  { path: "CrystalHud.client.luau", type: "file" as const, depth: 1 },
+  { path: "SellPrompt.client.luau", type: "file" as const, depth: 1 },
+  { path: "src/shared", type: "dir" as const, depth: 0 },
+  { path: "GameConfig.luau", type: "file" as const, depth: 1 },
+  { path: "Remotes.luau", type: "file" as const, depth: 1 },
+  { path: "src/ui", type: "dir" as const, depth: 0 },
+  { path: "ShopPanel.luau", type: "file" as const, depth: 1 },
+];
+
+const SCRIPT_COUNT = FILES.filter((f) => f.type === "file").length;
 
 /**
  * The build sequence.
@@ -36,20 +62,8 @@ const STEPS = [
   { label: "Created src/server/CurrencyService.luau", ms: 1300 },
   { label: "Created src/server/CrystalNodes.server.luau", ms: 1740 },
   { label: "Created src/ui/ShopPanel.luau", ms: 2180 },
-  { label: "Validated 7 scripts — clean", ms: 2620 },
+  { label: `Validated ${SCRIPT_COUNT} scripts — clean`, ms: 2620 },
   { label: "Synced to Roblox Studio", ms: 3020 },
-];
-
-const FILES = [
-  { path: "src/server", type: "dir" as const, depth: 0 },
-  { path: "CurrencyService.luau", type: "file" as const, depth: 1 },
-  { path: "CrystalNodes.server.luau", type: "file" as const, depth: 1 },
-  { path: "IslandUnlocks.server.luau", type: "file" as const, depth: 1 },
-  { path: "src/shared", type: "dir" as const, depth: 0 },
-  { path: "GameConfig.luau", type: "file" as const, depth: 1 },
-  { path: "Remotes.luau", type: "file" as const, depth: 1 },
-  { path: "src/ui", type: "dir" as const, depth: 0 },
-  { path: "ShopPanel.luau", type: "file" as const, depth: 1 },
 ];
 
 const CODE = `--!strict
@@ -67,6 +81,22 @@ function CurrencyService.award(player: Player, amount: number)
 	wallets[player.UserId] = (wallets[player.UserId] or 0) + amount
 	CurrencyService.changed:Fire(player, wallets[player.UserId])
 end`;
+
+/**
+ * When the panel settles.
+ *
+ * These three used to drift: the step list was shortened to land at 3s while
+ * the summary and the live dot stayed gated on 6.8s — past the point the timer
+ * stopped ticking. Neither could ever render, so the panel finished early and
+ * left the space its summary was meant to occupy empty. Anything gated on time
+ * belongs in here, next to the tick that has to outlast it.
+ */
+const SETTLE = {
+  summary: STEPS[STEPS.length - 1].ms + 280,
+  approval: STEPS[STEPS.length - 1].ms + 540,
+  /** The tick must outlive every gate above or they never fire. */
+  stopTicking: STEPS[STEPS.length - 1].ms + 900,
+};
 
 const FINISHED = 99_999;
 
@@ -97,7 +127,7 @@ export function WorkspacePreview({ className }: { className?: string }) {
         timer = window.setInterval(() => {
           const next = Date.now() - start;
           setElapsed(next);
-          if (next > 3600) window.clearInterval(timer);
+          if (next > SETTLE.stopTicking) window.clearInterval(timer);
         }, 80);
       },
       { threshold: 0.25 },
@@ -139,7 +169,7 @@ export function WorkspacePreview({ className }: { className?: string }) {
           Crystal Islands
         </span>
         <span className="ml-auto inline-flex items-center gap-1.5 rounded-md border border-[var(--signal)]/30 bg-[var(--signal)]/10 px-2 py-0.5 text-[0.625rem] font-medium text-[var(--signal)]">
-          <StatusDot tone="live" pulse={elapsed > 6800} />
+          <StatusDot tone="live" pulse={elapsed >= SETTLE.summary} />
           Studio connected
         </span>
       </div>
@@ -175,6 +205,14 @@ export function WorkspacePreview({ className }: { className?: string }) {
               </li>
             ))}
           </ul>
+
+          {visibleFiles >= FILES.length && (
+            <p className="mt-3 animate-rise border-t border-hairline pt-2.5 text-[0.625rem] leading-relaxed text-muted-foreground">
+              {SCRIPT_COUNT} scripts
+              <br />
+              <span className="text-[var(--success)]">Validated — no errors</span>
+            </p>
+          )}
         </div>
 
         {/* conversation */}
@@ -201,12 +239,34 @@ export function WorkspacePreview({ className }: { className?: string }) {
             )}
           </div>
 
-          {elapsed > 6800 && (
+          {elapsed >= SETTLE.summary && (
             <p className="animate-rise text-[0.8125rem] leading-relaxed text-foreground/85">
               Built the collect → sell → upgrade loop. Crystals respawn on a
               timer, the shop validates every purchase server-side, and island
               unlocks are gated on total coins earned.
             </p>
+          )}
+
+          {/* The approval gate is the product's central promise and the panel
+              never showed it — so the one screenshot a visitor studies left out
+              the reason to trust it. Nothing reaches the place until this is
+              pressed. */}
+          {elapsed >= SETTLE.approval && (
+            <div className="mt-auto flex animate-rise flex-wrap items-center gap-2 rounded-lg border border-[var(--ember)]/30 bg-[var(--ember)]/[0.07] px-3 py-2.5">
+              <ShieldCheck className="size-3.5 shrink-0 text-[var(--ember)]" />
+              <span className="text-[0.75rem] leading-snug text-foreground/85">
+                {SCRIPT_COUNT} files ready. Nothing reaches your place until you say
+                so.
+              </span>
+              <span className="ml-auto flex shrink-0 gap-1.5">
+                <span className="rounded-md border border-border px-2 py-1 text-[0.6875rem] text-muted-foreground">
+                  Discard
+                </span>
+                <span className="rounded-md bg-[var(--ember)] px-2 py-1 text-[0.6875rem] font-medium text-[var(--ember-ink)]">
+                  Apply
+                </span>
+              </span>
+            </div>
           )}
         </div>
 

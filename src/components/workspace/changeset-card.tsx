@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { AlertTriangle, Check, FilePlus2, FilePen, FileX2, Loader2, MoveRight, Undo2 } from "lucide-react";
 import { toast } from "sonner";
+import { playSound } from "@/lib/sound";
 import { Button } from "@/components/ui/button";
 import type { ChangesetData } from "@/lib/ai/types";
 import { cn } from "@/lib/utils";
@@ -68,10 +69,12 @@ export function ChangesetCard({ changeset }: { changeset: ChangesetData }) {
       setPhase("applying");
       const result = await call("apply", "apply these changes");
       setPhase("applied");
+      playSound("approve");
       toast.success(`Applied ${result.applied} change${result.applied === 1 ? "" : "s"}.`);
       router.refresh();
     } catch (error) {
       setPhase("idle");
+      playSound("error");
       toast.error(error instanceof Error ? error.message : "Could not apply those changes.");
     }
   }

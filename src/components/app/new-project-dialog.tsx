@@ -201,7 +201,7 @@ export function NewProjectDialog({
                       </span>
                       {active && (
                         <span className="absolute right-1.5 top-1.5 flex size-4 items-center justify-center rounded-full bg-[var(--ember)]">
-                          <Check className="size-2.5 text-[oklch(0.16_0.008_75)]" strokeWidth={3} />
+                          <Check className="size-2.5 text-[var(--ember-ink)]" strokeWidth={3} />
                         </span>
                       )}
                     </span>

@@ -2,102 +2,64 @@ import Image from "next/image";
 import { cn } from "@/lib/utils";
 
 /**
- * Real Roblox, on the page — paired with the sentence that builds it.
+ * Real Roblox places, above the fold.
  *
- * A game-creation product that only shows code and file trees asks people to
- * take the game part on faith. These are genuine Roblox renders of genuine
- * Creator Store models: Roblox's own render farm produced the images, and the
- * link on each card goes to the asset.
+ * These replaced three Creator Store asset renders — a wall, some towers and a
+ * standing zombie on a flat blue skybox, which the page itself had to label
+ * "Roblox Creator Store model". A catalogue thumbnail is not a game, and
+ * captioning it honestly only made the problem legible. These are places:
+ * built in Studio, captured with Studio's own screenshot tool, compressed for
+ * the web and nothing else.
  *
- * Every candidate was checked by eye first. The Creator Store is heavily
- * keyword-spammed — a search for a low-poly tree pack returned a weapons pack,
- * and a "sci-fi space station" returned a stock avatar — so nothing is used
- * because its filename sounded right.
- *
- * The honest framing lives in the heading, once, rather than in a disclaimer
- * paragraph underneath: the models are Roblox's, the game around them is what
- * Blockwright writes.
+ * The captions describe what the scene is, not where it came from, because
+ * neither was produced by running a prompt through the agent. That caption is
+ * reserved for a place an end-to-end run actually builds.
  */
 
-const PIECES = [
+const PLACES = [
   {
-    src: "/roblox/546011181.png",
-    assetId: 546011181,
-    prompt: "Make a castle siege where two teams fight over the courtyard.",
-    /**
-     * Per-asset framing. The two renders compose their subjects very
-     * differently inside an identical 420-square canvas, so a single shared
-     * treatment leaves one zoomed and the other letterboxed. Scaling each to
-     * fill and nudging the focal point is what makes the pair read as one set.
-     */
-    /** Focal point for the cover crop, chosen so the subject stays centred. */
-    offset: "object-[50%_52%]",
+    src: "/demos/hero-corridor.jpg",
+    alt: "A dark hotel corridor in Roblox lit by warm wall sconces, with numbered doors and wooden crates",
+    title: "Horror",
+    line: "Sconce-lit corridor, numbered doors, dust in the air",
+    /** Focal point for the cover crop. */
+    offset: "object-[50%_46%]",
   },
   {
-    src: "/roblox/128871661974159.png",
-    assetId: 128871661974159,
-    prompt: "Make a tower defence where you buy walls and towers between waves.",
-    offset: "object-[50%_44%]",
-  },
-  {
-    src: "/roblox/87055610558102.png",
-    assetId: 87055610558102,
-    prompt: "Make a zombie survival where you barricade a house between waves.",
-    // A rigged character, not a building: the page needed someone in it. The
-    // focal point sits high because a full-body rig in a wide card crops
-    // vertically, and the face is the part worth keeping.
-    offset: "object-[50%_14%]",
+    src: "/demos/islands.jpg",
+    alt: "Bright floating grass islands in Roblox with an open treasure chest spilling gold",
+    title: "Adventure",
+    line: "Floating islands, terrain grass, a chest worth crossing for",
+    offset: "object-[50%_54%]",
   },
 ];
 
-/**
- * The hero pair: real Roblox, above the fold, each card carrying the sentence
- * that would build it.
- *
- * This is the one composition that explains the product without a paragraph —
- * a creator sees the thing they recognise and the thing they would type, next
- * to each other, before scrolling.
- */
 export function RobloxHeroPair({ className }: { className?: string }) {
   return (
-    <div className={cn("grid gap-3 sm:grid-cols-3", className)}>
-      {PIECES.map((piece) => (
+    <div className={cn("grid gap-3 sm:grid-cols-2", className)}>
+      {PLACES.map((place) => (
         <figure
-          key={piece.assetId}
-          className="group relative overflow-hidden rounded-2xl border border-border bg-[#4a6ea6]"
+          key={place.src}
+          className="group relative overflow-hidden rounded-2xl border border-border bg-black"
         >
-          <div className="relative h-44 overflow-hidden sm:h-56">
+          <div className="relative h-48 overflow-hidden sm:h-60">
             <Image
-              src={piece.src}
-              alt="A Roblox model, rendered by Roblox"
-              width={420}
-              height={420}
+              src={place.src}
+              alt={place.alt}
+              width={1600}
+              height={760}
               priority
-              /**
-               * `object-cover`, not `object-contain` with a scale. Scaling the
-               * element made the image box larger than its container, so the
-               * picture overflowed and was clipped on all four sides — tower
-               * tops sheared flat by the card edge. Cover fills the frame by
-               * cropping the source, which is what a crop is supposed to do.
-               */
-              className={cn("h-full w-full object-cover", piece.offset)}
+              sizes="(max-width: 640px) 100vw, 50vw"
+              className={cn(
+                "h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.04] motion-reduce:group-hover:scale-100",
+                place.offset,
+              )}
             />
           </div>
 
-          <figcaption className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/88 via-black/60 to-transparent px-3.5 pb-3 pt-10 text-left">
-            <p className="text-[0.8125rem] font-medium leading-snug text-white">
-              &ldquo;{piece.prompt}&rdquo;
-            </p>
-            {/* Attribution sits on the card itself rather than in a disclaimer
-                paragraph: the model is Roblox's, the game around it is ours. */}
-            <a
-              href={`https://create.roblox.com/store/asset/${piece.assetId}`}
-              target="_blank"
-              rel="noreferrer noopener"
-              className="mt-1.5 inline-block font-mono text-[0.5625rem] uppercase tracking-[0.1em] text-white/45 transition-colors hover:text-white/85 focus-ember"
-            >
-              Roblox Creator Store model
-            </a>
+          <figcaption className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/45 to-transparent px-4 pb-3 pt-12 text-left">
+            <p className="text-[0.9375rem] font-semibold text-white">{place.title}</p>
+            <p className="mt-0.5 text-[0.8125rem] leading-snug text-white/75">{place.line}</p>
           </figcaption>
         </figure>
       ))}

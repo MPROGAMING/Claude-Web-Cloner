@@ -137,7 +137,16 @@ export const blueprintSchema = z.object({
   /** Honest scope signal, so the user knows what they are approving. */
   scope: z.enum(["small", "medium", "large"]),
   estimated_scripts: z.number().int().min(1).max(60),
-  sections: z.array(sectionSchema).min(5).max(15),
+  /**
+   * Capped at 9, not 15.
+   *
+   * The instruction to include only the sections a game needs was ignored — the
+   * first real run produced all fifteen, which is ~8k output tokens and most of
+   * the two-minute wait. Seven of these are required, so nine leaves room for
+   * the two that genuinely matter to this game and makes the limit structural
+   * rather than a request.
+   */
+  sections: z.array(sectionSchema).min(5).max(9),
   /** What is deliberately NOT in version one. Prevents silent scope creep. */
   out_of_scope: z.array(z.string().max(160)).max(8),
   /** The first slice to build — what "done" means for the first build. */

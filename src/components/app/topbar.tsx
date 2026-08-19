@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { SoundToggle } from "@/components/app/sound-toggle";
 import { CreditBadge } from "@/components/app/credit-badge";
 import { UserMenu } from "@/components/app/user-menu";
 import { LogoMark } from "@/components/brand/logo";
@@ -38,6 +39,7 @@ export function Topbar({
 
       <div className="flex min-w-0 flex-1 items-center gap-3">{children}</div>
 
+      <SoundToggle />
       <CreditBadge balance={balance} />
       <UserMenu email={email} displayName={displayName} />
     </header>

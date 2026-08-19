@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState, useTransition } from "react";
+import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import {
   AlertTriangle,
   Check,
@@ -12,6 +12,7 @@ import {
   Upload,
 } from "lucide-react";
 import { toast } from "sonner";
+import { playSound } from "@/lib/sound";
 import { Button } from "@/components/ui/button";
 import { StatusDot } from "@/components/ui/status-dot";
 import { relativeTime } from "@/lib/format";
@@ -48,6 +49,12 @@ export function StudioPanel({ projectId }: { projectId: string }) {
   const [copied, setCopied] = useState(false);
   const [pending, startTransition] = useTransition();
 
+  // What the last poll saw. A ref rather than state because `refresh` is
+  // memoized on [projectId]: anything it reads from state is frozen at the
+  // first render, so comparing against `state` here would compare against null
+  // forever and re-fire the chime on every poll.
+  const lastStatus = useRef<StudioState["status"] | null>(null);
+
   const refresh = useCallback(async () => {
     try {
       const response = await fetch(`/api/studio/status?projectId=${projectId}`, {
@@ -58,6 +65,17 @@ export function StudioPanel({ projectId }: { projectId: string }) {
       setState(next);
       // Once the plugin pairs, the code is spent — stop showing it.
       if (next.status === "connected") setPairCode(null);
+
+      // Sound the edges only: connecting and dropping are events, being
+      // connected is not.
+      if (next.status !== lastStatus.current) {
+        if (next.status === "connected") {
+          playSound("connect");
+        } else if (lastStatus.current === "connected") {
+          playSound("disconnect");
+        }
+        lastStatus.current = next.status;
+      }
     } catch {
       // A transient network blip should not clear a good connection display.
     }
@@ -109,6 +127,7 @@ export function StudioPanel({ projectId }: { projectId: string }) {
       const result = await endStudioSession(projectId);
       if (result.ok) {
         setPairCode(null);
+        playSound("disconnect");
         toast.success("Studio disconnected");
         refresh();
       } else {

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { ArrowUp, Paperclip, Square, X } from "lucide-react";
 import { toast } from "sonner";
+import { playSound } from "@/lib/sound";
 import { ModelSelector } from "@/components/workspace/model-selector";
 import { estimateCredits } from "@/lib/credits/pricing";
 import { getModelOrDefault, type ClientModel } from "@/lib/ai/registry";
@@ -105,6 +106,7 @@ export function ChatComposer({
         ].join("\n")
       : value.trim();
 
+    playSound("send");
     onSubmit(body);
     setValue("");
     setAttachments([]);
@@ -258,7 +260,7 @@ export function ChatComposer({
                 className={cn(
                   "flex size-8 items-center justify-center rounded-lg transition-all focus-ember",
                   canSend
-                    ? "bg-[var(--ember)] text-[oklch(0.16_0.008_75)] hover:brightness-108"
+                    ? "bg-[var(--ember)] text-[var(--ember-ink)] hover:brightness-108"
                     : "bg-muted text-muted-foreground",
                 )}
               >

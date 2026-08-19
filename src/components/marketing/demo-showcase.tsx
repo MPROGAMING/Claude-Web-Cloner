@@ -4,23 +4,27 @@ import { cn } from "@/lib/utils";
 /**
  * Real Roblox places, captured from Roblox Studio.
  *
- * These are genuine renders — a place built in Studio and captured with
- * Studio's own screenshot tool, at 1594x757, then compressed for the web.
- * Nothing here is concept art, a mockup, or another studio's game.
+ * These are genuine renders — places built in Studio and captured with Studio's
+ * own screenshot tool, then compressed for the web. Nothing here is concept art,
+ * a mockup, or another studio's game.
  *
- * The captions are deliberately careful about causation. This scene was authored
- * directly in Studio to demonstrate the target quality; it was NOT produced by
- * running a prompt through the agent, so it does not claim to have been. When an
- * end-to-end agent run produces a place, that one gets the prompt caption and
- * this note goes away.
+ * The captions are deliberately careful about causation. These scenes were
+ * authored directly in Studio to demonstrate the target quality; they were NOT
+ * produced by running a prompt through the agent, so they do not claim to have
+ * been. When an end-to-end agent run produces a place, that one gets the prompt
+ * caption and this note goes away.
+ *
+ * The two shots are deliberately different in kind: one is the view a player
+ * gets standing inside the world, the other is the prop detail you only see up
+ * close. Two angles on the same corridor was the previous version's mistake.
  */
 
 const SHOTS = [
   {
-    src: "/demos/hero-corridor.jpg",
-    alt: "A dark hotel corridor in Roblox, lit by warm wall sconces, with numbered doors and scattered crates",
-    title: "Hotel corridor",
-    note: "Wall sconces, numbered doors, dust in the light",
+    src: "/demos/bridge-pov.jpg",
+    alt: "Standing on a rope bridge in Roblox, looking across a gap between floating grass islands toward a stone archway",
+    title: "Standing on the bridge",
+    note: "What the player sees — sag in the ropes, sky underneath",
     span: "sm:col-span-3 sm:row-span-2",
     priority: true,
   },
@@ -52,9 +56,9 @@ export function DemoShowcase({ className }: { className?: string }) {
             This is a place, not a mockup.
           </h2>
           <p className="mt-4 max-w-lg text-[0.9375rem] leading-relaxed text-muted-foreground">
-            Captured straight out of Roblox Studio. The lighting, the fog, the
-            props — all of it lives in a real place file you can open and keep
-            building.
+            Captured straight out of Roblox Studio. The terrain, the lighting,
+            the props — all of it lives in a real place file you can open, keep
+            building, and publish when it&rsquo;s ready for players.
           </p>
         </div>
 
@@ -70,8 +74,8 @@ export function DemoShowcase({ className }: { className?: string }) {
               <Image
                 src={shot.src}
                 alt={shot.alt}
-                width={1594}
-                height={757}
+                width={1600}
+                height={760}
                 priority={shot.priority}
                 sizes="(max-width: 640px) 100vw, 60vw"
                 className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.03] motion-reduce:group-hover:scale-100"
@@ -85,9 +89,9 @@ export function DemoShowcase({ className }: { className?: string }) {
         </div>
 
         <p className="mt-4 text-[0.75rem] leading-relaxed text-muted-foreground">
-          Captured in Roblox Studio for this demo. The wardrobe and crate were
-          generated as 3D meshes from a text description; the corridor, lighting
-          and atmosphere were built in the place.
+          Captured in Roblox Studio for this demo. The chest, archway and one
+          tree were generated as 3D meshes from a text description; the terrain,
+          bridge, lighting and atmosphere were built in the place.
         </p>
       </div>
     </section>

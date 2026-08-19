@@ -46,16 +46,16 @@ export default function LandingPage() {
             </h1>
 
             <p className="mx-auto mt-5 max-w-md text-[0.9375rem] leading-relaxed text-muted-foreground sm:text-base">
-              Blockwright builds it — the scripts, the systems, the whole thing —
-              and puts it straight into your Roblox place.
+              Blockwright writes the scripts, wires the systems, and puts the
+              whole thing into your Roblox place — ready for you to hit Publish.
             </p>
 
             {/* The product's core action, in the hero. */}
             <HeroComposer />
           </div>
 
-          {/* Real Roblox above the fold, each tagged with the sentence that
-              builds it. One image explains the product better than a section. */}
+          {/* Two real places above the fold, in two different genres. One
+              image explains the product better than a section does. */}
           <RobloxHeroPair className="mt-10" />
         </div>
       </section>
@@ -132,7 +132,9 @@ export default function LandingPage() {
             <p className="mt-5 text-base leading-relaxed text-muted-foreground">
               Install the plugin, paste a six-character code, and the project in
               your browser is linked to the place open in Studio. Scripts appear
-              where they belong. No copy-paste, no dragging files around.
+              where they belong — no copy-paste, no dragging files around. When
+              it plays the way you want, you press Publish in Studio and your
+              friends are in it.
             </p>
 
             <ul className="mt-8 space-y-4">
@@ -311,8 +313,8 @@ export default function LandingPage() {
             What are you building?
           </h2>
           <p className="mx-auto mt-5 max-w-lg text-base leading-relaxed text-muted-foreground">
-            Open a project, type one sentence, and watch the first version of it
-            appear.
+            Open a project, describe the game you have in your head, and get to
+            something people can actually play.
           </p>
           <LinkButton href="/sign-up" size="lg" className="mt-8 h-10 px-5 text-sm">
             Start building free

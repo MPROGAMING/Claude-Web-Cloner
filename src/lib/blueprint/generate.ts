@@ -125,9 +125,11 @@ What makes this useful rather than decorative:
   the client can decide, an exploiter can decide.
 - Be honest about scope. A creator approving a "small" build that needs forty
   scripts has been misled.
-- Include only the sections this game needs. A single-player obby does not need
-  an economy section. The required ones are concept, core_loop, players, world,
-  systems, networking and persistence.
+- You get at most NINE sections and seven are already required: concept,
+  core_loop, players, world, systems, networking, persistence. That leaves room
+  for exactly two more, so choose the two that matter most to THIS game and drop
+  the rest. A single-player obby does not need an economy section. Padding the
+  list with sections that say nothing specific is worse than omitting them.
 - out_of_scope is not filler. Name the things a creator would reasonably expect
   that version one will not have.
 - first_milestone describes the first playable slice — what will exist and be
@@ -169,7 +171,7 @@ export async function generateBlueprint(params: {
     schema: blueprintSchema,
     instructions: BLUEPRINT_INSTRUCTIONS,
     prompt,
-    maxOutputTokens: 8000,
+    maxOutputTokens: 5000,
   });
 
   const issues = reviewBlueprint(result.object);

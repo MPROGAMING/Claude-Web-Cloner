@@ -55,6 +55,7 @@
   --color-surface-sunken: var(--surface-sunken);
   --color-ember: var(--ember);
   --color-ember-soft: var(--ember-soft);
+  --color-ember-ink: var(--ember-ink);
   --color-signal: var(--signal);
   --color-signal-soft: var(--signal-soft);
   --color-success: var(--success);
@@ -123,6 +124,9 @@
 
   --ember: oklch(0.63 0.168 47);
   --ember-soft: oklch(0.63 0.168 47 / 0.16);
+  /* Foreground for anything sitting on a solid --ember fill. Ember is bright in
+     both themes, so this stays dark in both. */
+  --ember-ink: oklch(0.16 0.008 75);
   --signal: oklch(0.58 0.108 205);
   --signal-soft: oklch(0.58 0.108 205 / 0.14);
 
@@ -181,6 +185,7 @@
 
   --ember: oklch(0.762 0.158 58);
   --ember-soft: oklch(0.762 0.158 58 / 0.18);
+  --ember-ink: oklch(0.16 0.008 75);
   --signal: oklch(0.76 0.115 200);
   --signal-soft: oklch(0.76 0.115 200 / 0.16);
 

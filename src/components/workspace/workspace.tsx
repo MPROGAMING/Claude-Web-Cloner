@@ -19,6 +19,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { toast } from "sonner";
+import { playSound } from "@/lib/sound";
 import { ChatMessage } from "@/components/workspace/chat-message";
 import { ChatComposer } from "@/components/workspace/chat-composer";
 import { GenerationStatus, GenerationSummary } from "@/components/workspace/generation-status";
@@ -118,9 +119,12 @@ export function Workspace({
         }
       },
       onError: (chatError) => {
+        playSound("error");
         toast.error(friendlyError(chatError));
       },
       onFinish: () => {
+        // Tied to the run actually ending, not to a timer.
+        playSound("complete");
         setStatuses([]);
         // The agent wrote files server-side; pull the new tree.
         void refreshFiles();
