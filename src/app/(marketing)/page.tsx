@@ -13,6 +13,7 @@ import { WorkspacePreview } from "@/components/marketing/workspace-preview";
 import { HeroComposer } from "@/components/marketing/hero-composer";
 import { StudBuild } from "@/components/brand/stud-build";
 import { RobloxHeroPair } from "@/components/marketing/roblox-showcase";
+import { DemoShowcase } from "@/components/marketing/demo-showcase";
 import { StudioFlow } from "@/components/marketing/studio-flow";
 import { TemplateStrip } from "@/components/marketing/template-strip";
 import { PricingCards } from "@/components/marketing/pricing-cards";
@@ -58,6 +59,9 @@ export default function LandingPage() {
           <RobloxHeroPair className="mt-10" />
         </div>
       </section>
+
+      {/* Real captured Roblox output, before any product UI. */}
+      <DemoShowcase />
 
       <section className="relative border-t border-border">
         <div className="mx-auto max-w-6xl px-5 py-14 sm:px-8">

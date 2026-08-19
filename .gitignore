@@ -54,3 +54,6 @@ temp/
 # ingestion-manifest, coverage report and step reports) is versioned and the
 # bulk is not.
 docs/roblox-brain/corpus/
+
+# Raw Studio captures are kept out of the repo; the optimised jpgs ship instead.
+public/demos/*.png
