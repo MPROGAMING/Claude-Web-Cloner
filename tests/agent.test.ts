@@ -15,6 +15,7 @@ import {
   finalState,
   invertOperations,
   isExecutable,
+  reviewChangeset,
   toPreview,
   validateChangeset,
 } from "@/lib/agent/changesets";
@@ -25,7 +26,7 @@ import { contextFor, reviewFile, reviewFiles } from "@/lib/agent/security";
 import { decideRepair, validateChangesetFiles, validateFiles } from "@/lib/agent/repair";
 import { planSchema, reviewPlan, planToSteps } from "@/lib/agent/planner";
 import { rankRelevantFiles, renderTree } from "@/lib/agent/context";
-import type { AgentState, Changeset } from "@/lib/agent/types";
+import type { AgentState, ChangeOperation, Changeset } from "@/lib/agent/types";
 
 /**
  * Step 7 — agent layer.
@@ -1162,5 +1163,67 @@ describe("runs always reach a terminal state", () => {
     // And it must be guarded, or a mid-stream error double-writes the row.
     expect(body).toMatch(/if \(runClosed\) return;/);
     expect(route).toMatch(/let runClosed = false;/);
+  });
+});
+
+// ---------------------------------------------------------------------------
+describe("requiring something that is not a module", () => {
+  /**
+   * Straight from a playtest. The agent wrote WardenModule.server.luau and
+   * EntityLoop.server.luau, then required both from MainServer. The suffix
+   * makes them a Script and a LocalScript, which run on their own and cannot be
+   * require()d — so every server script in that build failed to load, and
+   * nothing caught it until someone pressed Play in Studio.
+   *
+   * It is a cross-file property, so the per-file Luau checker structurally
+   * cannot see it; it belongs to change-set review, which has every file.
+   */
+  const op = (path: string, content: string) =>
+    ({ kind: "create", path, content }) as ChangeOperation;
+
+  it("refuses a require of a .server file", () => {
+    const issues = reviewChangeset([
+      op("src/server/WardenModule.server.luau", "local M = {}\nreturn M\n"),
+      op(
+        "src/server/MainServer.server.luau",
+        'local S = game:GetService("ServerScriptService")\n' +
+          'local Warden = require(S:WaitForChild("WardenModule"))\n',
+      ),
+    ]);
+
+    const issue = issues.find((i) => i.rule === "roblox:require-of-script");
+    expect(issue?.severity).toBe("error");
+    expect(issue?.message).toContain("WardenModule");
+    expect(issue?.message).toContain("Script");
+    expect(issue?.message).toContain(".server");
+  });
+
+  it("catches the dotted form as well as WaitForChild", () => {
+    const issues = reviewChangeset([
+      op("src/client/Hud.client.luau", "return {}\n"),
+      op("src/client/Boot.client.luau", "local H = require(script.Parent.Hud)\n"),
+    ]);
+    expect(issues.some((i) => i.rule === "roblox:require-of-script")).toBe(true);
+  });
+
+  it("allows requiring an actual module", () => {
+    const issues = reviewChangeset([
+      op("src/shared/Config.luau", "return { rounds = 6 }\n"),
+      op(
+        "src/server/Main.server.luau",
+        'local RS = game:GetService("ReplicatedStorage")\n' +
+          'local BW = RS:WaitForChild("Blockwright")\n' +
+          'local Config = require(BW:WaitForChild("Config"))\n' +
+          "print(Config.rounds)\n",
+      ),
+    ]);
+    expect(issues.filter((i) => i.rule === "roblox:require-of-script")).toEqual([]);
+  });
+
+  it("does not flag a script requiring itself by coincidence of name", () => {
+    const issues = reviewChangeset([
+      op("src/server/Loop.server.luau", "local x = require(script.Parent.Loop)\n"),
+    ]);
+    expect(issues.filter((i) => i.rule === "roblox:require-of-script")).toEqual([]);
   });
 });

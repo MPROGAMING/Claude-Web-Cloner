@@ -160,10 +160,20 @@ So a module at src/shared/Remotes.luau is required as:
   local Blockwright = ReplicatedStorage:WaitForChild("Blockwright")
   local Remotes = require(Blockwright:WaitForChild("Remotes"))
 
-The trailing .server / .client suffix decides the Instance class and is stripped
-from the name: src/server/EntityLoop.server.luau becomes a Script named
-"EntityLoop". Nested folders under src/<area>/ are flattened, so two files with
-the same basename in different folders collide — give them distinct names.`;
+The trailing .server / .client suffix decides the Instance CLASS, and is stripped
+from the name:
+
+  Foo.server.luau  -> a Script       (runs on its own; CANNOT be require()d)
+  Foo.client.luau  -> a LocalScript  (runs on its own; CANNOT be require()d)
+  Foo.luau         -> a ModuleScript (does nothing until something requires it)
+
+So any file you intend to require must NOT carry .server or .client. Naming a
+module WardenModule.server.luau and then calling require() on it is a runtime
+error, not a style problem — a real build shipped exactly that and every server
+script in it failed to load.
+
+Nested folders under src/<area>/ are flattened, so two files with the same
+basename in different folders collide — give them distinct names.`;
 
   const memoryBlock = ctx.memoryContext ? `\n\n${ctx.memoryContext}\n` : "";
 

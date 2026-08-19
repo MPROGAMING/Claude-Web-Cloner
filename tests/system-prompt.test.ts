@@ -125,3 +125,30 @@ describe("Studio placement is stated, not left to be inferred", () => {
     }
   });
 });
+
+// ---------------------------------------------------------------------------
+describe("the .server suffix decides class, and the prompt says so", () => {
+  /**
+   * The same playtest that found the folder-nesting bug also produced
+   * `WardenModule.server.luau` and `EntityLoop.server.luau` — both required by
+   * MainServer. The suffix makes them Scripts, and a Script cannot be
+   * require()d, so every server script in the build failed to load. The prompt
+   * mentioned the suffix but only as a naming detail, which is not what bites.
+   */
+  it("spells out that a Script cannot be required", () => {
+    const p = buildSystemPrompt({
+      projectName: "Hotel",
+      projectDescription: null,
+      existingFiles: [],
+      studioConnected: true,
+      mode: "preview",
+      classification: "multi_file_implementation",
+      requiresPlan: true,
+      maxSteps: 12,
+    });
+
+    expect(p).toMatch(/CANNOT be require/i);
+    expect(p).toContain("ModuleScript");
+    expect(p).toMatch(/must NOT carry \.server or \.client/i);
+  });
+});

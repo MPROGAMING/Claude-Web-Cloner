@@ -350,6 +350,49 @@ export function reviewChangeset(operations: ChangeOperation[]): ChangesetValidat
     }
   }
 
+  // --- requiring something that is not a module --------------------------
+  // The .server / .client suffix decides the Instance class: those become a
+  // Script and a LocalScript, which run on their own and cannot be require()d.
+  // A real build shipped WardenModule.server.luau and EntityLoop.server.luau
+  // and then required both from MainServer, so every server script in it failed
+  // to load — and nothing caught it until someone pressed Play in Studio.
+  //
+  // Cross-file, so it belongs here rather than in the per-file Luau checker.
+  const standalone = new Map<string, string>();
+  for (const file of files) {
+    if (!/\.luau?$/i.test(file.path)) continue;
+    if (!/\.(server|client)\.luau?$/i.test(file.path)) continue;
+    const base = file.path.split("/").pop()!.replace(/\.(server|client)\.luau?$/i, "");
+    standalone.set(base, file.path);
+  }
+
+  if (standalone.size > 0) {
+    for (const file of files) {
+      if (!/\.luau?$/i.test(file.path)) continue;
+      // The name being required is the last identifier or string in the call —
+      // require(a.b.Name), require(x:WaitForChild("Name")) both end in it.
+      for (const match of file.content.matchAll(/\brequire\s*\(([^)]*)\)/g)) {
+        const inner = match[1];
+        const name =
+          [...inner.matchAll(/["']([A-Za-z_]\w*)["']/g)].pop()?.[1] ??
+          [...inner.matchAll(/\.([A-Za-z_]\w*)/g)].pop()?.[1];
+        if (!name) continue;
+        const target = standalone.get(name);
+        if (!target || target === file.path) continue;
+        issues.push({
+          severity: "error",
+          rule: "roblox:require-of-script",
+          message:
+            `${file.path} requires "${name}", but ${target} is a ` +
+            `${/\.server\./i.test(target) ? "Script" : "LocalScript"} — ` +
+            `only a ModuleScript can be required. Drop the ` +
+            `${/\.server\./i.test(target) ? ".server" : ".client"} suffix to make it a module.`,
+          path: file.path,
+        });
+      }
+    }
+  }
+
   for (const finding of reviewFiles(files).findings) {
     if (finding.severity !== "error") continue;
     issues.push({
