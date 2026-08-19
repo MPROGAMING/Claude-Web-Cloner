@@ -33,7 +33,7 @@ export function ModelWall({ className }: { className?: string }) {
                   <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
                     {model.description}
                   </p>
-                  <p className="mt-1.5 font-mono text-[0.625rem] text-muted-foreground/70">
+                  <p className="mt-1.5 font-mono text-[0.625rem] text-muted-foreground">
                     {PROVIDER_LABEL[model.provider]} · {(model.contextWindow / 1000).toFixed(0)}k context
                   </p>
                 </li>

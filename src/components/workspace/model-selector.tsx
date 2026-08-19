@@ -116,7 +116,7 @@ function ModelRow({
           <span className="truncate text-[0.8125rem] font-medium">{model.name}</span>
 
           {model.free ? (
-            <span className="shrink-0 rounded border border-[var(--success)]/40 bg-[var(--success)]/12 px-1 py-px font-mono text-[0.5625rem] font-semibold uppercase tracking-wider text-[var(--success)]">
+            <span className="shrink-0 rounded border border-[var(--success)]/40 bg-[var(--success)]/12 px-1 py-px font-mono text-[0.5625rem] font-semibold uppercase tracking-wider text-[var(--success-ink)]">
               Free
             </span>
           ) : null}
@@ -278,7 +278,7 @@ export function ModelSelector({
             <ProviderMark brand={selected.brand} size="sm" />
             <span className="truncate">{selected.name}</span>
             {selected.free && (
-              <span className="shrink-0 rounded bg-[var(--success)]/15 px-1 font-mono text-[0.5625rem] font-semibold uppercase text-[var(--success)]">
+              <span className="shrink-0 rounded bg-[var(--success)]/15 px-1 font-mono text-[0.5625rem] font-semibold uppercase text-[var(--success-ink)]">
                 Free
               </span>
             )}

@@ -315,7 +315,7 @@ export const ChatMessage = memo(function ChatMessage({
             type="button"
             onClick={copy}
             aria-label="Copy response"
-            className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-ember"
+            className="tap-target flex items-center justify-center rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-ember"
           >
             {copied ? (
               <Check className="size-3.5 text-[var(--success)]" />
@@ -329,14 +329,14 @@ export const ChatMessage = memo(function ChatMessage({
               type="button"
               onClick={onRetry}
               aria-label="Regenerate response"
-              className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-ember"
+              className="tap-target flex items-center justify-center rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-ember"
             >
               <RotateCcw className="size-3.5" />
             </button>
           )}
 
           {modelName && (
-            <span className="ml-1 font-mono text-[0.625rem] text-muted-foreground/60">
+            <span className="ml-1 font-mono text-[0.625rem] text-muted-foreground">
               {modelName}
             </span>
           )}

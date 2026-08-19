@@ -109,6 +109,17 @@ Compose with the `render` prop, not `asChild`.
 warning. If you hit it, the state is almost certainly derived; use `useMemo`,
 a lazy initial value, or move the write into the callback that learns the news.
 
+**Colour tokens are not interchangeable with their inks.** `--success`,
+`--warning` and `--danger` are tuned to read against the *page*. Put one on a
+10% wash of itself — the badge pattern — and it drops to 2.5–3.4:1. Text on a
+tint uses `--success-ink` / `--warning-ink` / `--danger-ink`; the fill keeps the
+base token. This was invisible for a while because `npm run a11y` parsed colours
+with an `rgba()` regex, and every Tailwind opacity modifier on an oklch token
+computes as `oklab(...)` — so most of the palette was skipped rather than
+checked. The audit resolves colours through a canvas now and composites
+translucent layers, which is why it suddenly has opinions it did not have
+before.
+
 ## Code style
 
 - TypeScript strict, no `any`.
@@ -150,6 +161,7 @@ src/
     (app)/         dashboard, projects, templates, activity, credits, settings
     api/           chat, studio/{pair,poll,status}, projects/[id]/files,
                    notifications/{,read}
+                   agent/changesets/[id]/{approve,apply,undo,diff}
   components/      ui/ (shadcn) · app/ · marketing/ · workspace/ · brand/
   lib/
     ai/            registry, providers, tools, system-prompt, types
@@ -157,6 +169,9 @@ src/
     memory/        facts (pure) · service (server) · tool
     notifications/ events (pure) · service (server) · announced (client)
     roblox/        project-model, luau-validator
+    diff.ts        Myers line/token diff (no dependency)
+    editor/        luau-editing (Tab/Enter/comment rules) · fuzzy (go-to-file)
+    roblox/        project-model, luau-validator, luau-highlight
     studio/        protocol, service, liveness
     supabase/      client, server, admin, types
     actions/       server actions

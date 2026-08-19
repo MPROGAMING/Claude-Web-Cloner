@@ -112,7 +112,7 @@ export default function PricingPage() {
               ) : (
                 <Minus className="mt-0.5 size-3.5 shrink-0 text-muted-foreground/50" />
               )}
-              <span className={item.included ? "text-muted-foreground" : "text-muted-foreground/60"}>
+              <span className="text-muted-foreground">
                 {item.text}
               </span>
             </li>

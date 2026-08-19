@@ -2,10 +2,21 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { AlertTriangle, Check, FilePlus2, FilePen, FileX2, Loader2, MoveRight, Undo2 } from "lucide-react";
+import {
+  AlertTriangle,
+  Check,
+  FileDiff,
+  FilePlus2,
+  FilePen,
+  FileX2,
+  Loader2,
+  MoveRight,
+  Undo2,
+} from "lucide-react";
 import { toast } from "sonner";
 import { playSound } from "@/lib/sound";
 import { Button } from "@/components/ui/button";
+import { ChangesetReview } from "@/components/workspace/changeset-review";
 import type { ChangesetData } from "@/lib/ai/types";
 import { cn } from "@/lib/utils";
 
@@ -41,6 +52,7 @@ export function ChangesetCard({ changeset }: { changeset: ChangesetData }) {
   const [phase, setPhase] = useState<Phase>(
     changeset.status === "applied" ? "applied" : "idle",
   );
+  const [reviewing, setReviewing] = useState(false);
 
   const blocking = changeset.issues.filter((issue) => issue.severity === "error");
   const busy = phase === "approving" || phase === "applying" || phase === "undoing";
@@ -111,17 +123,25 @@ export function ChangesetCard({ changeset }: { changeset: ChangesetData }) {
         {changeset.operations.map((op) => {
           const Icon = ICONS[op.kind];
           return (
-            <li key={`${op.kind}-${op.path}`} className="flex items-center gap-2 px-3 py-1.5">
-              <Icon className={cn("size-3 shrink-0", TONE[op.kind])} />
-              <code className="truncate text-[0.72rem]">{op.path}</code>
-              {op.toPath && (
-                <code className="truncate text-[0.72rem] text-muted-foreground">→ {op.toPath}</code>
-              )}
-              {op.validation && op.validation.errors > 0 && (
-                <span className="ml-auto shrink-0 text-[0.7rem] text-[var(--danger)]">
-                  {op.validation.errors} error{op.validation.errors === 1 ? "" : "s"}
-                </span>
-              )}
+            <li key={`${op.kind}-${op.path}`}>
+              {/* The row is the way into the diff: a summary that cannot be
+                  opened teaches people to approve without reading. */}
+              <button
+                type="button"
+                onClick={() => setReviewing(true)}
+                className="tap-row flex w-full items-center gap-2 px-3 py-1.5 text-left transition-colors hover:bg-accent/50 focus-ember"
+              >
+                <Icon className={cn("size-3 shrink-0", TONE[op.kind])} />
+                <code className="truncate text-[0.72rem]">{op.path}</code>
+                {op.toPath && (
+                  <code className="truncate text-[0.72rem] text-muted-foreground">→ {op.toPath}</code>
+                )}
+                {op.validation && op.validation.errors > 0 && (
+                  <span className="ml-auto shrink-0 text-[0.7rem] text-[var(--danger)]">
+                    {op.validation.errors} error{op.validation.errors === 1 ? "" : "s"}
+                  </span>
+                )}
+              </button>
             </li>
           );
         })}
@@ -141,7 +161,12 @@ export function ChangesetCard({ changeset }: { changeset: ChangesetData }) {
         </div>
       )}
 
-      <div className="flex items-center gap-2 border-t border-border px-3 py-2">
+      <div className="flex flex-wrap items-center gap-2 border-t border-border px-3 py-2">
+        <Button size="sm" variant="outline" onClick={() => setReviewing(true)}>
+          <FileDiff className="size-3" />
+          Review changes
+        </Button>
+
         {phase === "applied" || phase === "undoing" ? (
           <Button size="sm" variant="ghost" onClick={undo} disabled={busy}>
             {phase === "undoing" ? (
@@ -169,6 +194,16 @@ export function ChangesetCard({ changeset }: { changeset: ChangesetData }) {
           </>
         )}
       </div>
+
+      {reviewing && (
+        <ChangesetReview
+          changeset={changeset}
+          onClose={() => setReviewing(false)}
+          onApprove={approveAndApply}
+          busy={busy}
+          applied={phase === "applied" || phase === "undone"}
+        />
+      )}
     </div>
   );
 }

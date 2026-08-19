@@ -60,7 +60,12 @@ export function TemplateCard({
         <span
           className="absolute left-2.5 top-2.5 rounded-md border px-1.5 py-0.5 font-mono text-[0.5625rem] uppercase tracking-[0.1em] backdrop-blur-sm"
           style={{
-            color: accent,
+            // Mixed toward the page ink rather than used raw. The accents are
+            // chosen to look right as a gradient, and the darkest of them
+            // (horror, oklch 0.5) reads 3.0:1 as 9px text. Mixing keeps each
+            // template's hue and lets the theme supply the lightness the label
+            // needs.
+            color: `color-mix(in oklch, ${accent} 55%, var(--foreground))`,
             borderColor: `color-mix(in oklch, ${accent} 35%, transparent)`,
             backgroundColor: "color-mix(in oklch, var(--background) 62%, transparent)",
           }}
