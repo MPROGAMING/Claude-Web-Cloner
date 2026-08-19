@@ -59,6 +59,9 @@
   --color-signal: var(--signal);
   --color-signal-soft: var(--signal-soft);
   --color-success: var(--success);
+  --color-success-ink: var(--success-ink);
+  --color-warning-ink: var(--warning-ink);
+  --color-danger-ink: var(--danger-ink);
   --color-warning: var(--warning);
   --color-danger: var(--danger);
   --color-hairline: var(--hairline);
@@ -155,6 +158,34 @@
   --sidebar-accent-foreground: oklch(0.24 0.01 75);
   --sidebar-border: oklch(0.912 0.005 85);
   --sidebar-ring: var(--ring);
+
+  /* Diff. Green/red is the one convention a reader arrives already knowing, so
+     these are derived from --success and --danger rather than invented — but
+     they are named separately because a removed line is not an error, and a
+     future change to the error red must not repaint the diff. */
+  /* Ink for text sitting on a tint of its own colour. The fills are tuned to
+     read against the page; on a 10% wash of themselves they fall to 2.5–3.4:1,
+     which is how a yellow credit badge audited as fine and was unreadable. Use
+     `--x-ink` for the text and `--x` for the fill, never one for both. */
+  --success-ink: oklch(0.45 0.14 152);
+  --warning-ink: oklch(0.5 0.13 76);
+  --danger-ink: oklch(0.48 0.2 26);
+
+  --diff-add-bg: oklch(0.58 0.128 152 / 0.12);
+  --diff-add-strong: oklch(0.58 0.128 152 / 0.26);
+  --diff-add-ink: oklch(0.46 0.13 152);
+  --diff-remove-bg: oklch(0.575 0.212 26 / 0.1);
+  --diff-remove-strong: oklch(0.575 0.212 26 / 0.22);
+  --diff-remove-ink: oklch(0.47 0.19 26);
+  /* The line the caret is on. Value, not colour — it must not compete with a
+     diff tint or a diagnostic row sharing the same gutter. */
+  --editor-active-line: oklch(0.19 0.008 75 / 0.05);
+
+  /* One line box in the editor. The gutter, the row tints and the highlighted
+     code are three separate stacks that must agree to the pixel, and they do
+     not all sit inside `.code-type` — so this lives at the root where every
+     layer can reach it. */
+  --code-line: 1.2rem;
 }
 
 /* ---------- Dark theme (product default) ---------- */
@@ -214,6 +245,18 @@
   --sidebar-accent-foreground: oklch(0.96 0.004 85);
   --sidebar-border: oklch(1 0 0 / 0.075);
   --sidebar-ring: var(--ring);
+
+  --success-ink: oklch(0.82 0.14 155);
+  --warning-ink: oklch(0.85 0.14 80);
+  --danger-ink: oklch(0.76 0.17 24);
+
+  --diff-add-bg: oklch(0.74 0.14 155 / 0.13);
+  --diff-add-strong: oklch(0.74 0.14 155 / 0.28);
+  --diff-add-ink: oklch(0.79 0.13 155);
+  --diff-remove-bg: oklch(0.68 0.185 24 / 0.13);
+  --diff-remove-strong: oklch(0.68 0.185 24 / 0.3);
+  --diff-remove-ink: oklch(0.78 0.15 24);
+  --editor-active-line: oklch(1 0 0 / 0.045);
 }
 
 @layer base {
@@ -336,6 +379,21 @@
     @media (pointer: coarse) {
       min-height: 2.75rem;
     }
+  }
+
+  /* The one code metric. The editor paints a highlighted layer directly behind
+     a transparent textarea, and the diff paints a change tint behind syntax
+     colour, so every layer must lay characters out identically — one class,
+     applied to all of them, is the only way that stays true. Ligatures off for
+     the same reason: an `!=` drawn as one glyph is one glyph wide in the layer
+     that has them and two in the layer that does not. */
+  .code-type {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    line-height: var(--code-line);
+    tab-size: 2;
+    font-variant-ligatures: none;
+    font-feature-settings: "liga" 0, "calt" 0;
   }
 
   /* Cards that lift on hover. One class so the timing never drifts between

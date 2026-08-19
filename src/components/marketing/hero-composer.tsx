@@ -93,7 +93,7 @@ export function HeroComposer() {
         />
 
         <div className="absolute inset-x-3 bottom-3 flex items-center gap-3">
-          <span className="hidden font-mono text-[0.6875rem] text-muted-foreground/70 sm:inline">
+          <span className="hidden font-mono text-[0.6875rem] text-muted-foreground sm:inline">
             Enter to start · Shift + Enter for a new line
           </span>
 

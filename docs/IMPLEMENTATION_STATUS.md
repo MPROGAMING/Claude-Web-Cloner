@@ -1,6 +1,6 @@
 # Implementation status
 
-Last updated: 2026-08-19 · v0.4.0
+Last updated: 2026-08-19 · v0.5.0
 Supabase project: `Blockwright` (`joqttyltdbbwebtwbabh`, ap-southeast-2, Postgres 17)
 
 ## Model catalog verification (2026-08-18)
@@ -222,6 +222,7 @@ parts. Credit balance counts rather than snaps. All reduced-motion aware.
 | Dashboard / projects / templates / activity / credits / settings | **Verified live** |
 | Project CRUD, duplicate, archive | Done (create verified live) |
 | Workspace (3-pane, collapsible, mobile sheets) | **Verified live** |
+| Code editor: tabs, editing, diff, go-to-file | **Verified live** — see "Workspace editor" |
 | Model registry + selector | **Verified live** — sections, search, logos, live free tier |
 | OpenRouter provider | **Verified live** — catalog and generation both |
 | Dynamic free discovery | **Verified live** — 14 models fetched and merged |
@@ -271,8 +272,13 @@ Sign In / Providers → Confirm email.
   "Database error querying schema". Set them to `''` and add an
   `auth.identities` row. Prefer the signup API.
 - **Conversation history capped at 200 messages** in `/api/chat`.
-- **No diff view yet** — `file_revisions` already stores what it needs.
 - **Composer attachments disabled** with a tooltip.
+- **Light-theme contrast backlog.** `npm run a11y` could not see most of the
+  palette until its colour parser was fixed (below). The workspace, marketing,
+  dashboard, templates, credits and settings routes are clean in both themes;
+  `/pricing` ("Most credits per dollar" 3.59:1, "Default" 3.19:1), `/templates`
+  (the count pill, 3.19:1) and `/activity` ("Needs approval", 3.32:1) still fail
+  in light at 9–11px, and `/projects` has a pre-existing H1 → H3 heading jump.
 - The `(app)` loading skeleton is dashboard-shaped and also shows for the
   workspace route, which is a brief visual mismatch.
 
@@ -280,6 +286,75 @@ Sign In / Providers → Confirm email.
 
 1. Run the Studio plugin cycle inside a real place — the last unverified path.
 2. Enable leaked-password protection in the Supabase dashboard.
-3. Diff view in the code panel using `file_revisions`.
+3. Clear the light-theme contrast backlog listed under Known gaps.
 4. Conversation summarisation past ~150 messages.
 5. Stripe checkout behind the existing `CREDIT_PACKS` interface.
+
+## Workspace editor (2026-08-19)
+
+The code panel is an editor now, not a viewer. Four pieces, each judgeable on
+its own:
+
+**Diff.** `lib/diff.ts` is a Myers O(ND) line diff with hunking, side-by-side
+pairing and word-level spans inside a changed line. No dependency: the whole
+thing is one shortest-edit search, and a diff library would arrive with a
+renderer, a patch parser and a merge engine nothing here calls.
+`GET /api/agent/changesets/[id]/diff` serves the exact stored content and the
+exact staged content — `toPreview()` still omits content, because a change
+*summary* does not need it, but an approval does. "Review changes" opens the
+diff, the file list, and the approve control in one frame.
+
+**Editing.** `lib/actions/files.ts` adds `saveFile` and `createFile`. A
+user-supplied path is no more trusted than a model-supplied one, so both go
+through `validateProjectPath`; the previous content is snapshotted into
+`file_revisions` before the write, and the write is conditional on the revision
+the editor had open, so a generation landing mid-edit reports a conflict instead
+of eating the edit.
+
+**Editor quality.** Line numbers, current-line, in-file search with match
+stepping, live Luau diagnostics on the *draft*, and Luau-aware keys: Tab to the
+next stop or over a block, Enter carrying indentation and adding a level after
+`then`/`do`/`function`/`repeat`/`{`, auto-dedent when a line becomes `end` /
+`else` / `until`, `⌘/` to comment, `⌥↑/↓` to move lines, `⌘S` to save. The rules
+are pure functions in `lib/editor/luau-editing.ts` and tested as string
+transformations.
+
+**Multi-file.** Tabs with per-tab dirty state and drafts that survive switching,
+`⌥←/→` between them, and `⌘P` go-to-file with subsequence matching. The panel
+expands to `min(52rem, 55vw)` so a nine-file change set is not reviewed through
+a 22rem slot.
+
+### Measured
+
+- **+10.1 KB gzipped** to the client bundle (623,635 → 634,009 B over 39
+  chunks), for the editor, the diff, the tokeniser, the edit rules, tabs and
+  go-to-file. CodeMirror 6 is 125.6 KB gzipped before a Lua grammar; Monaco is
+  852 KB plus a 44 KB icon font (bundlephobia, measured 2026-08-19).
+- **78 new tests** across `diff`, `luau-editing`, `luau-highlight`,
+  `file-actions` and `fuzzy`; suite now 397 across 19 files.
+- Diffing a 2,000-line file with two changed lines: **under 150 ms**, pinned by
+  a test. Past a 4,000-edit bound the diff says so and falls back to a wholesale
+  replace rather than chasing a quadratic answer nobody can read.
+
+### The highlighter moved, and got a lexer's memory
+
+`lib/roblox/luau-highlight.ts` is the tokeniser lifted out of the old
+`code-viewer.tsx`. Its test used to rebuild the patterns by reading the
+component's source, because the function was private to a client component; it
+imports the module now. It also tokenises the whole buffer and splits tokens
+across lines afterwards, rather than restarting per line — `--[[` and `[[` run
+past a newline, and a highlighter restarted on every line cannot see that it is
+still inside one.
+
+### The accessibility audit had a blind spot
+
+`scripts/a11y.mjs` parsed colours with an `rgba()` regex. Every Tailwind opacity
+modifier on an oklch token (`text-muted-foreground/45`) computes as
+`oklab(...)`, which the regex did not match — so `parse()` returned null and the
+check skipped the element silently. A 2.29:1 line-number gutter and a 2.55:1
+credit badge both audited as clean.
+
+Colours resolve through a canvas now, and translucent text and stacked
+translucent surfaces are composited rather than treated as opaque. That found
+six real contrast failures on the workspace and marketing routes, all fixed, and
+the backlog above.

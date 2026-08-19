@@ -189,11 +189,33 @@ const AUDIT = function () {
   }
 
   // --- contrast ------------------------------------------------------------
+  // Resolved through a 1x1 canvas rather than a regex. Every colour in this
+  // design system is authored in oklch, and the moment an opacity modifier is
+  // applied (`text-muted-foreground/45`) Chrome computes it as `oklab(...)` —
+  // which an `rgba()` regex does not match, so the check silently skipped it
+  // and returned null. That blind spot covered most of the palette: a 2.29:1
+  // line-number gutter audited as clean because its colour was never parsed.
+  const swatch = document.createElement("canvas");
+  swatch.width = swatch.height = 1;
+  const swatchCtx = swatch.getContext("2d", { willReadFrequently: true });
+  const parseCache = new Map();
   const parse = (c) => {
-    const m = String(c).match(/rgba?\(([^)]+)\)/);
-    if (!m) return null;
-    const p = m[1].split(/[\s,\/]+/).filter(Boolean).map(Number);
-    return { r: p[0], g: p[1], b: p[2], a: p[3] === undefined ? 1 : p[3] };
+    const key = String(c);
+    if (parseCache.has(key)) return parseCache.get(key);
+    let value = null;
+    if (key && key !== "none") {
+      swatchCtx.clearRect(0, 0, 1, 1);
+      swatchCtx.fillStyle = "#000";
+      swatchCtx.fillStyle = key;
+      // An unparseable value leaves fillStyle at the previous colour, so a
+      // second probe against a different base tells us whether it took.
+      swatchCtx.fillRect(0, 0, 1, 1);
+      const [r, g, b, a] = swatchCtx.getImageData(0, 0, 1, 1).data;
+      // Canvas premultiplies, so recover the unmultiplied channels.
+      value = a === 0 ? { r: 0, g: 0, b: 0, a: 0 } : { r, g, b, a: a / 255 };
+    }
+    parseCache.set(key, value);
+    return value;
   };
   const lin = (v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; };
   const lum = (c) => 0.2126 * lin(c.r) + 0.7152 * lin(c.g) + 0.0722 * lin(c.b);
@@ -201,14 +223,30 @@ const AUDIT = function () {
 
   // The design layers translucent surfaces, so the immediate parent is usually
   // transparent; walk up to the first thing that actually paints.
+  const over = (fg, bg) => ({
+    r: fg.r * fg.a + bg.r * (1 - fg.a),
+    g: fg.g * fg.a + bg.g * (1 - fg.a),
+    b: fg.b * fg.a + bg.b * (1 - fg.a),
+    a: 1,
+  });
+
   const bgOf = (el) => {
+    // Collect every translucent layer down to the first opaque one, then
+    // composite them. Stopping at the first layer over 85% alpha treated a
+    // stack of tints as if only the last one existed.
+    const layers = [];
     let n = el;
     while (n && n !== document.documentElement) {
       const c = parse(getComputedStyle(n).backgroundColor);
-      if (c && c.a > 0.85) return c;
+      if (c && c.a > 0) {
+        layers.push(c);
+        if (c.a >= 0.999) break;
+      }
       n = n.parentElement;
     }
-    return parse(getComputedStyle(document.body).backgroundColor) || { r: 0, g: 0, b: 0, a: 1 };
+    const base = parse(getComputedStyle(document.body).backgroundColor) || { r: 0, g: 0, b: 0, a: 1 };
+    if (!layers.length || layers[layers.length - 1].a < 0.999) layers.push({ ...base, a: 1 });
+    return layers.reduceRight((acc, layer) => over(layer, acc), { r: 0, g: 0, b: 0, a: 1 });
   };
 
   for (const el of document.querySelectorAll("p,span,a,h1,h2,h3,h4,h5,li,button,dt,dd,figcaption,label,td,th")) {
@@ -224,7 +262,9 @@ const AUDIT = function () {
     const size = parseFloat(cs.fontSize);
     const large = size >= 24 || (size >= 18.66 && +cs.fontWeight >= 700);
     const need = large ? 3 : 4.5;
-    const got = ratio(fg, bgOf(el));
+    const behind = bgOf(el);
+    // Translucent text is its colour over the background, not its colour.
+    const got = ratio(fg.a < 1 ? over(fg, behind) : fg, behind);
     if (got < need) {
       add("contrast", `${got.toFixed(2)}:1 needs ${need}:1 — "${text.slice(0, 44)}" @ ${size.toFixed(0)}px`, el);
     }

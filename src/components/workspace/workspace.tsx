@@ -24,7 +24,8 @@ import { ChatMessage } from "@/components/workspace/chat-message";
 import { ChatComposer } from "@/components/workspace/chat-composer";
 import { GenerationStatus, GenerationSummary } from "@/components/workspace/generation-status";
 import { FileTree } from "@/components/workspace/file-tree";
-import { CodeViewer } from "@/components/workspace/code-viewer";
+import { CodePanel, type DraftState } from "@/components/workspace/code-panel";
+import { FileQuickOpen } from "@/components/workspace/file-quick-open";
 import { StudioPanel } from "@/components/workspace/studio-panel";
 import { BlueprintDialog } from "@/components/blueprint/blueprint-dialog";
 import type { Blueprint, BlueprintIssue } from "@/lib/blueprint/schema";
@@ -84,7 +85,16 @@ export function Workspace({
   const [modelId, setModelId] = useState(project.model_id);
   const [files, setFiles] = useState(initialFiles);
   const [activePath, setActivePath] = useState<string | undefined>(files[0]?.path);
+  // Tabs, in the order they were opened. The first file is open on arrival so
+  // the panel is never a blank rectangle next to a project full of code.
+  const [openPaths, setOpenPaths] = useState<string[]>(files[0] ? [files[0].path] : []);
   const [panelOpen, setPanelOpen] = useState(true);
+  const [codeExpanded, setCodeExpanded] = useState(false);
+  // Unsaved edits live here rather than in the code panel: two panels are
+  // mounted below `xl` (the side panel and the mobile sheet) and typing must
+  // survive closing the sheet.
+  const [drafts, setDrafts] = useState<Record<string, string>>({});
+  const [savedContent, setSavedContent] = useState<Record<string, string>>({});
   const [mobilePanel, setMobilePanel] = useState<"files" | "studio" | null>(null);
   const [statuses, setStatuses] = useState<StatusData[]>([]);
   const [atBottom, setAtBottom] = useState(true);
@@ -134,16 +144,54 @@ export function Workspace({
 
   const busy = status === "submitted" || status === "streaming";
 
+  const openFile = useCallback((path: string) => {
+    setOpenPaths((current) => (current.includes(path) ? current : [...current, path]));
+    setActivePath(path);
+  }, []);
+
+  const draftState: DraftState = useMemo(
+    () => ({
+      drafts,
+      saved: savedContent,
+      onDraftChange: (path, content) =>
+        setDrafts((current) => ({ ...current, [path]: content })),
+      onDraftDiscard: (path) =>
+        setDrafts((current) => {
+          const next = { ...current };
+          delete next[path];
+          return next;
+        }),
+      onSaved: (path, content) =>
+        setSavedContent((current) => ({ ...current, [path]: content })),
+    }),
+    [drafts, savedContent],
+  );
+
+  const closeFile = useCallback(
+    (path: string) => {
+      const index = openPaths.indexOf(path);
+      const next = openPaths.filter((open) => open !== path);
+      setOpenPaths(next);
+      // Fall to the neighbour on the left, which is where the eye already is.
+      if (activePath === path) setActivePath(next[Math.max(0, index - 1)]);
+    },
+    [openPaths, activePath],
+  );
+
   const refreshFiles = useCallback(async () => {
     try {
       const response = await fetch(`/api/projects/${project.id}/files`, { cache: "no-store" });
       if (!response.ok) return;
       const data: { files: ProjectFile[] } = await response.json();
       setFiles(data.files);
+
+      const paths = new Set(data.files.map((file) => file.path));
+      setOpenPaths((current) => {
+        const surviving = current.filter((path) => paths.has(path));
+        return surviving.length ? surviving : data.files[0] ? [data.files[0].path] : [];
+      });
       setActivePath((current) =>
-        current && data.files.some((f) => f.path === current)
-          ? current
-          : (data.files[0]?.path ?? undefined),
+        current && paths.has(current) ? current : (data.files[0]?.path ?? undefined),
       );
     } catch {
       // Non-fatal: the tree refreshes again on the next turn.
@@ -165,11 +213,6 @@ export function Workspace({
     const distance = node.scrollHeight - node.scrollTop - node.clientHeight;
     setAtBottom(distance < 80);
   };
-
-  const activeFile = useMemo(
-    () => files.find((file) => file.path === activePath),
-    [files, activePath],
-  );
 
   // Which files this turn touched, derived from the streamed artifact parts
   // rather than mirrored into state — there is nothing to synchronise here.
@@ -219,7 +262,7 @@ export function Workspace({
         <Link
           href="/projects"
           aria-label="Back to projects"
-          className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-ember"
+          className="tap-target flex items-center justify-center rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-ember"
         >
           <ArrowLeft className="size-4" />
         </Link>
@@ -247,7 +290,7 @@ export function Workspace({
               // Roblox creators use.
               aria-label={blueprint?.approved ? "Open the approved game plan" : "Plan the game"}
               className={cn(
-                "flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-[0.75rem] font-medium transition-colors focus-ember",
+                "tap-target flex items-center justify-center gap-1.5 rounded-md border px-2.5 py-1.5 text-[0.75rem] font-medium transition-colors focus-ember",
                 blueprint?.approved
                   ? "border-[var(--success)]/30 bg-[var(--success)]/10 text-[var(--success)] hover:bg-[var(--success)]/15"
                   : "border-border text-muted-foreground hover:bg-accent hover:text-foreground",
@@ -271,7 +314,7 @@ export function Workspace({
           type="button"
           onClick={() => setMobilePanel(mobilePanel === "files" ? null : "files")}
           aria-label="Toggle files"
-          className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground lg:hidden focus-ember"
+          className="tap-target flex items-center justify-center rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground lg:hidden focus-ember"
         >
           <Files className="size-4" />
         </button>
@@ -279,7 +322,7 @@ export function Workspace({
           type="button"
           onClick={() => setMobilePanel(mobilePanel === "studio" ? null : "studio")}
           aria-label="Toggle Studio panel"
-          className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground lg:hidden focus-ember"
+          className="tap-target flex items-center justify-center rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground lg:hidden focus-ember"
         >
           <Plug2 className="size-4" />
         </button>
@@ -315,7 +358,7 @@ export function Workspace({
           <FileTree
             files={files}
             activePath={activePath}
-            onSelect={setActivePath}
+            onSelect={openFile}
             changedPaths={changedPaths}
           />
         </aside>
@@ -414,10 +457,14 @@ export function Workspace({
           />
         </main>
 
-        {/* context panel */}
+        {/* context panel. Expanding it takes width from the conversation rather
+            than floating over it, so the tree, the tabs and the code stay in
+            one continuous surface — reviewing nine files in a 22rem column is
+            the thing that makes people stop reading. */}
         <aside
           className={cn(
-            "hidden w-[22rem] shrink-0 flex-col border-l border-border bg-sidebar xl:flex",
+            "hidden shrink-0 flex-col border-l border-border bg-sidebar xl:flex",
+            codeExpanded ? "w-[min(52rem,55vw)]" : "w-[22rem]",
             !panelOpen && "xl:hidden",
           )}
         >
@@ -428,13 +475,20 @@ export function Workspace({
             </TabsList>
 
             <TabsContent value="code" className="min-h-0 flex-1 overflow-hidden">
-              {activeFile ? (
-                <CodeViewer file={activeFile} />
-              ) : (
-                <p className="p-6 text-center text-[0.8125rem] text-muted-foreground">
-                  No file selected. Generated scripts appear in the tree on the left.
-                </p>
-              )}
+              <CodePanel
+                projectId={project.id}
+                files={files}
+                openPaths={openPaths}
+                activePath={activePath}
+                onOpen={openFile}
+                onClosePath={closeFile}
+                onFilesChanged={refreshFiles}
+                changedPaths={changedPaths}
+                draftState={draftState}
+                bindKeys={mobilePanel !== "files"}
+                expanded={codeExpanded}
+                onToggleExpand={() => setCodeExpanded((value) => !value)}
+              />
             </TabsContent>
 
             <TabsContent value="studio" className="min-h-0 flex-1 overflow-y-auto">
@@ -443,6 +497,8 @@ export function Workspace({
           </Tabs>
         </aside>
       </div>
+
+      <FileQuickOpen files={files} onSelect={openFile} />
 
       {/* ---- mobile overlays ---- */}
       {mobilePanel && (
@@ -455,29 +511,43 @@ export function Workspace({
           />
           <div className="absolute inset-y-0 right-0 flex w-[min(22rem,88vw)] flex-col border-l border-border bg-surface shadow-[var(--shadow-overlay)]">
             {mobilePanel === "files" ? (
-              activeFile && files.length > 0 ? (
+              files.length > 0 ? (
                 <Tabs defaultValue="tree" className="flex min-h-0 flex-1 flex-col gap-0">
                   <TabsList className="m-2 shrink-0">
-                    <TabsTrigger value="tree">Files</TabsTrigger>
-                    <TabsTrigger value="code">Code</TabsTrigger>
+                    <TabsTrigger value="tree" className="tap-target">
+                      Files
+                    </TabsTrigger>
+                    <TabsTrigger value="code" className="tap-target">
+                      Code
+                    </TabsTrigger>
                   </TabsList>
                   <TabsContent value="tree" className="min-h-0 flex-1 overflow-hidden">
                     <FileTree
                       files={files}
                       activePath={activePath}
-                      onSelect={setActivePath}
+                      onSelect={openFile}
                       changedPaths={changedPaths}
                     />
                   </TabsContent>
                   <TabsContent value="code" className="min-h-0 flex-1 overflow-hidden">
-                    <CodeViewer file={activeFile} />
+                    <CodePanel
+                      projectId={project.id}
+                      files={files}
+                      openPaths={openPaths}
+                      activePath={activePath}
+                      onOpen={openFile}
+                      onClosePath={closeFile}
+                      onFilesChanged={refreshFiles}
+                      changedPaths={changedPaths}
+                      draftState={draftState}
+                    />
                   </TabsContent>
                 </Tabs>
               ) : (
                 <FileTree
                   files={files}
                   activePath={activePath}
-                  onSelect={setActivePath}
+                  onSelect={openFile}
                   changedPaths={changedPaths}
                 />
               )

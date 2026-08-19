@@ -26,9 +26,9 @@ export function CreditBadge({ balance, className }: { balance: number; className
               tone === "normal" &&
                 "border-border bg-surface text-foreground hover:bg-accent",
               tone === "low" &&
-                "border-[var(--warning)]/35 bg-[var(--warning)]/10 text-[var(--warning)]",
+                "border-[var(--warning)]/35 bg-[var(--warning)]/10 text-[var(--warning-ink)]",
               tone === "critical" &&
-                "border-[var(--danger)]/40 bg-[var(--danger)]/10 text-[var(--danger)]",
+                "border-[var(--danger)]/40 bg-[var(--danger)]/10 text-[var(--danger-ink)]",
               className,
             )}
           >

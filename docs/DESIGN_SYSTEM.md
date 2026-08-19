@@ -46,6 +46,31 @@ Use `bg-surface`, `bg-surface-sunken`, `bg-surface-raised`.
 
 Reference as `text-[var(--ember)]`, `border-[var(--signal)]/35`, etc.
 
+### Inks
+
+`--success-ink`, `--warning-ink`, `--danger-ink` are for **text sitting on a
+tint of its own colour** — the badge pattern, `bg-[var(--warning)]/10` with a
+label inside it.
+
+The base tokens are tuned to read against the page. On a 10% wash of themselves
+they fall to 2.5–3.4:1, which is how a yellow "low credits" badge shipped
+unreadable in the light theme. Use the ink for the text and the base token for
+the fill and border; never one for both.
+
+### Diff
+
+`--diff-add-bg` / `--diff-add-strong` / `--diff-add-ink` and the `remove`
+equivalents. Derived from `--success` and `--danger` but named separately,
+because a removed line is not an error — a future change to the error red must
+not repaint the diff. `-strong` is the intra-line emphasis, painted as a
+background layer *behind* the syntax colour so the two never fight over the same
+text.
+
+`--editor-active-line` is a value shift, not a colour, so it does not compete
+with a diff tint or a diagnostic row in the same gutter. `--code-line` is the
+editor's line-box height; the gutter, the row tints and the highlighted code are
+three separate stacks that must agree to the pixel.
+
 ### Borders
 
 `--border` for real edges, `--hairline` (via `.hairline` or `border-hairline`)
@@ -143,6 +168,21 @@ Add `pulse` for genuinely live state only.
 - Assistant: full width, no bubble. The response is the page, not a card.
 - Tool calls: single-line rows, expandable. Default view is "what happened";
   JSON is one click away.
+
+### Code surfaces
+
+Everything that paints code carries `.code-type` — the editor's highlighted
+layer, its transparent textarea, the gutter, and both sides of a diff. One class
+for all of them, because the editor works by stacking layers over identical
+text: any divergence in font, size, line height or ligature handling shows up
+immediately as characters drifting out from under their own highlight.
+
+- The editor is a textarea over a highlighted layer, not a dependency. See the
+  note in `components/workspace/code-editor.tsx` for the measured trade.
+- The diff shows changed lines paired with what they replaced, elides unchanged
+  stretches, and marks the changed *tokens* within a changed line.
+- Approval lives in the same frame as the diff. A change summary is enough to
+  recognise a change set and not enough to consent to one.
 
 ### Empty states
 

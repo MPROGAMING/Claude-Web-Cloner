@@ -222,6 +222,9 @@ export function ChatComposer({
               type="file"
               multiple
               accept=".luau,.lua,.txt,.md,.json"
+              // Visually hidden but still in the accessibility tree, so it needs
+              // its own name — the button that opens it is a separate element.
+              aria-label="Choose scripts to attach"
               className="sr-only"
               onChange={(event) => void attachFiles(event.target.files)}
             />
@@ -233,7 +236,7 @@ export function ChatComposer({
                     disabled={busy}
                     onClick={() => fileRef.current?.click()}
                     aria-label="Attach a script"
-                    className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50 focus-ember"
+                    className="tap-target flex items-center justify-center rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50 focus-ember"
                   >
                     <Paperclip className="size-4" />
                   </button>
@@ -247,7 +250,7 @@ export function ChatComposer({
                 type="button"
                 onClick={onStop}
                 aria-label="Stop generating"
-                className="flex size-8 items-center justify-center rounded-lg border border-border bg-surface transition-colors hover:bg-accent focus-ember"
+                className="tap-target flex size-8 items-center justify-center rounded-lg border border-border bg-surface transition-colors hover:bg-accent focus-ember"
               >
                 <Square className="size-3 fill-current" />
               </button>
@@ -258,7 +261,7 @@ export function ChatComposer({
                 disabled={!canSend}
                 aria-label="Send message"
                 className={cn(
-                  "flex size-8 items-center justify-center rounded-lg transition-all focus-ember",
+                  "tap-target flex size-8 items-center justify-center rounded-lg transition-all focus-ember",
                   canSend
                     ? "bg-[var(--ember)] text-[var(--ember-ink)] hover:brightness-108"
                     : "bg-muted text-muted-foreground",
@@ -271,7 +274,7 @@ export function ChatComposer({
         </div>
       </div>
 
-      <p className="mx-auto mt-2 max-w-3xl text-center font-mono text-[0.625rem] text-muted-foreground/60">
+      <p className="mx-auto mt-2 max-w-3xl text-center font-mono text-[0.625rem] text-muted-foreground">
         Enter to send · Shift + Enter for a new line
       </p>
     </div>
