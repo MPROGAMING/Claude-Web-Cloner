@@ -183,9 +183,38 @@ function handlers.sync_files(command)
 
 	state.lastSync = os.time()
 
+	-- A sync that writes nothing is not a success. The server sends the whole
+	-- file list, so "0 written" means either the project is empty or every file
+	-- was skipped for an unsupported class or service — and both of those look
+	-- identical to a creator watching a green tick and an unchanged Explorer.
+	if #files == 0 then
+		return {
+			ok = false,
+			error = "The project has no Luau files to sync yet.",
+			data = { written = 0, skipped = 0, instances = {} },
+		}
+	end
+
+	if written == 0 then
+		return {
+			ok = false,
+			error = string.format(
+				"None of the %d file%s could be placed — unrecognised service or class.",
+				#files,
+				#files == 1 and "" or "s"
+			),
+			data = { written = 0, skipped = skipped, instances = {} },
+		}
+	end
+
 	return {
 		ok = true,
-		summary = string.format("Synced %d script%s into Studio", written, written == 1 and "" or "s"),
+		summary = string.format(
+			"Synced %d script%s into Studio%s",
+			written,
+			written == 1 and "" or "s",
+			skipped > 0 and string.format(" (%d skipped)", skipped) or ""
+		),
 		data = { written = written, skipped = skipped, instances = touched },
 	}
 end

@@ -57,3 +57,8 @@ docs/roblox-brain/corpus/
 
 # Raw Studio captures are kept out of the repo; the optimised jpgs ship instead.
 public/demos/*.png
+
+# Agent worktrees. Each is its own git repo; committing them would nest
+# repositories inside this one and make lint scan three extra copies of the
+# tree — 54,000 problems on the first attempt.
+.claude/worktrees/

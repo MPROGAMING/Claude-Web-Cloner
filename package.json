@@ -34,7 +34,8 @@
     "brain:verify-generation": "node --import ./scripts/roblox-brain/lib/register-hooks.mjs scripts/roblox-brain/verify-generation.mjs",
     "agent:verify": "node scripts/roblox-brain/verify-agent.mjs",
     "blueprint:verify": "node scripts/roblox-brain/verify-blueprint.mjs",
-    "a11y": "node scripts/a11y.mjs"
+    "a11y": "node scripts/a11y.mjs",
+    "studio:verify": "node scripts/roblox-brain/verify-studio.mjs"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^4.0.39",

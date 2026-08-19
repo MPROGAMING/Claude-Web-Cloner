@@ -12,6 +12,10 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Agent worktrees are full copies of this tree. Without this, lint walks
+    // every one of them and reports the same problems N+1 times — the first
+    // run after three agents were spawned returned 54,000.
+    ".claude/worktrees/**",
   ]),
 ]);
 
