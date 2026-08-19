@@ -24,10 +24,11 @@ import { getBrainGenerationConfig, resolveChatModelId } from "@/lib/knowledge/ge
 import { classifyRequest } from "@/lib/agent/classifier";
 import { blueprintSchema, blueprintToContext } from "@/lib/blueprint/schema";
 import { AgentStateMachine } from "@/lib/agent/state-machine";
-import { ChangesetBuilder, toPreview as toChangesetPreview } from "@/lib/agent/changesets";
+import { ChangesetBuilder, reviewChangeset, toPreview as toChangesetPreview } from "@/lib/agent/changesets";
 import { budgetFor } from "@/lib/agent/budgets";
 import { resolveMode } from "@/lib/agent/authorization";
 import { finishRun, persistChangeset, recordToolCall, recordTransition, startRun } from "@/lib/agent/audit";
+import { runRepairLoop, describeRepair } from "@/lib/agent/repair-loop";
 import { rateLimit } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
 
@@ -442,8 +443,42 @@ export async function POST(request: Request) {
             machine.tryTransition("VALIDATING", "checking generated output");
 
             let changesetPreview: ReturnType<typeof toChangesetPreview> | null = null;
+            let repairAttempts = 0;
+
             if (changesetBuilder && changesetBuilder.size > 0) {
-              const changeset = changesetBuilder.build();
+              // Server-driven repair, before the user ever sees the change set.
+              // Leaving this to the model meant a run could declare success while
+              // its own validator was still reporting errors.
+              const repair = await runRepairLoop(changesetBuilder.list(), {
+                maxAttempts: budget.maxRepairAttempts,
+              });
+              repairAttempts = repair.attempts.length;
+
+              if (repair.attempts.length > 0) {
+                machine.tryTransition("REPAIRING", "fixing validation failures");
+                machine.tryTransition("VALIDATING", "re-checking after repair");
+
+                logger.info("agent.repair.summary", {
+                  runId,
+                  attempts: repair.attempts.length,
+                  repaired: repair.repaired,
+                  stoppedBecause: repair.stoppedBecause,
+                  credits: repair.totalCredits,
+                });
+
+                const note = describeRepair(repair);
+                if (note && writerRef) {
+                  writerRef.write({
+                    type: "data-status",
+                    data: { id: "repair", label: note, state: repair.outcome.ok ? "done" : "failed" },
+                    transient: true,
+                  });
+                }
+              }
+
+              const changeset = { ...changesetBuilder.build(), operations: repair.operations };
+              changeset.issues = reviewChangeset(repair.operations);
+
               const persisted = await persistChangeset(supabase, changeset);
               changesetPreview = toChangesetPreview(changeset);
 
@@ -473,7 +508,7 @@ export async function POST(request: Request) {
             await finishRun(supabase, {
               runId,
               state: machine.state,
-              repairAttempts: 0,
+              repairAttempts,
               toolCalls: toolCallCount,
               retrievalMs: brain.latency_ms,
               generationMs: Math.max(0, Date.now() - startedAt - brain.latency_ms),

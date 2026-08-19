@@ -7,6 +7,10 @@
  * hit it. Driving Chrome directly avoids the whole class of problem and makes
  * before/after comparisons trustworthy, which is the point of taking them.
  *
+ * Authenticated pages: set BW_COOKIE to a `name=value; name2=value2` string and
+ * the cookies are installed before navigation, so signed-in surfaces can be
+ * captured without a browser session. `scripts/session-cookie.mjs` mints one.
+ *
  * Usage:
  *   node scripts/shot.mjs <url> <out.png> [width] [height] [scrollY|full]
  */
@@ -106,6 +110,28 @@ try {
     deviceScaleFactor: 2,
     mobile: Number(w) < 768,
   });
+
+  // Install the session cookies before the first navigation, otherwise the app
+  // redirects to sign-in and the screenshot is of a login form.
+  const cookieHeader = process.env.BW_COOKIE;
+  if (cookieHeader) {
+    const { hostname } = new URL(url);
+    const cookies = cookieHeader
+      .split(";")
+      .map((pair) => pair.trim())
+      .filter(Boolean)
+      .map((pair) => {
+        const eq = pair.indexOf("=");
+        return {
+          name: pair.slice(0, eq),
+          value: pair.slice(eq + 1),
+          domain: hostname,
+          path: "/",
+        };
+      });
+    await cdp.send("Network.enable");
+    await cdp.send("Network.setCookies", { cookies });
+  }
 
   await cdp.send("Page.navigate", { url });
   // Fonts, images and the entrance animations all need a moment to settle;

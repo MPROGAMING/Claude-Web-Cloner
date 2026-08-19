@@ -1035,3 +1035,63 @@ describe("output budget is actually enforced", () => {
     expect(route).toMatch(/maxOutputTokens:\s*budget\.maxOutputTokens/);
   });
 });
+
+describe("server-driven repair", () => {
+  /**
+   * Step 7 left the repair loop to the model: validation output went back as
+   * tool results and the model decided whether to act, which meant a run could
+   * declare success while its own validator still reported errors. These pin the
+   * pure parts of the server-driven loop — the model call itself is exercised by
+   * the acceptance script, not here.
+   */
+  it("keeps only the final content per path when validating a changeset", () => {
+    const b = builder();
+    b.stageWrite({ path: "src/server/A.server.luau", content: "if x != 1 then", mode: "create" });
+    b.stageWrite({ path: "src/server/A.server.luau", content: "--!strict\nreturn true\n", mode: "update" });
+
+    // The loop validates the resulting state, so an earlier broken draft must not
+    // make it think there is something to repair.
+    expect(validateChangesetFiles(b.list()).ok).toBe(true);
+  });
+
+  it("reports exactly the files a failure blames", () => {
+    const outcome = validateFiles([
+      { path: "src/server/Broken.server.luau", content: "if x != 1 then\n" },
+      { path: "src/shared/Fine.luau", content: "--!strict\nreturn {}\n" },
+    ]);
+
+    const blamed = new Set([
+      ...outcome.perFile.filter((r) => r.result.errors > 0).map((r) => r.path),
+      ...outcome.security.findings.filter((f) => f.severity === "error").map((f) => f.path),
+    ]);
+
+    expect(blamed.has("src/server/Broken.server.luau")).toBe(true);
+    expect(blamed.has("src/shared/Fine.luau")).toBe(false);
+  });
+
+  it("treats a security error as repairable, not just syntax", () => {
+    const outcome = validateFiles([
+      {
+        path: "src/client/Money.client.luau",
+        content: "--!strict\nlocal coins = player.leaderstats.Coins\ncoins.Value = 99999\n",
+      },
+    ]);
+    expect(outcome.ok).toBe(false);
+    expect(outcome.securityErrors).toBeGreaterThan(0);
+  });
+
+  it("bounds attempts at the budget's repair ceiling", () => {
+    for (const kind of ["multi_file_implementation", "code_generation", "debugging"] as const) {
+      expect(budgetFor(kind).maxRepairAttempts).toBeLessThanOrEqual(3);
+    }
+  });
+
+  it("is wired into the chat route rather than only defined", () => {
+    // The previous repair policy existed and was never called. Reading the route
+    // is crude, but the alternative is spending provider credit to find out it
+    // was dropped again.
+    const route = readFileSync("src/app/api/chat/route.ts", "utf8");
+    expect(route).toMatch(/runRepairLoop\(/);
+    expect(route).toMatch(/maxAttempts:\s*budget\.maxRepairAttempts/);
+  });
+});
