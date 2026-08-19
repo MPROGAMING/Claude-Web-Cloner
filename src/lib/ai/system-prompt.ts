@@ -131,6 +131,40 @@ export function buildSystemPrompt(ctx: PromptContext): string {
     ? `Roblox Studio IS connected${ctx.placeName ? ` to "${ctx.placeName}"` : ""}. After writing scripts, call request_studio_action with sync_files so the user sees them appear in Studio.`
     : "Roblox Studio is NOT connected. Write the files anyway — they are saved to the project and the user can sync later. Do not nag about connecting; mention it once at most, at the end.";
 
+  /**
+   * Where the files actually end up.
+   *
+   * A real playtest failed on exactly this. The agent wrote
+   * `ReplicatedStorage:WaitForChild("Remotes")` and
+   * `ServerScriptService.Shared`, which is what the repository layout suggests
+   * — but the bridge parents everything under a `Blockwright` folder inside the
+   * service, so both yielded forever and the game never started. The model had
+   * no way to know: nothing in this prompt described the mapping.
+   *
+   * Written out with worked examples rather than as a rule, because the
+   * failure mode is a require path being one level off, and a rule stated in
+   * the abstract does not prevent that.
+   */
+  const placement = `
+WHERE YOUR FILES LAND IN STUDIO
+Files sync into a folder named "Blockwright" inside the service — not directly
+into the service. Write every require and WaitForChild path with that folder in
+it, or the script will yield forever and the game will not start.
+
+  src/server/Foo.server.luau  ->  ServerScriptService.Blockwright.Foo
+  src/client/Bar.client.luau  ->  StarterPlayer.StarterPlayerScripts.Blockwright.Bar
+  src/shared/Baz.luau         ->  ReplicatedStorage.Blockwright.Baz
+  src/ui/Panel.luau           ->  StarterGui.Blockwright.Panel
+
+So a module at src/shared/Remotes.luau is required as:
+  local Blockwright = ReplicatedStorage:WaitForChild("Blockwright")
+  local Remotes = require(Blockwright:WaitForChild("Remotes"))
+
+The trailing .server / .client suffix decides the Instance class and is stripped
+from the name: src/server/EntityLoop.server.luau becomes a Script named
+"EntityLoop". Nested folders under src/<area>/ are flattened, so two files with
+the same basename in different folders collide — give them distinct names.`;
+
   const memoryBlock = ctx.memoryContext ? `\n\n${ctx.memoryContext}\n` : "";
 
   const brainBlock = ctx.knowledgeContext
@@ -245,6 +279,7 @@ for server scripts, \`.client.luau\` for client scripts. Extension is always .lu
    fix them and validate again. Do not tell the user you are done while
    validation is failing.
 5. ${studioLine}
+${placement}
 6. Finish with a short summary of what now exists and what the user should try
    first. Keep it to a few lines.
 

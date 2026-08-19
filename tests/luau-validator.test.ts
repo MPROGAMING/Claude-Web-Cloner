@@ -129,3 +129,53 @@ describe("formatDiagnostics", () => {
     expect(report).toContain("[syntax]");
   });
 });
+
+// ---------------------------------------------------------------------------
+describe("statements that will not parse", () => {
+  /**
+   * Found by an actual playtest. The agent wrote
+   * `doorLabel backgroundColor3 = Color3.new(0, 0, 0)` — the dot dropped out of
+   * a property assignment. The validator passed it, the change set was
+   * approved, applied and synced into a real place, and Studio then refused the
+   * entire script: "Incomplete statement: expected assignment or a function
+   * call". Every other line in that HUD stopped running because of one missing
+   * character.
+   */
+  it("rejects a property assignment with the accessor dropped", () => {
+    const result = validateLuau(
+      ["local doorLabel = Instance.new(\"TextLabel\")",
+       "doorLabel backgroundColor3 = Color3.new(0, 0, 0)"].join("\n"),
+    );
+
+    expect(result.ok).toBe(false);
+    const issue = result.diagnostics.find((d) => d.rule === "parse-error");
+    expect(issue?.severity).toBe("error");
+    expect(issue?.line).toBe(2);
+    expect(issue?.message).toContain("doorLabel backgroundColor3");
+  });
+
+  it("does not fire on the statements that legally start with two words", () => {
+    const legal = [
+      "local x = 1",
+      "local doorLabel = Instance.new(\"TextLabel\")",
+      "type Wallet = { balance: number }",
+      "export type Public = { id: string }",
+      "local wallets: { [number]: number } = {}",
+      "for i = 1, 10 do end",
+      "doorLabel.BackgroundColor3 = Color3.new(0, 0, 0)",
+      "self.remaining = 0",
+      "a, b = 1, 2",
+      "if ready then start() end",
+      "while running do task.wait() end",
+      "local function make() return 1 end",
+    ].join("\n");
+
+    const result = validateLuau(legal);
+    expect(result.diagnostics.filter((d) => d.rule === "parse-error")).toEqual([]);
+  });
+
+  it("does not mistake an equality test for an assignment", () => {
+    const result = validateLuau("if door number == 3 then end");
+    expect(result.diagnostics.filter((d) => d.rule === "parse-error")).toEqual([]);
+  });
+});

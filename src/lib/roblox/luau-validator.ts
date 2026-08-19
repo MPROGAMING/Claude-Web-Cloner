@@ -24,6 +24,17 @@ export interface LuauValidationResult {
   diagnostics: LuauDiagnostic[];
 }
 
+/**
+ * Everything that can legally begin a statement with a bare word followed by
+ * another bare word. Without this list the dropped-accessor rule below would
+ * fire on `local x = 1`, `type Foo = {}` and `export type Bar = {}`.
+ */
+const LUAU_KEYWORDS = new Set([
+  "local", "function", "if", "elseif", "else", "for", "while", "do", "repeat",
+  "until", "then", "end", "return", "break", "continue", "and", "or", "not",
+  "in", "nil", "true", "false", "type", "export",
+]);
+
 const BLOCK_OPENERS = /\b(function|if|for|while|do|repeat)\b/g;
 const BLOCK_CLOSERS = /\b(end|until)\b/g;
 
@@ -68,6 +79,27 @@ export function validateLuau(source: string, path = "script.luau"): LuauValidati
     // counted `do`, so subtract the duplicate.
     const duplicateDo = (line.match(/\b(for|while)\b[^\n]*\bdo\b/g)?.length ?? 0);
     depth += openers - closers - duplicateDo;
+
+    // --- statements that will not parse --------------------------------------
+    // `doorLabel backgroundColor3 = Color3.new(0, 0, 0)` — the dot dropped out
+    // of a property assignment. Studio refuses the whole script with
+    // "Incomplete statement: expected assignment or a function call", so every
+    // other line in the file stops running too.
+    //
+    // This one reached a real playtest: the file was written, validated,
+    // approved, applied and synced into a place, and the first thing the HUD
+    // did was fail to compile. Two bare identifiers separated only by
+    // whitespace before a single `=` is never valid Luau, so it is safe to
+    // treat as an error rather than a warning.
+    const droppedAccessor = /^\s*([A-Za-z_]\w*)\s+([A-Za-z_]\w*)\s*=(?!=)/.exec(line);
+    if (droppedAccessor && !LUAU_KEYWORDS.has(droppedAccessor[1])) {
+      diagnostics.push({
+        line: lineNumber,
+        severity: "error",
+        rule: "parse-error",
+        message: `\`${droppedAccessor[1]} ${droppedAccessor[2]}\` is not a statement — a '.' or ':' is probably missing.`,
+      });
+    }
 
     // --- Roblox-specific correctness -----------------------------------------
     if (/(?<![:.\w])wait\s*\(/.test(line)) {

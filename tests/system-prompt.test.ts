@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { buildSystemPrompt, deriveConversationTitle } from "@/lib/ai/system-prompt";
+import { inferService } from "@/lib/roblox/project-model";
 
 const base = {
   projectName: "Crystal Islands",
@@ -70,5 +71,57 @@ describe("deriveConversationTitle", () => {
 
   it("collapses whitespace", () => {
     expect(deriveConversationTitle("make   a\n\n  tycoon")).toBe("Make a tycoon");
+  });
+});
+
+// ---------------------------------------------------------------------------
+describe("Studio placement is stated, not left to be inferred", () => {
+  /**
+   * A real playtest failed here. The agent wrote
+   * `ReplicatedStorage:WaitForChild("Remotes")` because that is what the
+   * repository layout suggests, but the bridge parents everything under a
+   * "Blockwright" folder inside the service. Both that and
+   * `ServerScriptService.Shared` yielded forever, and the game never started.
+   *
+   * The model was not wrong so much as uninformed: nothing in the prompt
+   * described the mapping. These pin that it now does, and that the examples
+   * stay true to `inferService` in lib/roblox/project-model.ts — if that
+   * mapping changes and the prompt does not, generated require paths break
+   * again in a way only a playtest would catch.
+   */
+  const prompt = () =>
+    buildSystemPrompt({
+      projectName: "Hotel",
+      projectDescription: null,
+      existingFiles: [],
+      studioConnected: true,
+      mode: "preview",
+      classification: "multi_file_implementation",
+      requiresPlan: true,
+      maxSteps: 12,
+    });
+
+  it("names the folder the bridge actually parents files under", () => {
+    expect(prompt()).toContain("Blockwright");
+    expect(prompt()).toMatch(/not directly\s*\n?into the service/);
+  });
+
+  it("gives a worked require path rather than only a rule", () => {
+    const p = prompt();
+    expect(p).toContain('ReplicatedStorage:WaitForChild("Blockwright")');
+    expect(p).toContain('require(');
+  });
+
+  it("keeps its examples consistent with inferService", () => {
+    const p = prompt();
+    for (const [path, service] of [
+      ["src/server/Foo.server.luau", "ServerScriptService"],
+      ["src/client/Bar.client.luau", "StarterPlayer.StarterPlayerScripts"],
+      ["src/shared/Baz.luau", "ReplicatedStorage"],
+      ["src/ui/Panel.luau", "StarterGui"],
+    ] as const) {
+      expect(inferService(path)).toBe(service);
+      expect(p).toContain(`${service}.Blockwright.`);
+    }
   });
 });
