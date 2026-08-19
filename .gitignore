@@ -92,3 +92,6 @@ bench/**/corpus/
 # false positive, it must not reach this public repository. See
 # docs/BENCHMARK-PROGRESS.md, "Paused".
 bench/runtime/
+
+# Browser-automation debug artifacts. Never part of the product.
+.playwright-mcp/

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { FileCode2, FileText, Plus, X } from "lucide-react";
 import { toast } from "sonner";
 import { CodeEditor } from "@/components/workspace/code-editor";
+import { fileIdentity } from "@/components/workspace/file-identity";
 import { createFile, saveFile } from "@/lib/actions/files";
 import type { ProjectFile } from "@/lib/supabase/types";
 import { cn } from "@/lib/utils";
@@ -174,7 +175,7 @@ export function CodePanel({
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <div className="flex shrink-0 items-stretch border-b border-hairline bg-surface-sunken/60">
+      <div className="flex shrink-0 items-stretch border-b border-hairline bg-surface-sunken">
         <div
           role="tablist"
           aria-label="Open files"
@@ -184,13 +185,16 @@ export function CodePanel({
             const active = file.path === activePath;
             const dirty = isDirty(file.path);
             const Icon = file.kind === "doc" ? FileText : FileCode2;
+            // The tab wears the Instance name Studio will show, not the
+            // filename; the path stays on the tooltip.
+            const identity = fileIdentity(file.path, file.kind);
 
             return (
               <div
                 key={file.path}
                 className={cn(
                   "group flex shrink-0 items-center border-r border-hairline",
-                  active ? "bg-surface" : "hover:bg-accent/40",
+                  active ? "bg-[var(--plate-raised)]" : "hover:bg-accent/40",
                 )}
               >
                 <button
@@ -198,14 +202,14 @@ export function CodePanel({
                   role="tab"
                   aria-selected={active}
                   onClick={() => onOpen(file.path)}
-                  title={file.path}
+                  title={`${identity.role} · ${file.path}`}
                   className={cn(
                     "tap-row flex max-w-40 items-center gap-1.5 py-1.5 pl-2.5 pr-1 text-[0.6875rem] transition-colors focus-ember",
                     active ? "text-foreground" : "text-muted-foreground",
                   )}
                 >
                   <Icon className="size-3 shrink-0" strokeWidth={1.75} />
-                  <span className="truncate">{file.path.split("/").pop()}</span>
+                  <span className="truncate">{identity.name}</span>
                   {dirty && <span className="text-[var(--ember)]">•</span>}
                   {!dirty && changedPaths?.has(file.path) && (
                     <span
@@ -250,7 +254,7 @@ export function CodePanel({
             }}
             placeholder="src/server/Thing.luau"
             aria-label="Path for the new file"
-            className="h-7 w-full rounded-md border border-border bg-surface-sunken px-2 font-mono text-[0.6875rem] outline-none placeholder:text-muted-foreground focus-visible:border-[var(--ember)]/50"
+            className="h-8 w-full rounded-md bg-surface-sunken px-2 font-mono text-[0.6875rem] outline-none placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-[var(--ember)]/50"
           />
           <p className="mt-1 font-mono text-[0.5625rem] text-muted-foreground">
             Under src/ or docs/ · .luau .lua .md .json
@@ -279,7 +283,7 @@ export function CodePanel({
           />
         ) : (
           <p className="p-6 text-center text-[0.8125rem] text-muted-foreground">
-            No file open. Pick one from the tree, or press ⌘P.
+            Nothing open. Pick a piece of the game on the left, or press ⌘P.
           </p>
         )}
       </div>

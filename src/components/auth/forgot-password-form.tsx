@@ -1,9 +1,15 @@
 "use client";
 
 import { useActionState } from "react";
-import { AlertCircle, KeyRound, Loader2, MailCheck } from "lucide-react";
-import { AuthCard, AuthLink, FormMessage } from "@/components/auth/auth-shell";
-import { Button } from "@/components/ui/button";
+import { AlertCircle, KeyRound, MailCheck } from "lucide-react";
+import {
+  AuthCard,
+  AuthFootnote,
+  AuthLink,
+  AuthSubmit,
+  FormMessage,
+  authFieldClass,
+} from "@/components/auth/auth-shell";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { requestPasswordReset, type AuthActionState } from "@/lib/actions/auth";
@@ -18,14 +24,15 @@ export function ForgotPasswordForm() {
     return (
       <AuthCard
         icon={MailCheck}
+        eyebrow="On its way"
         title="Check your inbox"
         subtitle={state.notice}
         footer={<AuthLink href="/sign-in">Back to sign in</AuthLink>}
       >
-        <p className="mt-5 rounded-lg bg-surface-sunken px-3 py-2.5 text-[0.75rem] leading-relaxed text-muted-foreground">
+        <AuthFootnote>
           Nothing arrived? Check spam, then try again in a minute — repeated requests are rate
           limited.
-        </p>
+        </AuthFootnote>
       </AuthCard>
     );
   }
@@ -33,16 +40,17 @@ export function ForgotPasswordForm() {
   return (
     <AuthCard
       icon={KeyRound}
+      eyebrow="Locked out"
       title="Reset your password"
-      subtitle="We'll email you a link to choose a new one."
+      subtitle="We'll email you a link to choose a new one. Your projects and files are untouched."
       footer={
         <>
           Remembered it? <AuthLink href="/sign-in">Sign in</AuthLink>
         </>
       }
     >
-      <form action={formAction} className="mt-7 space-y-4">
-        <div className="space-y-1.5">
+      <form action={formAction} className="mt-6 space-y-4">
+        <div className="space-y-2">
           <Label htmlFor="email">Email</Label>
           <Input
             id="email"
@@ -52,6 +60,7 @@ export function ForgotPasswordForm() {
             autoComplete="email"
             autoFocus
             placeholder="you@example.com"
+            className={authFieldClass}
             aria-describedby={state.error ? "reset-error" : undefined}
           />
         </div>
@@ -65,10 +74,9 @@ export function ForgotPasswordForm() {
           </span>
         )}
 
-        <Button type="submit" size="lg" className="h-10 w-full" disabled={pending}>
-          {pending && <Loader2 className="size-4 animate-spin" />}
+        <AuthSubmit pending={pending} pendingLabel="Sending" className="mt-5">
           Send reset link
-        </Button>
+        </AuthSubmit>
       </form>
     </AuthCard>
   );

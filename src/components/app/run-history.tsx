@@ -34,6 +34,11 @@ import { cn } from "@/lib/utils";
  * name, whether it worked, how long it took, and the one-line summary the tool
  * itself wrote. They are a replay of the actions, and `agent_tool_calls`
  * deliberately never stored arguments or results in the first place.
+ *
+ * Read order is the whole design: state first (a coloured spine you can scan a
+ * column of without reading a word), then what it built in play language, then
+ * the receipt — files, credits, duration — and only on request the tool-by-tool
+ * replay. A run that needs a decision is the loudest thing in the list.
  */
 
 export interface RunRow {
@@ -84,23 +89,50 @@ export interface RunToolCall {
 
 const FILTERS = [
   { id: "all", label: "All" },
-  { id: "awaiting", label: "Awaiting approval" },
+  { id: "awaiting", label: "Needs you" },
   { id: "completed", label: "Completed" },
   { id: "failed", label: "Failed" },
 ] as const;
 
 type FilterId = (typeof FILTERS)[number]["id"];
 
-const STATE_TONE: Record<string, { tone: string; icon: typeof Check; label: string }> = {
-  COMPLETED: { tone: "text-[var(--success)]", icon: Check, label: "Completed" },
-  FAILED: { tone: "text-[var(--danger)]", icon: X, label: "Failed" },
-  CANCELLED: { tone: "text-muted-foreground", icon: Pause, label: "Cancelled" },
+/**
+ * State, encoded three ways at once: a glyph, an ink, and the colour of the
+ * spine down the left edge of the row. Colour alone is never the carrier.
+ */
+const STATE_TONE: Record<
+  string,
+  { ink: string; spine: string; tile: string; icon: typeof Check; label: string }
+> = {
+  COMPLETED: {
+    ink: "text-[var(--success)]",
+    spine: "bg-[var(--success)]",
+    tile: "bg-[var(--success)]/12",
+    icon: Check,
+    label: "Completed",
+  },
+  FAILED: {
+    ink: "text-[var(--danger)]",
+    spine: "bg-[var(--danger)]",
+    tile: "bg-[var(--danger)]/12",
+    icon: X,
+    label: "Failed",
+  },
+  CANCELLED: {
+    ink: "text-muted-foreground",
+    spine: "bg-muted-foreground/40",
+    tile: "bg-surface-sunken",
+    icon: Pause,
+    label: "Cancelled",
+  },
 };
 
 function stateOf(run: RunRow) {
   return (
     STATE_TONE[run.state] ?? {
-      tone: "text-[var(--signal)]",
+      ink: "text-[var(--signal)]",
+      spine: "bg-[var(--signal)]",
+      tile: "bg-[var(--signal)]/12",
       icon: Loader2,
       label: run.state.charAt(0) + run.state.slice(1).toLowerCase().replace(/_/g, " "),
     }
@@ -124,6 +156,14 @@ function when(iso: string): string {
   const hours = Math.floor(mins / 60);
   if (hours < 24) return `${hours}h ago`;
   return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}
+
+function dayOf(iso: string): string {
+  return new Date(iso).toLocaleDateString("en-US", {
+    weekday: "long",
+    month: "short",
+    day: "numeric",
+  });
 }
 
 const KIND_LABEL: Record<string, string> = {
@@ -168,204 +208,289 @@ export function RunHistory({
     return runs;
   }, [runs, filter]);
 
+  // Grouped by calendar day for the same reason the event feed is: a flat list
+  // of forty rows has no landmarks, and "when did it stop working" is the
+  // question this page gets asked most.
+  const days = useMemo(() => {
+    const map = new Map<string, RunRow[]>();
+    for (const run of visible) {
+      const day = dayOf(run.createdAt);
+      map.set(day, [...(map.get(day) ?? []), run]);
+    }
+    return [...map.entries()];
+  }, [visible]);
+
   return (
     <div>
-      <div className="flex flex-wrap gap-1.5">
-        {FILTERS.map((f) => (
-          <button
-            key={f.id}
-            type="button"
-            onClick={() => setFilter(f.id)}
-            className={cn(
-              "tap-row rounded-lg px-3 py-1.5 text-[0.8125rem] font-medium transition-colors focus-ember",
-              filter === f.id
-                ? "bg-accent text-foreground"
-                : "text-muted-foreground hover:bg-accent/50 hover:text-foreground",
-            )}
-          >
-            {f.label}
-            <span className="ml-1.5 text-muted-foreground">{counts[f.id]}</span>
-          </button>
-        ))}
+      <div
+        role="group"
+        aria-label="Filter builds"
+        className="inline-flex w-full flex-wrap gap-1 rounded-xl border border-border bg-surface-sunken p-1 sm:w-fit"
+      >
+        {FILTERS.map((f) => {
+          const active = filter === f.id;
+          const urgent = f.id === "awaiting" && counts.awaiting > 0;
+          return (
+            <button
+              key={f.id}
+              type="button"
+              onClick={() => setFilter(f.id)}
+              aria-pressed={active}
+              className={cn(
+                "tap-row inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-[0.8125rem] font-medium transition-colors focus-ember",
+                active
+                  ? "bg-surface text-foreground shadow-flat"
+                  : "text-muted-foreground hover:bg-surface/60 hover:text-foreground",
+              )}
+            >
+              {f.label}
+              <span
+                className={cn(
+                  "rounded px-1.5 py-px font-mono text-[0.6875rem] tabular-nums",
+                  urgent
+                    ? "bg-[var(--ember)]/15 text-[var(--ember-text)]"
+                    : "bg-surface-sunken text-muted-foreground",
+                )}
+              >
+                {counts[f.id]}
+              </span>
+            </button>
+          );
+        })}
       </div>
 
       {visible.length === 0 ? (
-        <p className="mt-8 rounded-xl border border-dashed border-border px-4 py-8 text-center text-[0.875rem] text-muted-foreground">
-          Nothing here yet. Runs show up as soon as you ask Blockwright to build something.
+        <p className="mt-6 rounded-xl border border-dashed border-border px-4 py-10 text-center text-[0.875rem] text-muted-foreground">
+          {filter === "all"
+            ? "Nothing here yet. Runs show up as soon as you ask Blockwright to build something."
+            : "No builds match that filter."}
         </p>
       ) : (
-        <ul className="mt-5 space-y-2">
-          {visible.map((run) => {
-            const s = stateOf(run);
-            const Icon = s.icon;
-            const expanded = open === run.id;
-            const awaiting = run.changeset?.status === "pending_approval";
+        <div className="mt-5 space-y-8">
+          {days.map(([day, dayRuns]) => (
+            <section key={day}>
+              <h2 className="label-meta sticky top-14 z-10 -mx-1 bg-background/90 px-1 py-2 backdrop-blur">
+                {day}
+                <span className="ml-2 normal-case tracking-normal opacity-70">
+                  {dayRuns.length} build{dayRuns.length === 1 ? "" : "s"}
+                </span>
+              </h2>
 
-            return (
-              <li
-                key={run.id}
-                className="overflow-hidden rounded-xl border border-border bg-surface"
-              >
-                <button
-                  type="button"
-                  onClick={() => setOpen(expanded ? null : run.id)}
-                  aria-expanded={expanded}
-                  className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-accent/40 focus-ember"
-                >
-                  <Icon
-                    className={cn("size-4 shrink-0", s.tone, run.state === "GENERATING" && "animate-spin")}
+              <ul className="mt-2 space-y-2">
+                {dayRuns.map((run) => (
+                  <RunCard
+                    key={run.id}
+                    run={run}
+                    expanded={open === run.id}
+                    onToggle={() => setOpen(open === run.id ? null : run.id)}
                   />
-
-                  <span className="min-w-0 flex-1">
-                    <span className="flex flex-wrap items-baseline gap-x-2">
-                      <span className="text-[0.9375rem] font-medium">
-                        {KIND_LABEL[run.classification] ?? "Run"}
-                      </span>
-                      <Link
-                        href={`/projects/${run.projectId}`}
-                        onClick={(e) => e.stopPropagation()}
-                        className="truncate text-[0.8125rem] text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
-                      >
-                        {run.projectName}
-                      </Link>
-                    </span>
-                    <span className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[0.75rem] text-muted-foreground">
-                      <span>{when(run.createdAt)}</span>
-                      {duration(run) && (
-                        <span className="inline-flex items-center gap-1">
-                          <Clock className="size-3" />
-                          {duration(run)}
-                        </span>
-                      )}
-                      {run.creditsCharged > 0 && (
-                        <span className="inline-flex items-center gap-1">
-                          <Coins className="size-3" />
-                          {run.creditsCharged}
-                        </span>
-                      )}
-                      {run.changeset && run.changeset.operationCount > 0 && (
-                        <span className="inline-flex items-center gap-1">
-                          <FileCode2 className="size-3" />
-                          {run.changeset.operationCount} file
-                          {run.changeset.operationCount === 1 ? "" : "s"}
-                        </span>
-                      )}
-                      {run.repairAttempts > 0 && (
-                        <span className="inline-flex items-center gap-1 text-[var(--warning)]">
-                          <Wrench className="size-3" />
-                          fixed {run.repairAttempts}×
-                        </span>
-                      )}
-                    </span>
-                  </span>
-
-                  {awaiting && (
-                    <span className="shrink-0 rounded-md border border-[var(--ember)]/40 bg-[var(--ember)]/10 px-2 py-1 text-[0.6875rem] font-medium text-[var(--ember-text)]">
-                      Needs approval
-                    </span>
-                  )}
-                  {run.mode === "preview" && !awaiting && (
-                    <span className="hidden shrink-0 text-[0.6875rem] text-muted-foreground sm:inline">
-                      preview
-                    </span>
-                  )}
-
-                  <ChevronDown
-                    className={cn(
-                      "size-3.5 shrink-0 text-muted-foreground transition-transform duration-200",
-                      expanded && "rotate-180",
-                    )}
-                  />
-                </button>
-
-                {expanded && (
-                  <div className="animate-rise border-t border-border/60 px-4 py-3">
-                    {/* The state walk. This is what the agent did, in order —
-                        never what it was thinking. */}
-                    {run.steps.length > 0 && (
-                      <div className="flex flex-wrap items-center gap-1.5">
-                        {run.steps.map((step, i) => (
-                          <span key={i} className="flex items-center gap-1.5">
-                            {i > 0 && <span className="text-muted-foreground/50">→</span>}
-                            <span
-                              // The machine's own reason for the transition —
-                              // a fixed server-authored string, never model text.
-                              title={step.reason || undefined}
-                              className="rounded border border-border bg-surface-sunken px-1.5 py-0.5 font-mono text-[0.625rem] text-muted-foreground"
-                            >
-                              {step.state.toLowerCase().replace(/_/g, " ")}
-                            </span>
-                          </span>
-                        ))}
-                      </div>
-                    )}
-
-                    <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-[0.8125rem] sm:grid-cols-4">
-                      {[
-                        ["Model", run.modelId.replace(/^openrouter:/, "")],
-                        ["Steps", String(run.stepCount)],
-                        ["Tools used", String(run.toolCalls)],
-                        [
-                          "Tokens",
-                          `${formatTokens(run.inputTokens)} in / ${formatTokens(run.outputTokens)} out`,
-                        ],
-                      ].map(([label, value]) => (
-                        <div key={label}>
-                          <dt className="text-[0.6875rem] uppercase tracking-[0.06em] text-muted-foreground">
-                            {label}
-                          </dt>
-                          <dd className="mt-0.5 truncate font-mono text-[0.75rem]">{value}</dd>
-                        </div>
-                      ))}
-                    </dl>
-
-                    <TimingBreakdown run={run} />
-                    <ToolCallList tools={run.tools} total={run.toolCalls} />
-
-                    {run.changeset && (
-                      <div className="mt-3 flex flex-wrap items-center gap-2">
-                        {run.changeset.hasErrors ? (
-                          <span className="inline-flex items-center gap-1.5 text-[0.8125rem] text-[var(--danger)]">
-                            <AlertTriangle className="size-3.5" />
-                            The proposed changes did not pass validation
-                          </span>
-                        ) : run.changeset.status === "applied" ? (
-                          <span className="inline-flex items-center gap-1.5 text-[0.8125rem] text-[var(--success)]">
-                            <ShieldCheck className="size-3.5" />
-                            Approved and applied
-                          </span>
-                        ) : (
-                          <span className="text-[0.8125rem] text-muted-foreground">
-                            {run.changeset.operationCount} change
-                            {run.changeset.operationCount === 1 ? "" : "s"} proposed ·{" "}
-                            {run.changeset.status.replace(/_/g, " ")}
-                          </span>
-                        )}
-
-                        <Link
-                          href={`/projects/${run.projectId}`}
-                          className="ml-auto rounded-lg border border-border px-2.5 py-1 text-[0.75rem] transition-colors hover:bg-accent focus-ember"
-                        >
-                          {awaiting ? "Review changes" : "Open project"}
-                        </Link>
-                      </div>
-                    )}
-
-                    <IssueList issues={run.changeset?.issues ?? []} />
-
-                    {run.errorCategory && (
-                      <p className="mt-3 rounded-lg border border-[var(--danger)]/30 bg-[var(--danger)]/8 px-3 py-2 text-[0.8125rem] text-[var(--danger)]">
-                        Stopped during {run.errorCategory}.
-                      </p>
-                    )}
-                  </div>
-                )}
-              </li>
-            );
-          })}
-        </ul>
+                ))}
+              </ul>
+            </section>
+          ))}
+        </div>
       )}
     </div>
+  );
+}
+
+function RunCard({
+  run,
+  expanded,
+  onToggle,
+}: {
+  run: RunRow;
+  expanded: boolean;
+  onToggle: () => void;
+}) {
+  const s = stateOf(run);
+  const Icon = s.icon;
+  const awaiting = run.changeset?.status === "pending_approval";
+  const runDuration = duration(run);
+
+  return (
+    <li
+      className={cn(
+        "relative overflow-hidden rounded-xl border bg-surface transition-colors",
+        awaiting ? "border-[var(--ember)]/45" : "border-border",
+      )}
+    >
+      {/* The spine. A column of these is readable as a strip of colour before
+          a single word has been read, which is what a log is scanned for. */}
+      <span aria-hidden className={cn("absolute inset-y-0 left-0 w-[3px]", s.spine)} />
+
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-expanded={expanded}
+        className="flex w-full items-center gap-3 py-3 pl-4 pr-3.5 text-left transition-colors hover:bg-accent/40 focus-ember sm:gap-3.5"
+      >
+        <span
+          className={cn(
+            "flex size-8 shrink-0 items-center justify-center rounded-lg",
+            s.tile,
+          )}
+        >
+          <Icon
+            aria-hidden
+            className={cn("size-4", s.ink, run.state === "GENERATING" && "animate-spin")}
+          />
+          <span className="sr-only">{s.label}</span>
+        </span>
+
+        <span className="min-w-0 flex-1">
+          <span className="flex flex-wrap items-baseline gap-x-2">
+            <span className="text-[0.9375rem] font-semibold">
+              {KIND_LABEL[run.classification] ?? "Run"}
+            </span>
+            <Link
+              href={`/projects/${run.projectId}`}
+              onClick={(e) => e.stopPropagation()}
+              className="truncate text-[0.8125rem] text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+            >
+              {run.projectName}
+            </Link>
+          </span>
+          <span className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 font-mono text-[0.6875rem] tabular-nums text-muted-foreground">
+            <span>{when(run.createdAt)}</span>
+            {runDuration && (
+              <span className="inline-flex items-center gap-1">
+                <Clock aria-hidden className="size-3" />
+                {runDuration}
+              </span>
+            )}
+            {run.creditsCharged > 0 && (
+              <span className="inline-flex items-center gap-1">
+                <Coins aria-hidden className="size-3" />
+                {run.creditsCharged}
+              </span>
+            )}
+            {run.changeset && run.changeset.operationCount > 0 && (
+              <span className="inline-flex items-center gap-1">
+                <FileCode2 aria-hidden className="size-3" />
+                {run.changeset.operationCount} file
+                {run.changeset.operationCount === 1 ? "" : "s"}
+              </span>
+            )}
+            {run.repairAttempts > 0 && (
+              <span className="inline-flex items-center gap-1 text-[var(--warning)]">
+                <Wrench aria-hidden className="size-3" />
+                fixed {run.repairAttempts}×
+              </span>
+            )}
+          </span>
+        </span>
+
+        {awaiting && (
+          <span className="shrink-0 rounded-md border border-[var(--ember)]/40 bg-[var(--ember)]/12 px-2 py-1 text-[0.6875rem] font-semibold text-[var(--ember-text)]">
+            Needs approval
+          </span>
+        )}
+        {run.mode === "preview" && !awaiting && (
+          <span className="hidden shrink-0 font-mono text-[0.625rem] uppercase tracking-[0.1em] text-muted-foreground sm:inline">
+            preview
+          </span>
+        )}
+
+        <ChevronDown
+          aria-hidden
+          className={cn(
+            "size-4 shrink-0 text-muted-foreground transition-transform duration-200",
+            expanded && "rotate-180",
+          )}
+        />
+      </button>
+
+      {expanded && (
+        <div className="animate-rise border-t border-hairline px-4 py-4">
+          {/* The state walk. This is what the agent did, in order —
+              never what it was thinking. */}
+          {run.steps.length > 0 && (
+            <div className="flex flex-wrap items-center gap-1.5">
+              {run.steps.map((step, i) => (
+                <span key={i} className="flex items-center gap-1.5">
+                  {i > 0 && (
+                    <span aria-hidden className="text-muted-foreground/50">
+                      →
+                    </span>
+                  )}
+                  <span
+                    // The machine's own reason for the transition —
+                    // a fixed server-authored string, never model text.
+                    title={step.reason || undefined}
+                    className="rounded border border-hairline bg-surface-sunken px-1.5 py-0.5 font-mono text-[0.625rem] text-muted-foreground"
+                  >
+                    {step.state.toLowerCase().replace(/_/g, " ")}
+                  </span>
+                </span>
+              ))}
+            </div>
+          )}
+
+          <dl className="mt-3.5 grid grid-cols-2 gap-x-4 gap-y-3 rounded-lg bg-surface-sunken px-3.5 py-3 sm:grid-cols-4">
+            {[
+              ["Model", run.modelId.replace(/^openrouter:/, "")],
+              ["Steps", String(run.stepCount)],
+              ["Tools used", String(run.toolCalls)],
+              [
+                "Tokens",
+                `${formatTokens(run.inputTokens)} in / ${formatTokens(run.outputTokens)} out`,
+              ],
+            ].map(([label, value]) => (
+              <div key={label} className="min-w-0">
+                <dt className="label-meta truncate">{label}</dt>
+                <dd className="mt-0.5 truncate font-mono text-[0.75rem] tabular-nums">{value}</dd>
+              </div>
+            ))}
+          </dl>
+
+          <TimingBreakdown run={run} />
+          <ToolCallList tools={run.tools} total={run.toolCalls} />
+
+          {run.changeset && (
+            <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-hairline pt-3.5">
+              {run.changeset.hasErrors ? (
+                <span className="inline-flex items-center gap-1.5 text-[0.8125rem] text-[var(--danger)]">
+                  <AlertTriangle aria-hidden className="size-3.5" />
+                  The proposed changes did not pass validation
+                </span>
+              ) : run.changeset.status === "applied" ? (
+                <span className="inline-flex items-center gap-1.5 text-[0.8125rem] text-[var(--success)]">
+                  <ShieldCheck aria-hidden className="size-3.5" />
+                  Approved and applied
+                </span>
+              ) : (
+                <span className="text-[0.8125rem] text-muted-foreground">
+                  {run.changeset.operationCount} change
+                  {run.changeset.operationCount === 1 ? "" : "s"} proposed ·{" "}
+                  {run.changeset.status.replace(/_/g, " ")}
+                </span>
+              )}
+
+              <Link
+                href={`/projects/${run.projectId}`}
+                className={cn(
+                  "tap-row ml-auto inline-flex items-center rounded-lg px-3 py-1.5 text-[0.75rem] font-medium transition-colors focus-ember",
+                  awaiting
+                    ? "border border-[var(--ember)]/45 bg-[var(--ember)]/12 text-[var(--ember-text)] hover:bg-[var(--ember)]/20"
+                    : "border border-border hover:bg-accent",
+                )}
+              >
+                {awaiting ? "Review changes" : "Open project"}
+              </Link>
+            </div>
+          )}
+
+          <IssueList issues={run.changeset?.issues ?? []} />
+
+          {run.errorCategory && (
+            <p className="mt-3 rounded-lg border border-[var(--danger)]/30 bg-[var(--danger)]/8 px-3 py-2 text-[0.8125rem] text-[var(--danger)]">
+              Stopped during {run.errorCategory}.
+            </p>
+          )}
+        </div>
+      )}
+    </li>
   );
 }
 
@@ -388,11 +513,9 @@ function TimingBreakdown({ run }: { run: RunRow }) {
   if (total <= 0) return null;
 
   return (
-    <div className="mt-3">
-      <p className="text-[0.6875rem] uppercase tracking-[0.06em] text-muted-foreground">
-        Time spent
-      </p>
-      <div className="mt-1.5 flex h-1.5 overflow-hidden rounded-full bg-surface-sunken" aria-hidden>
+    <div className="mt-3.5">
+      <p className="label-meta">Time spent</p>
+      <div className="mt-1.5 flex h-2 overflow-hidden rounded-full bg-surface-sunken" aria-hidden>
         {phases.map((phase) => (
           <span
             key={phase.label}
@@ -405,9 +528,9 @@ function TimingBreakdown({ run }: { run: RunRow }) {
         {phases.map((phase) => (
           <li
             key={phase.label}
-            className="inline-flex items-center gap-1.5 text-[0.6875rem] text-muted-foreground"
+            className="inline-flex items-center gap-1.5 font-mono text-[0.6875rem] tabular-nums text-muted-foreground"
           >
-            <span className={cn("size-1.5 rounded-full", phase.tone)} aria-hidden />
+            <span className={cn("size-1.5 rounded-[2px]", phase.tone)} aria-hidden />
             {phase.label} {millis(phase.ms)}
           </li>
         ))}
@@ -427,27 +550,25 @@ function ToolCallList({ tools, total }: { tools: RunToolCall[]; total: number })
   if (tools.length === 0) return null;
 
   return (
-    <div className="mt-3">
-      <p className="text-[0.6875rem] uppercase tracking-[0.06em] text-muted-foreground">
-        What it did
-      </p>
+    <div className="mt-3.5">
+      <p className="label-meta">What it did</p>
       <ol className="mt-1.5 space-y-1">
         {tools.map((tool, i) => (
           <li
             key={i}
-            className="flex items-center gap-2 rounded-md border border-border bg-surface-sunken px-2.5 py-1.5"
+            className="flex items-center gap-2 rounded-md border border-hairline bg-surface-sunken px-2.5 py-1.5"
           >
             {tool.ok ? (
-              <Check className="size-3 shrink-0 text-[var(--success)]" strokeWidth={2.5} />
+              <Check aria-hidden className="size-3 shrink-0 text-[var(--success)]" strokeWidth={2.5} />
             ) : (
-              <X className="size-3 shrink-0 text-[var(--danger)]" strokeWidth={2.5} />
+              <X aria-hidden className="size-3 shrink-0 text-[var(--danger)]" strokeWidth={2.5} />
             )}
             <span className="min-w-0 flex-1 truncate text-[0.75rem]">{tool.summary}</span>
             <span className="shrink-0 font-mono text-[0.625rem] text-muted-foreground">
               {tool.name}
             </span>
             {tool.durationMs > 0 && (
-              <span className="hidden shrink-0 font-mono text-[0.625rem] text-muted-foreground sm:inline">
+              <span className="hidden shrink-0 font-mono text-[0.625rem] tabular-nums text-muted-foreground sm:inline">
                 {millis(tool.durationMs)}
               </span>
             )}
@@ -455,7 +576,7 @@ function ToolCallList({ tools, total }: { tools: RunToolCall[]; total: number })
         ))}
       </ol>
       {total > tools.length && (
-        <p className="mt-1.5 text-[0.6875rem] text-muted-foreground">
+        <p className="mt-1.5 font-mono text-[0.625rem] text-muted-foreground">
           Showing {tools.length} of {total}.
         </p>
       )}
@@ -486,7 +607,7 @@ function IssueList({ issues }: { issues: RunIssue[] }) {
               : "bg-[var(--warning)]/8 text-[var(--warning)]",
           )}
         >
-          <AlertTriangle className="mt-0.5 size-3 shrink-0" />
+          <AlertTriangle aria-hidden className="mt-0.5 size-3 shrink-0" />
           <span className="min-w-0 flex-1">
             {issue.message}
             {issue.path && (

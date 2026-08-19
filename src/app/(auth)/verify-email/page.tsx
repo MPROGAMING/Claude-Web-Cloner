@@ -7,7 +7,7 @@ export const metadata: Metadata = { title: "Confirm your email" };
 
 export default function VerifyEmailPage() {
   return (
-    <Suspense fallback={<Skeleton className="h-80 w-full max-w-sm rounded-xl" />}>
+    <Suspense fallback={<Skeleton className="h-[26rem] w-full rounded-2xl" />}>
       <VerifyEmailPanel />
     </Suspense>
   );

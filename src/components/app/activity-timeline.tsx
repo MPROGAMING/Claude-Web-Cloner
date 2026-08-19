@@ -16,6 +16,10 @@ import { cn } from "@/lib/utils";
 /**
  * Activity is stored as `kind` + human summary. The icon map is the only place
  * that knows what a kind looks like, so adding a new event type is one line.
+ *
+ * The marker is a rounded square rather than a circle for the same reason a
+ * stud is: this product's geometry is moulded plastic, and a row of circles
+ * down the left edge belongs to a different system.
  */
 const ICONS: Record<string, { icon: LucideIcon; className: string }> = {
   "project.created": { icon: Sparkles, className: "text-[var(--ember)]" },
@@ -51,24 +55,30 @@ export function ActivityTimeline({
         const last = index === events.length - 1;
 
         return (
-          <li key={event.id} className="relative flex gap-3 pb-4 last:pb-0">
+          <li key={event.id} className="relative flex items-start gap-3 pb-3.5 last:pb-0">
             {!last && (
               <span
                 aria-hidden
                 className="absolute left-[0.6875rem] top-6 h-[calc(100%-1rem)] w-px bg-border"
               />
             )}
-            <span className="relative z-10 mt-0.5 flex size-[1.375rem] shrink-0 items-center justify-center rounded-full border border-border bg-surface">
-              <Icon className={cn("size-3", iconClass)} strokeWidth={2} />
+            <span className="relative z-10 mt-px flex size-[1.375rem] shrink-0 items-center justify-center rounded-[6px] border border-hairline bg-surface-sunken">
+              <Icon aria-hidden className={cn("size-3", iconClass)} strokeWidth={2} />
             </span>
-            <div className="min-w-0 flex-1">
-              <p className={cn("truncate", compact ? "text-[0.8125rem]" : "text-sm")}>
-                {event.summary}
-              </p>
-              <p className="mt-0.5 font-mono text-[0.625rem] text-muted-foreground">
-                {relativeTime(event.created_at)}
-              </p>
-            </div>
+            <p
+              className={cn(
+                "min-w-0 flex-1 truncate",
+                compact ? "text-[0.8125rem]" : "text-[0.875rem]",
+              )}
+            >
+              {event.summary}
+            </p>
+            <time
+              dateTime={event.created_at}
+              className="shrink-0 pt-px font-mono text-[0.625rem] tabular-nums text-muted-foreground"
+            >
+              {relativeTime(event.created_at)}
+            </time>
           </li>
         );
       })}

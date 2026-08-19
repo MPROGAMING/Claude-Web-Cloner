@@ -17,6 +17,8 @@ import { toast } from "sonner";
 import { playSound } from "@/lib/sound";
 import { Button } from "@/components/ui/button";
 import { ChangesetReview } from "@/components/workspace/changeset-review";
+import { fileIdentity } from "@/components/workspace/file-identity";
+import { PART_INK } from "@/components/workspace/material";
 import type { ChangesetData } from "@/lib/ai/types";
 import { cn } from "@/lib/utils";
 
@@ -119,12 +121,18 @@ export function ChangesetCard({ changeset }: { changeset: ChangesetData }) {
   }
 
   return (
-    <div className="rounded-lg border border-border bg-surface-sunken/60">
-      <div className="flex items-center gap-2 border-b border-border px-3 py-2">
-        <span className="text-[0.75rem] font-medium">Proposed changes</span>
-        <span className="text-[0.72rem] text-muted-foreground">{changeset.summary}</span>
+    <>
+      {/* The receipt: a part raised out of the transcript, holding one deep
+          well per artifact. The interior stays at the plate's deep tone so the
+          per-file validation and error text keeps its contrast. */}
+      <div className="mount overflow-hidden rounded-xl [--surface:var(--plate-raised)]">
+      <div className="flex items-center gap-2 px-3 py-2">
+        <span className="text-[0.8125rem] font-semibold">Proposed changes</span>
+        <span className="font-mono text-[0.6875rem] text-muted-foreground">
+          {changeset.summary}
+        </span>
         {phase === "applied" && (
-          <span className="ml-auto flex items-center gap-1 text-[0.72rem] text-[var(--success)]">
+          <span className="ml-auto flex items-center gap-1 rounded bg-surface-sunken px-1.5 py-0.5 text-[0.72rem] text-[var(--success)]">
             <Check className="size-3" /> Applied
           </span>
         )}
@@ -133,9 +141,13 @@ export function ChangesetCard({ changeset }: { changeset: ChangesetData }) {
         )}
       </div>
 
-      <ul className="divide-y divide-border/60">
+      <ul className="divide-y divide-hairline bg-surface-sunken">
         {changeset.operations.map((op) => {
           const Icon = ICONS[op.kind];
+          // What the piece is and what it does, ahead of where it is stored.
+          // The full path stays on the row's title and in the review dialog.
+          const identity = fileIdentity(op.toPath ?? op.path);
+          const label = op.toPath ? `${fileIdentity(op.path).name} → ${identity.name}` : identity.name;
           return (
             <li key={`${op.kind}-${op.path}`}>
               {/* The row is the way into the diff: a summary that cannot be
@@ -143,13 +155,14 @@ export function ChangesetCard({ changeset }: { changeset: ChangesetData }) {
               <button
                 type="button"
                 onClick={() => setReviewing(true)}
-                className="tap-row flex w-full items-center gap-2 px-3 py-1.5 text-left transition-colors hover:bg-accent/50 focus-ember"
+                title={op.toPath ? `${op.path} → ${op.toPath}` : op.path}
+                className="tap-row flex w-full items-center gap-2 px-3 py-2 text-left transition-colors hover:bg-accent/50 focus-ember"
               >
                 <Icon className={cn("size-3 shrink-0", TONE[op.kind])} />
-                <code className="truncate text-[0.72rem]">{op.path}</code>
-                {op.toPath && (
-                  <code className="truncate text-[0.72rem] text-muted-foreground">→ {op.toPath}</code>
-                )}
+                <span className="truncate text-[0.78rem] font-medium">{label}</span>
+                <span className="shrink-0 text-[0.68rem] text-muted-foreground">
+                  {identity.role}
+                </span>
                 {op.validation && op.validation.errors > 0 && (
                   <span className="ml-auto shrink-0 text-[0.7rem] text-[var(--danger)]">
                     {op.validation.errors} error{op.validation.errors === 1 ? "" : "s"}
@@ -162,7 +175,7 @@ export function ChangesetCard({ changeset }: { changeset: ChangesetData }) {
       </ul>
 
       {blocking.length > 0 && (
-        <div className="border-t border-border px-3 py-2">
+        <div className="bg-surface-sunken px-3 py-2">
           {blocking.map((issue) => (
             <p
               key={`${issue.rule}-${issue.path ?? ""}`}
@@ -175,7 +188,7 @@ export function ChangesetCard({ changeset }: { changeset: ChangesetData }) {
         </div>
       )}
 
-      <div className="flex flex-wrap items-center gap-2 border-t border-border px-3 py-2">
+      <div className="flex flex-wrap items-center gap-2.5 px-3 py-2.5">
         <Button size="sm" variant="outline" onClick={() => setReviewing(true)}>
           <FileDiff className="size-3" />
           Review changes
@@ -192,7 +205,14 @@ export function ChangesetCard({ changeset }: { changeset: ChangesetData }) {
           </Button>
         ) : phase === "undone" ? null : (
           <>
-            <Button size="sm" onClick={() => approveAndApply()} disabled={busy || blocking.length > 0}>
+            {/* A moulded part with real travel: consenting to a set of writes
+                should feel like pressing something, not like clicking a link. */}
+            <Button
+              size="sm"
+              onClick={() => approveAndApply()}
+              disabled={busy || blocking.length > 0}
+              className={cn("brick h-8 px-3 font-semibold", PART_INK)}
+            >
               {busy ? <Loader2 className="size-3 animate-spin" /> : <Check className="size-3" />}
               {phase === "approving"
                 ? "Approving…"
@@ -208,6 +228,7 @@ export function ChangesetCard({ changeset }: { changeset: ChangesetData }) {
           </>
         )}
       </div>
+      </div>
 
       {reviewing && (
         <ChangesetReview
@@ -218,6 +239,6 @@ export function ChangesetCard({ changeset }: { changeset: ChangesetData }) {
           applied={phase === "applied" || phase === "undone"}
         />
       )}
-    </div>
+    </>
   );
 }

@@ -7,7 +7,7 @@ export const metadata: Metadata = { title: "Create your account" };
 
 export default function SignUpPage() {
   return (
-    <Suspense fallback={<Skeleton className="h-[28rem] w-full max-w-sm rounded-xl" />}>
+    <Suspense fallback={<Skeleton className="h-[34rem] w-full rounded-2xl" />}>
       <AuthForm mode="sign-up" />
     </Suspense>
   );

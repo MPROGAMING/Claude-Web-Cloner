@@ -40,7 +40,9 @@ Not assumed — executed:
 - Sign-in through the real UI; dashboard, credits, settings and the workspace all
   render live data
 - Project creation from a template → workspace opens with the template prompt
-  seeded into the composer
+  seeded into the composer *(the templates product was later deleted — see
+  "Templates deleted" below; the composer seeding still works, from the hero
+  composer's intent hand-off)*
 - Studio pairing code generates and displays (`3FMPSV`, 10-minute expiry)
 - Model selector resolves availability from the keys actually configured:
   OpenRouter models are usable, direct-provider models name the key they need
@@ -185,15 +187,16 @@ badges, context size, credit cost, and a catalog freshness timestamp.
 
 ### Real brand assets
 Provider logos are the genuine marks from `@lobehub/icons` (MIT). Template art
-uses real Game Icons artwork (CC BY 3.0) via `react-icons/gi`, attributed in the
-footer. Both inline as SVG — no hot-linking, no broken images, no layout shift.
+used real Game Icons artwork (CC BY 3.0) via `react-icons/gi`, attributed in the
+footer — **both the art and the attribution are gone**, see "Templates deleted"
+below. Both inline as SVG — no hot-linking, no broken images, no layout shift.
 
 Stock photography was evaluated and **rejected**: downloaded candidates were
 generic and repeatedly mismatched to genre (a scary clown returned for "horror",
 a games controller for a PvP arena, a portrait-orientation castle for a
 resource simulator). Real game iconography reads correctly at every size.
 
-### Templates
+### Templates *(superseded — the whole product was deleted, see below)*
 Expanded 8 → **12 genres**, each with hero art, category, tags, accent, featured
 flag and an example prompt. New filterable gallery; dashboard and create dialog
 both use the visual cards.
@@ -219,7 +222,7 @@ parts. Credit balance counts rather than snaps. All reduced-motion aware.
 | App shell, nav, responsive | Done |
 | Landing + pricing | Done |
 | Auth (email/password, callback, protected routes) | **Verified live** |
-| Dashboard / projects / templates / activity / credits / settings | **Verified live** |
+| Dashboard / projects / activity / credits / settings | **Verified live** |
 | Project CRUD, duplicate, archive | Done (create verified live) |
 | Workspace (3-pane, collapsible, mobile sheets) | **Verified live** |
 | Code editor: tabs, editing, diff, go-to-file | **Verified live** — see "Workspace editor" |
@@ -351,10 +354,12 @@ Sign In / Providers → Confirm email.
 - **Composer attachments disabled** with a tooltip.
 - **Light-theme contrast backlog.** `npm run a11y` could not see most of the
   palette until its colour parser was fixed (below). The workspace, marketing,
-  dashboard, templates, credits and settings routes are clean in both themes;
-  `/pricing` ("Most credits per dollar" 3.59:1, "Default" 3.19:1), `/templates`
-  (the count pill, 3.19:1) and `/activity` ("Needs approval", 3.32:1) still fail
-  in light at 9–11px, and `/projects` has a pre-existing H1 → H3 heading jump.
+  dashboard, credits and settings routes are clean in both themes;
+  `/pricing` ("Most credits per dollar" 3.59:1, "Default" 3.19:1) and
+  `/activity` ("Needs approval", 3.32:1) still fail in light at 9–11px, and
+  `/projects` has a pre-existing H1 → H3 heading jump. The third failure was on
+  `/templates`, which no longer exists. These have not been re-measured since
+  the material system landed.
 - The `(app)` loading skeleton is dashboard-shaped and also shows for the
   workspace route, which is a brief visual mismatch.
 
@@ -507,3 +512,75 @@ Colours resolve through a canvas now, and translucent text and stacked
 translucent surfaces are composited rather than treated as opaque. That found
 six real contrast failures on the workspace and marketing routes, all fixed, and
 the backlog above.
+
+## Templates deleted; inspiration moved into the conversation (2026-08-19)
+
+The templates product is **permanently gone**, not disabled. A gallery of
+starter packs framed the product as a shop, and the thing that actually starts a
+build here is a sentence.
+
+**Removed:** `src/app/(app)/templates/`, `components/app/{template-gallery,
+template-card,dashboard-templates}.tsx`, `components/marketing/{template-art,
+template-strip,roblox-showcase,demo-showcase}.tsx`, `src/lib/templates.ts`,
+`public/templates/` (12 jpgs + `CREDITS.md`), `public/demos/` (4 Roblox Studio
+marketing jpgs) and `scripts/card-shots.mjs`. `/templates` is out of the sidebar
+nav, the command palette and `proxy.ts` `PROTECTED_PREFIXES`; the Game-icons
+CC BY 3.0 attribution is out of the marketing footer with the artwork it covered.
+
+**In its place:** `src/lib/inspiration.ts` — a pure module exporting `Mechanic`,
+`MECHANICS` (16 real Roblox mechanics written in **play language**, not code
+language) and `mechanicsFor(seed?)`, which returns a deterministic rotating
+slice of four. The rotation is a 32-bit FNV-1a hash of the seed, never
+`Math.random`, because the workspace empty state renders on the server and
+hydrates on the client and a different four on each side is a hydration
+mismatch. Picking a chip drops its full sentence into the composer, editable
+before it is sent. The workspace empty state is the consumer today.
+
+**The `template_slug` column stays.** `projects.template_slug` is still declared
+in `0001_init.sql`. It is nullable, nothing reads or writes it, and it is gone
+from the `Project` type in `lib/supabase/types.ts` — but there is no migration
+dropping it, deliberately: dropping a column is destructive and only the
+user-facing product was in scope. **Do not "fix" this in a later session.**
+
+**Verified:** `npx vitest run` — **468 tests across 21 files, all passing**.
+`npm run check` (lint + typecheck + build) and `npm run a11y` have **not** been
+re-run since the deletion, so route counts and the contrast backlog above are
+stale by exactly that much.
+
+## The stud is a material (2026-08-19)
+
+`globals.css` gained a material system under "The stud, as a material". Two
+facts drive it, and both came from measuring real Roblox surface textures rather
+than from taste:
+
+1. **A stud is a rounded square, not a circle.** The old `bg-studs` used
+   `radial-gradient(circle …)`, which is exactly why the plate read as a dotted
+   background instead of as a surface. Stud ≈ 5/8 of the pitch, corner radius
+   ≈ 0.27 × stud, a thin bevel *rim* rather than a broad dome, a flat top face,
+   a cast shadow down-right, light always from the upper-left.
+2. **Roblox ships two surface types** — `Studs` (raised) and `Inlet` (recessed),
+   the same lattice inverted. That is a rest/pressed pair inherited from the
+   platform, not an invented metaphor.
+
+The tile carries **no hue** — white and black at alpha only — so it composites
+over any `background-color`, serves both themes from one definition, and stays
+crisp at any zoom because it is geometry rather than a bitmap.
+
+API: `--stud-pitch` (the lattice; everything mounted measures in whole studs),
+`.stud-plate`, `.stud-plate-inlet`, `.brick` (a moulded part: a hard zero-blur
+extruded side wall **plus** a separate blurred contact shadow — one blurred
+shadow alone reads as a floating div — pressing with real travel on `:active`
+and on `[data-pressed="true"]`), `.mount` (opaque, occludes the studs beneath,
+hard 2px base proving contact), and `.land` + `@keyframes stud-land` (parts land
+with a one-eighth-stud overshoot; they do not fade in). `.bg-studs` is retained
+as a compatibility alias so existing markup keeps rendering.
+
+Under `prefers-reduced-motion` the travel and the landing go and **the bevel
+stays** — the material is still physical when it is still.
+
+**Adoption is not done.** Measured at the time of writing, the shipped app used
+only `.bg-studs` (the marketing hero) and `.stud-brick` (the `StudBuild` mark); `.stud-plate`,
+`.brick`, `.mount` and `.land` are defined and exercised in `src/app/lab/`
+(untracked design scratch) but not yet used by a product surface. Full spec,
+geometry table and the three verbs — press / snap / mount — in
+`docs/DESIGN_SYSTEM.md`.

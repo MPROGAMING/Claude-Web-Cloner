@@ -1,324 +1,233 @@
-import {
-  ArrowRight,
-  Boxes,
-  FileCode2,
-  GitBranch,
-  Plug2,
-  ShieldCheck,
-  Terminal,
-  Workflow,
-} from "lucide-react";
+import { ArrowRight, BookOpen, FileCode2, GitBranch, ShieldCheck, Workflow } from "lucide-react";
 import { LinkButton } from "@/components/ui/link-button";
-import { WorkspacePreview } from "@/components/marketing/workspace-preview";
-import { HeroComposer } from "@/components/marketing/hero-composer";
-import { StudBuild } from "@/components/brand/stud-build";
-import { RobloxHeroPair } from "@/components/marketing/roblox-showcase";
-import { DemoShowcase } from "@/components/marketing/demo-showcase";
+import { BrickText } from "@/components/marketing/brick-text";
+import { Hero } from "@/components/marketing/hero";
+import { PlateBand } from "@/components/marketing/plate-band";
 import { StudioFlow } from "@/components/marketing/studio-flow";
-import { TemplateStrip } from "@/components/marketing/template-strip";
-import { PricingCards } from "@/components/marketing/pricing-cards";
 import { Section, SectionHeading } from "@/components/marketing/section";
+
+/**
+ * The landing page.
+ *
+ * It used to run ten sections and 7,335px — a workspace replay, a feature
+ * grid, a model catalogue, a pricing block and two showcases — against a
+ * competitor who says everything in one screen and wins. Length was not
+ * buying anything: the fold already carries the promise, the composer and the
+ * receipt, and every section after it was another way of saying the same
+ * thing to someone who had already decided.
+ *
+ * What is left is the three questions the fold cannot answer — how does it
+ * work, how does it reach my place, does it actually know Roblox — and one
+ * action. Sections were cut rather than compressed; nothing here is a
+ * shrunken version of something bigger.
+ *
+ * The reader is thirteen to nineteen and has an idea, not a computer-science
+ * degree. Every claim below is the same claim the engineering docs make; the
+ * only thing that changed is that it is written in words the reader already
+ * has. That is not simplification — "you see every line it added or took out
+ * before you agree" is *more* specific than "review the diff", because it says
+ * what you actually see and when.
+ */
+
+const STEPS = [
+  {
+    icon: Workflow,
+    tone: "text-[var(--ember)]",
+    title: "It tells you the plan first",
+    body: "Before it builds anything big you get the list of what it is about to make. If it is wrong you fix it right there, instead of after twenty files exist.",
+  },
+  {
+    icon: FileCode2,
+    tone: "text-[var(--signal)]",
+    title: "It writes real scripts",
+    body: "Not a snippet to paste. Actual scripts, put where Roblox expects them — server stuff on the server, player stuff on the player — the way someone who knows Roblox would lay it out.",
+  },
+  {
+    icon: ShieldCheck,
+    tone: "text-[var(--success)]",
+    title: "It checks its own code",
+    body: "It reads back everything it wrote and looks for what actually breaks games: functions Roblox retired years ago, and code sitting on the player that only works on the server. It fixes those before you see them.",
+  },
+  {
+    icon: GitBranch,
+    tone: "text-[var(--ember)]",
+    title: "Nothing lands until you say so",
+    body: "You get the list of files it wants to change, and you can read every line it added or took out before you agree. Changed your mind afterwards? One press puts it back.",
+  },
+];
+
+/**
+ * Counted out of the shipped corpus manifest (`docs/roblox-brain/corpus`), not
+ * estimated. If the corpus is rebuilt these three numbers move with it.
+ */
+const BRAIN = [
+  { stat: "5,456", label: "pages of official Roblox and Luau documentation it reads from" },
+  { stat: "9,591", label: "Roblox functions and events it checks your code against" },
+  { stat: "3,190", label: "real examples out of the docs it can learn a pattern from" },
+];
 
 export default function LandingPage() {
   return (
     <>
-      {/* ------------------------------------------------------------------ */}
-      {/* Hero                                                                */}
-      {/* ------------------------------------------------------------------ */}
-      <section className="relative overflow-hidden">
-        {/* The floor is Roblox's own material: a stud plate, fading out. */}
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 bg-studs opacity-[0.85] [mask-image:radial-gradient(ellipse_78%_62%_at_50%_8%,black,transparent)]"
-        />
-        {/* Light from the forge, low and slow. */}
-        <div
-          aria-hidden
-          className="animate-forge pointer-events-none absolute left-1/2 top-[-10rem] size-[42rem] rounded-full bg-[var(--ember)]/14 blur-[130px]"
-        />
-
-        <div className="relative mx-auto max-w-6xl px-5 pb-12 pt-10 sm:px-8 sm:pt-14">
-          <div className="mx-auto max-w-3xl text-center">
-            <h1 className="text-[2.6rem] font-extrabold leading-[0.92] tracking-[-0.045em] sm:text-[4.25rem]">
-              Say what you want
-              <br />
-              <span className="text-[var(--ember)]">to make.</span>
-            </h1>
-
-            <p className="mx-auto mt-5 max-w-md text-[0.9375rem] leading-relaxed text-muted-foreground sm:text-base">
-              Blockwright writes the scripts, wires the systems, and puts the
-              whole thing into your Roblox place — ready for you to hit Publish.
-            </p>
-
-            {/* The product's core action, in the hero. */}
-            <HeroComposer />
-          </div>
-
-          {/* Two real places above the fold, in two different genres. One
-              image explains the product better than a section does. */}
-          <RobloxHeroPair className="mt-10" />
-        </div>
-      </section>
-
-      {/* Real captured Roblox output, before any product UI. */}
-      <DemoShowcase />
-
-      <section className="relative border-t border-border">
-        <div className="mx-auto max-w-6xl px-5 py-14 sm:px-8">
-          <WorkspacePreview />
-        </div>
-      </section>
+      <Hero />
 
       {/* ------------------------------------------------------------------ */}
-      {/* The problem it solves                                               */}
+      {/* How it works                                                        */}
       {/* ------------------------------------------------------------------ */}
-      <Section id="how" className="border-t border-border">
+      <Section id="how" className="border-t border-border bg-surface-sunken/60">
         <SectionHeading
           eyebrow="How it works"
           title="It builds. It doesn't just answer."
-          description="A chatbot hands you a snippet and leaves the integration to you. Blockwright works on the project itself — creating files, wiring them together, and verifying they compile before it says it's done."
+          description="Ask a chatbot and you get a chunk of code and good luck. Blockwright works on the game itself — making the files, wiring them to each other, and making sure they actually run before it tells you it is finished."
         />
 
-        <div className="pointer-events-none mt-8 flex justify-center">
-          <StudBuild className="h-[13rem] w-[17rem] sm:h-[16rem] sm:w-[21rem]" />
-        </div>
+        {/* A tray: the plate pressed in (Inlet), holding four parts. The
+            lattice stops at the tray edge rather than running under the
+            heading — studs behind running text is the one flaw a blind critic
+            found in the fold, and no contrast audit can see it.
 
-        <ol className="mt-6 grid gap-px overflow-hidden rounded-xl border border-border bg-border md:grid-cols-3">
-          {[
-            {
-              step: "01",
-              icon: Workflow,
-              title: "It tells you the plan first",
-              body: "Before it builds anything big, you see the list of what it's about to make. If it's wrong, you fix it there — not after twenty files exist.",
-            },
-            {
-              step: "02",
-              icon: FileCode2,
-              title: "It writes real scripts",
-              body: "Not snippets to paste. Actual scripts, in the right places — server stuff on the server, player stuff on the player — the way a good Roblox dev would lay it out.",
-            },
-            {
-              step: "03",
-              icon: ShieldCheck,
-              title: "It finds its own mistakes",
-              body: "It re-reads everything it wrote, spots the old or broken bits and the things that only work on one side, and fixes them before you ever see them.",
-            },
-          ].map((item) => (
-            <li key={item.step} className="bg-background p-7">
-              <div className="flex items-center gap-3">
-                <item.icon className="size-4 text-[var(--ember)]" strokeWidth={1.75} />
-                <span className="label-meta">{item.step}</span>
-              </div>
-              <h3 className="mt-4 text-[1.0625rem] font-semibold">{item.title}</h3>
-              <p className="mt-2.5 text-sm leading-relaxed text-muted-foreground">{item.body}</p>
-            </li>
-          ))}
-        </ol>
+            `--surface` is lifted a step on the way down, so a part inside a
+            sunken tray is not the same value as the tray. Set on a descendant
+            because `.mount` is unlayered and would beat a utility on itself. */}
+        <div className="relative mt-8 overflow-hidden rounded-2xl bg-surface-sunken p-[1.0625rem] shadow-[inset_0_2px_6px_0_rgb(0_0_0/0.4)] sm:p-[2.125rem]">
+          <div
+            aria-hidden
+            className="stud-plate-inlet pointer-events-none absolute inset-0 opacity-90 [--stud-pitch:34px]"
+          />
+          <ol className="relative grid gap-4 [--surface:var(--surface-raised)] sm:grid-cols-2 lg:grid-cols-4">
+            {STEPS.map((step, index) => (
+              <li key={step.title} className="mount rounded-xl p-5">
+                <div className="flex items-center gap-3">
+                  <span
+                    aria-hidden
+                    className="brick flex size-8 items-center justify-center rounded-lg font-mono text-[0.75rem] font-bold text-[var(--ember-ink)] [--lift:3px]"
+                  >
+                    {index + 1}
+                  </span>
+                  <step.icon className={`size-4 ${step.tone}`} strokeWidth={1.75} aria-hidden />
+                </div>
+                <h3 className="mt-4 text-[1.0625rem] font-semibold">{step.title}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{step.body}</p>
+              </li>
+            ))}
+          </ol>
+        </div>
       </Section>
 
       {/* ------------------------------------------------------------------ */}
-      {/* Studio bridge                                                       */}
+      {/* Studio bridge — the same plate as the hero, in the other note.      */}
       {/* ------------------------------------------------------------------ */}
-      <Section id="studio" className="border-t border-border bg-surface-sunken/40">
-        <div className="grid gap-14 lg:grid-cols-[1fr_1.05fr] lg:items-center">
-          <div>
-            <span className="inline-flex items-center gap-2 text-[0.8125rem] font-semibold text-[var(--signal)]">
-              <span aria-hidden className="size-1.5 rounded-[2px] bg-[var(--signal)]" />
-              Studio bridge
-            </span>
-            <h2 className="mt-3 text-3xl font-semibold leading-[1.1] sm:text-[2.5rem]">
-              Watch it land in your place.
-            </h2>
-            <p className="mt-5 text-base leading-relaxed text-muted-foreground">
-              Install the plugin, paste a six-character code, and the project in
-              your browser is linked to the place open in Studio. Scripts appear
-              where they belong — no copy-paste, no dragging files around. When
-              it plays the way you want, you press Publish in Studio and your
-              friends are in it.
-            </p>
+      <section id="studio" className="scroll-mt-16">
+        <div className="mx-auto max-w-7xl px-3 pb-4 sm:px-6">
+          <PlateBand className="px-5 py-7 sm:px-9 sm:py-9">
+            <div className="grid gap-7 lg:grid-cols-[1fr_minmax(0,1fr)] lg:items-center lg:gap-12">
+              <div>
+                <p className="mount label-meta inline-flex items-center gap-2.5 rounded-lg px-3 py-1.5 text-[var(--signal)]">
+                  <span aria-hidden className="size-1.5 rounded-[2px] bg-[var(--signal)]" />
+                  Studio bridge
+                </p>
 
-            <ul className="mt-8 space-y-4">
-              {[
-                {
-                  icon: Plug2,
-                  title: "Connect once",
-                  body: "One short code and you're linked. Unlink from either side whenever you want.",
-                },
-                {
-                  icon: Terminal,
-                  title: "It can only do what you allow",
-                  body: "The plugin does a short list of named jobs, like syncing your files. It is never handed code to run in your place.",
-                },
-                {
-                  icon: GitBranch,
-                  title: "It sees what happened",
-                  body: "Whatever Studio reports — worked, or broke — comes back into the chat, so it can react to the real result instead of guessing.",
-                },
-              ].map((item) => (
-                <li key={item.title} className="flex gap-3.5">
-                  <span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg border border-border bg-surface">
-                    <item.icon className="size-4 text-[var(--signal)]" strokeWidth={1.75} />
-                  </span>
-                  <div>
-                    <h3 className="text-sm font-medium">{item.title}</h3>
-                    <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
-                      {item.body}
-                    </p>
-                  </div>
+                {/* The same moulding as the hero, one size down. Display type
+                    is the one thing allowed to sit on bare plate — its own
+                    relief is louder than the lattice. */}
+                <h2 className="mt-4 pb-1.5 text-[clamp(1.75rem,3.4vw,2.5rem)] uppercase leading-[1.12]">
+                  <BrickText>Watch it land</BrickText>{" "}
+                  <BrickText>in your place.</BrickText>
+                </h2>
+
+                <div className="mount mt-5 rounded-2xl px-4 py-4 sm:px-5">
+                  <p className="text-[0.9375rem] leading-relaxed text-muted-foreground">
+                    Install the plugin, type in a six-character code, and the
+                    project in your browser is joined to the place you have open
+                    in Studio. Scripts turn up where they belong — no copying
+                    and pasting, no dragging files around. When it plays the way
+                    you wanted, you hit Publish in Studio and your friends are
+                    in it.
+                  </p>
+                  <ul className="mt-4 space-y-2 border-t border-hairline pt-4 text-[0.8125rem] leading-relaxed text-muted-foreground">
+                    <li>
+                      The plugin can only do a short list of jobs we named ahead
+                      of time. Nothing ever hands it code to run inside your
+                      place.
+                    </li>
+                    <li>
+                      Whatever Studio says back — it worked, or it didn&rsquo;t —
+                      goes straight into the chat, so it is reacting to what
+                      really happened rather than what it hoped.
+                    </li>
+                    <li>
+                      You don&rsquo;t need Studio to start. Your files are saved
+                      either way, and you can join them up the next time you
+                      open a place.
+                    </li>
+                  </ul>
+                </div>
+              </div>
+
+              <StudioFlow />
+            </div>
+          </PlateBand>
+        </div>
+      </section>
+
+      {/* ------------------------------------------------------------------ */}
+      {/* The knowledge base                                                  */}
+      {/* ------------------------------------------------------------------ */}
+      <Section id="brain" className="border-t border-border">
+        <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)] lg:items-center lg:gap-14">
+          <SectionHeading
+            eyebrow="The knowledge base"
+            title="It actually knows Roblox"
+            description="Most AI guesses at Roblox and makes up functions that were never there. Blockwright reads the real documentation before it writes a line, and tells you which page it got it from."
+          />
+
+          <div className="mount rounded-xl p-5 sm:p-6">
+            <ul className="divide-y divide-[var(--hairline)]">
+              {BRAIN.map((item) => (
+                <li key={item.stat} className="flex items-baseline gap-4 py-3 first:pt-0 last:pb-0">
+                  <p className="w-[4.75rem] shrink-0 font-display text-[1.5rem] font-extrabold leading-none tabular-nums tracking-[-0.03em] text-[var(--ember)]">
+                    {item.stat}
+                  </p>
+                  <p className="text-[0.8125rem] leading-relaxed text-muted-foreground">
+                    {item.label}
+                  </p>
                 </li>
               ))}
             </ul>
-
-            <p className="mt-8 rounded-lg border border-border bg-surface p-3.5 text-[0.8125rem] leading-relaxed text-muted-foreground">
-              Studio is optional. Everything works without it — your files are
-              saved, and you can sync them next time you open Studio.
+            <p className="mt-4 flex items-start gap-2.5 border-t border-hairline pt-4 text-[0.8125rem] leading-relaxed text-muted-foreground">
+              <BookOpen className="mt-0.5 size-4 shrink-0 text-[var(--signal)]" strokeWidth={1.75} />
+              Counted out of the documentation that ships inside the product,
+              not guessed at. You pick which model writes your game, and you can
+              swap it halfway through.
             </p>
           </div>
-
-          <StudioFlow />
         </div>
       </Section>
 
       {/* ------------------------------------------------------------------ */}
-      {/* Features                                                            */}
-      {/* ------------------------------------------------------------------ */}
-      <Section className="border-t border-border">
-        <SectionHeading
-          eyebrow="In the workspace"
-          title="Made for actually finishing a game"
-          description="The things you only miss on day two: every version kept, a way back when something breaks, and an honest count of what you've spent."
-        />
-
-        <div className="mt-14 grid gap-px overflow-hidden rounded-xl border border-border bg-border sm:grid-cols-2 lg:grid-cols-3">
-          {[
-            {
-              icon: FileCode2,
-              title: "See every script",
-              body: "All the code it writes, colour-coded and searchable, with a copy button when you want it somewhere else.",
-            },
-            {
-              icon: GitBranch,
-              title: "Undo anything",
-              body: "Every change keeps the old version. See exactly what moved, and put it back in one click.",
-            },
-            {
-              icon: Boxes,
-              title: "Pick up where you left off",
-              body: "Your chat, your files and your Studio link all stay with the project. Close the tab and come back tomorrow.",
-            },
-            {
-              icon: Workflow,
-              title: "No fake loading bars",
-              body: "When it says it's searching the docs or writing a script, that is the thing it is doing right then.",
-            },
-            {
-              icon: ShieldCheck,
-              title: "Built so it can't be cheated",
-              body: "It writes games where the server decides what counts — money, health, items — so players can't hand themselves whatever they like.",
-            },
-            {
-              icon: Plug2,
-              title: "Swap brains mid-build",
-              body: "Start on something fast, switch to something stronger for the hard part. It remembers the whole conversation either way.",
-            },
-          ].map((feature) => (
-            <div key={feature.title} className="bg-background p-6">
-              <feature.icon className="size-4 text-[var(--ember)]" strokeWidth={1.75} />
-              <h3 className="mt-4 text-[0.9375rem] font-semibold">{feature.title}</h3>
-              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{feature.body}</p>
-            </div>
-          ))}
-        </div>
-      </Section>
-
-      {/* ------------------------------------------------------------------ */}
-      {/* Templates                                                           */}
-      {/* ------------------------------------------------------------------ */}
-      <Section className="border-t border-border bg-surface-sunken/40">
-        <SectionHeading
-          eyebrow="Templates"
-          title="Start from a known-good loop"
-          description="Templates are prompts, not frozen code — the agent generates fresh against today's Roblox APIs every time."
-        />
-        <TemplateStrip className="mt-12" />
-      </Section>
-
-      {/* ------------------------------------------------------------------ */}
-      {/* Models                                                              */}
-      {/* ------------------------------------------------------------------ */}
-      {/* The model catalogue used to live here: fourteen rows of provider names
-          and context windows. It was the largest section on the page, aimed at
-          someone who evaluates inference pricing rather than someone who wants
-          a tycoon game. The capability is unchanged and still in the workspace
-          model picker; the landing now says the one thing a creator needs. */}
-      <Section id="brain" className="border-t border-border">
-        <SectionHeading
-          eyebrow="The brain"
-          title="It actually knows Roblox"
-          description="Most AI guesses at Roblox and invents functions that don't exist. Blockwright reads the real documentation before it writes a line, and tells you which page it used."
-        />
-
-        <div className="mt-12 grid gap-px overflow-hidden rounded-xl border border-border bg-border sm:grid-cols-3">
-          {[
-            {
-              stat: "5,456",
-              label: "pages of official Roblox and Luau documentation it can read",
-            },
-            {
-              stat: "9,591",
-              label: "Roblox functions and events it checks your code against",
-            },
-            {
-              stat: "3,190",
-              label: "real code examples from the docs it can learn a pattern from",
-            },
-          ].map((item) => (
-            <div key={item.stat} className="bg-background p-7">
-              <p className="text-[2.25rem] font-extrabold leading-none tracking-[-0.03em] text-[var(--ember)]">
-                {item.stat}
-              </p>
-              <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{item.label}</p>
-            </div>
-          ))}
-        </div>
-
-        <p className="mt-6 text-[0.8125rem] leading-relaxed text-muted-foreground">
-          You can pick which AI writes your game, and swap it mid-build — that
-          lives in the workspace, next to the chat box, where you actually need it.
-        </p>
-      </Section>
-
-      {/* ------------------------------------------------------------------ */}
-      {/* Pricing                                                             */}
-      {/* ------------------------------------------------------------------ */}
-      <Section id="pricing" className="border-t border-border bg-surface-sunken/40">
-        <SectionHeading
-          eyebrow="Credits"
-          title="Pay for what you generate"
-          description="One balance across every model. Heavier models cost more per token; nothing is charged for a request that fails before it reaches a provider."
-        />
-        <PricingCards className="mt-12" />
-      </Section>
-
-      {/* ------------------------------------------------------------------ */}
-      {/* CTA                                                                 */}
+      {/* One closing action                                                  */}
       {/* ------------------------------------------------------------------ */}
       <section className="relative overflow-hidden border-t border-border">
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-0 bg-dotgrid opacity-40 [mask-image:radial-gradient(ellipse_60%_60%_at_50%_50%,black,transparent)]"
+          className="pointer-events-none absolute inset-0 bg-[radial-gradient(70%_120%_at_50%_120%,color-mix(in_oklch,var(--ember)_22%,transparent),transparent_70%)]"
         />
-        <div className="relative mx-auto max-w-3xl px-5 py-20 text-center sm:px-8">
-          <h2 className="text-3xl font-semibold leading-[1.1] sm:text-[2.75rem]">
+        <div className="relative mx-auto max-w-3xl px-5 py-12 text-center sm:px-8 sm:py-14">
+          <h2 className="text-[1.875rem] font-bold uppercase leading-[1.02] tracking-[-0.02em] sm:text-[2.5rem]">
             What are you building?
           </h2>
-          <p className="mx-auto mt-5 max-w-lg text-base leading-relaxed text-muted-foreground">
-            Open a project, describe the game you have in your head, and get to
-            something people can actually play.
+          <p className="mx-auto mt-4 max-w-lg text-[0.9375rem] leading-relaxed text-muted-foreground">
+            Say the thing you have been picturing. You get 2,000 credits when
+            you make an account, and saying no to the first plan it comes back
+            with costs you nothing.
           </p>
-          <LinkButton href="/sign-up" size="lg" className="mt-8 h-10 px-5 text-sm">
+          <LinkButton
+            href="/sign-up"
+            size="lg"
+            className="brick mt-8 h-12 rounded-xl px-7 font-display text-[1.0625rem] font-extrabold uppercase tracking-[0.04em] text-[var(--ember-ink)]"
+          >
             Start building free
-            <ArrowRight className="size-4" data-icon="inline-end" />
+            <ArrowRight className="size-4" data-icon="inline-end" strokeWidth={2.75} />
           </LinkButton>
         </div>
       </section>

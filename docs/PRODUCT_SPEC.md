@@ -44,9 +44,10 @@ synthetic progress anywhere in the product; if the status rail says
 ## Feature surface
 
 ### Landing (`/`, `/pricing`)
-Hero with a scripted preview built from real product components, how-it-works,
-Studio bridge explainer, feature grid, templates, model wall rendered from the
-registry, credit packs, FAQ. No fabricated social proof.
+Hero with a working composer and a scripted preview built from real product
+components, how-it-works, Studio bridge explainer, feature grid, a section on
+the Roblox Brain, and a pricing preview. `/pricing` carries the credit packs and
+the FAQ. No fabricated social proof.
 
 ### Auth (`/sign-in`, `/sign-up`)
 Supabase email + password. Server actions only — the browser never calls the
@@ -55,7 +56,7 @@ provisions a profile and 2,000 credits via a database trigger.
 
 ### Dashboard (`/dashboard`)
 Welcome state, three stat tiles (projects / credits / live Studio connections),
-recent projects, template shortcuts, recent activity.
+recent projects, recent activity.
 
 ### Projects (`/projects`, `/projects/[id]`)
 Create, rename, duplicate (files copied, conversation not), archive, delete.
@@ -78,10 +79,31 @@ reading user back down), empty-state suggestions, honest error presentation.
 Composer: multiline, Enter to send / Shift+Enter for newline, model selector,
 context indicator, credit estimate, attachment slot reserved.
 
-### Templates (`/templates`)
-Eight starters across Economy / Progression / Combat / Systems / Social. A
-template is a **well-specified prompt**, not frozen code — so it never goes
-stale against current Roblox APIs and never ships unreviewed source.
+### Inspiration, inside the conversation
+There is no template gallery and no `/templates` route. A creator starts by
+saying what they want, so the product's job is to make that sentence easy to
+write — not to sell a starter pack.
+
+`src/lib/inspiration.ts` holds 16 mechanics written in **play language**, not
+code language: "lava that kills you the moment you touch it, and checkpoint
+flags that remember the last one you reached". Each is a complete, buildable
+request rather than a genre label. `mechanicsFor(seed)` returns a deterministic
+rotating slice of four — 32-bit FNV-1a over the seed, no `Math.random` — so the
+server and the client render identical chips, and a project's four do not
+reshuffle under the person reading them.
+
+The workspace empty state offers those four, seeded by the project. Picking one
+drops its full sentence into the composer, where it can be edited before it is
+sent. It is a way to start talking, never a thing you choose.
+
+A mechanic is a **prompt, not frozen code**, so nothing pre-written ships
+unreviewed and nothing goes stale against current Roblox APIs. That was always
+the reason templates were prompts; removing the gallery kept the reason and
+dropped the shopfront.
+
+The nullable `template_slug` column still exists in `0001_init.sql`. Nothing
+reads or writes it and it is gone from the `Project` type — dropping a column is
+destructive, and only the user-facing product was in scope. Leave it.
 
 ### Credits (`/credits`)
 Balance, lifetime granted/spent, per-model breakdown, per-request table with

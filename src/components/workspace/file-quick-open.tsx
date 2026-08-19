@@ -76,16 +76,16 @@ export function FileQuickOpen({
     <div
       role="presentation"
       onClick={close}
-      className="fixed inset-0 z-[95] flex items-start justify-center bg-background/70 px-4 pt-[14vh] backdrop-blur-sm"
+      className="fixed inset-0 z-[95] flex items-start justify-center bg-[var(--plate)]/80 px-4 pt-[14vh] backdrop-blur-sm"
     >
       <div
         role="dialog"
         aria-modal="true"
         aria-label="Go to file"
         onClick={(event) => event.stopPropagation()}
-        className="animate-pop w-full max-w-lg overflow-hidden rounded-2xl border border-border bg-surface shadow-[var(--shadow-raised)]"
+        className="mount animate-pop w-full max-w-lg overflow-hidden rounded-2xl"
       >
-        <div className="flex items-center gap-2.5 border-b border-border px-4">
+        <div className="flex items-center gap-2.5 border-b border-hairline px-4">
           <Search className="size-4 shrink-0 text-muted-foreground" />
           <input
             ref={inputRef}
@@ -113,7 +113,7 @@ export function FileQuickOpen({
             aria-label="Go to file"
             className="h-12 flex-1 bg-transparent text-[0.9375rem] outline-none placeholder:text-muted-foreground/60"
           />
-          <kbd className="hidden rounded border border-border px-1.5 py-0.5 font-mono text-[0.625rem] text-muted-foreground sm:block">
+          <kbd className="hidden rounded bg-surface-sunken px-1.5 py-0.5 font-mono text-[0.625rem] text-muted-foreground sm:block">
             esc
           </kbd>
         </div>

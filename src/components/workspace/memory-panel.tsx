@@ -127,7 +127,7 @@ export function MemoryPanel({
       </div>
 
       {adding && (
-        <div className="rounded-lg border border-border bg-surface p-2.5">
+        <div className="mount rounded-lg p-2.5 [--surface:var(--plate-raised)]">
           <label htmlFor="memory-content" className="label-meta">
             Tell it something durable
           </label>
@@ -138,7 +138,7 @@ export function MemoryPanel({
             onChange={(event) => setDraft(event.target.value)}
             rows={2}
             placeholder="The currency is called Sparks."
-            className="mt-1.5 w-full resize-none rounded-md border border-border bg-surface-sunken px-2 py-1.5 text-[0.8125rem] placeholder:text-muted-foreground focus-ember"
+            className="mt-1.5 w-full resize-none rounded-md bg-surface-sunken px-2 py-1.5 text-[0.8125rem] placeholder:text-muted-foreground focus-ember"
           />
           <div className="mt-2 flex items-center gap-1.5">
             <label htmlFor="memory-kind" className="sr-only">
@@ -148,7 +148,7 @@ export function MemoryPanel({
               id="memory-kind"
               value={draftKind}
               onChange={(event) => setDraftKind(event.target.value as MemoryKind)}
-              className="rounded-md border border-border bg-surface-sunken px-2 py-1 text-[0.75rem] focus-ember"
+              className="rounded-md bg-surface-sunken px-2 py-1 text-[0.75rem] focus-ember"
             >
               {MEMORY_KINDS.map((kind) => (
                 <option key={kind} value={kind}>
@@ -160,7 +160,7 @@ export function MemoryPanel({
               size="sm"
               onClick={add}
               disabled={pending || draft.trim().length < 3}
-              className="ml-auto"
+              className={cn("brick ml-auto h-8 font-semibold", "text-[var(--ember-ink)]")}
             >
               {pending ? <Loader2 className="size-3 animate-spin" /> : null}
               Remember
@@ -184,7 +184,7 @@ export function MemoryPanel({
             {group.facts.map((fact) => (
               <li
                 key={fact.id}
-                className="group rounded-md border border-border bg-surface px-2.5 py-1.5"
+                className="group rounded-lg bg-surface-sunken px-2.5 py-2"
               >
                 <p className="text-[0.8125rem] leading-snug">{fact.content}</p>
                 <div className="mt-1 flex items-center gap-1.5">

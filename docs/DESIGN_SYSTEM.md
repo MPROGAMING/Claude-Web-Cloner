@@ -81,8 +81,8 @@ row separator should not read the same.
 
 | Family | Variable | Use |
 | ------ | -------- | --- |
-| Space Grotesk | `font-display` | h1–h4, stat values. Applied automatically to headings. |
-| Geist Sans | `font-sans` | Body, UI |
+| Archivo (`wdth` axis, `font-stretch: 118%`) | `font-display` | h1–h4, stat values. Applied automatically to headings. |
+| Figtree | `font-sans` | Body, UI |
 | Geist Mono | `font-mono` | Code, metadata, counts, pairing codes, timestamps |
 
 Headings carry `letter-spacing: -0.022em` and `text-wrap: balance` from base
@@ -139,6 +139,111 @@ expressive, few enough to stay consistent.
 | `--shadow-ember` | Focus/active brand emphasis |
 
 Never combine a shadow with a heavy border. One or the other.
+
+## Material
+
+Roblox surfaces are the one piece of visual vocabulary that is unmistakably
+Roblox, so they are a **material** here, not a decoration. Everything below is
+defined in `globals.css` under "The stud, as a material".
+
+### The stud
+
+**A stud is a rounded square, not a circle.** The earlier `bg-studs` used
+`radial-gradient(circle …)`, which is exactly why the plate read as a dotted
+background rather than as a surface. The geometry was measured off real Roblox
+surface textures.
+
+| Measure | Value | Why |
+| ------- | ----- | --- |
+| Lattice pitch | `--stud-pitch`, `30px` | One stud. Everything mounted on a plate measures in whole studs. |
+| Stud footprint | ~5/8 of the pitch (19.6 of the tile's 32 units) | Studs sit apart; a wider stud reads as a grid, a narrower one as a dot. |
+| Corner radius | ~0.27 × stud (5.2 units) | A moulded square corner, not a squircle and not a circle. |
+| Bevel | a 2.4-unit **rim** stroke, not a broad dome | The edge catches the light; the top does not bulge. |
+| Top face | flat, ~0.65 × stud, at 5% white | A moulded plastic face, barely lifted from its rim. |
+| Cast shadow | offset down-right (+0.9, +1.8), 30% black | Places the stud on the plate rather than in it. |
+| Light | always upper-left | One light source for the whole system. Never reverse it per component. |
+
+**The tile carries no hue** — white and black at alpha only. It composites over
+whatever `background-color` sits beneath, so one definition serves every plate
+colour in both themes, and it stays crisp at any zoom because it is geometry,
+not a bitmap.
+
+### Two surfaces, inherited not invented
+
+Roblox ships two surface types: **`Studs`** (raised) and **`Inlet`** (recessed).
+They are the same lattice inverted, which hands the design system a rest/pressed
+pair rather than requiring one to be invented.
+
+| Class | Surface |
+| ----- | ------- |
+| `.stud-plate` | `Studs` — raised. The resting surface. |
+| `.stud-plate-inlet` | `Inlet` — recessed. The same lattice pressed in. |
+| `.bg-studs` | Compatibility alias for `.stud-plate`. Retained while existing markup migrates; **new work uses `.stud-plate`**. |
+
+A plate is a surface, not a colour: set its colour with any background utility
+and the studs composite on top.
+
+### The three verbs
+
+| Verb | API | Behaviour |
+| ---- | --- | --------- |
+| **Press** | `.brick` + `:active` / `[data-pressed="true"]` | A moulded part with real travel. It gets *shorter* — never just darker. |
+| **Snap** | `.land` + `@keyframes stud-land` | Parts land with a one-eighth-stud overshoot and settle. They do not fade in. Stagger with `--i`. |
+| **Mount** | `.mount` | Seated onto a plate: opaque, so the studs beneath are occluded, with a hard 2px base proving contact. |
+
+`.brick` takes `--brick-face` (defaults to `--ember`) and derives its side wall
+from it; `--lift` is the part's thickness, `5px` by default.
+
+**Thickness is two shadows, and the pair is the point.** A hard, zero-blur
+extruded side wall *plus* a separate blurred contact shadow. One blurred shadow
+on its own reads as a floating div; the pair reads as plastic sitting on
+something.
+
+### Rules
+
+- Measure in whole studs. If a mounted element's height is not a multiple of
+  `--stud-pitch`, it is fighting the lattice.
+- A plate is a surface. Do not use it as a texture behind unrelated content, and
+  do not tint the tile — tint the plate.
+- Anything mounted on a plate is opaque. Translucency over studs reads as a
+  print, not as a part.
+- Press is travel. A colour change alone is not a press.
+- Under `prefers-reduced-motion: reduce` the travel and the landing go, **the
+  bevel stays**. The material is still physical when it is still.
+
+### The plate, and type moulded out of it
+
+`.hero-plate` (`globals.css`) is a plate large enough to stand a page on. It
+holds **one colour in both themes** — `--plate` and friends live on `:root`, not
+in a theme block — because a landing hero is a physical object photographed on
+the page, and re-tuning six moulding tones per theme yields two materials rather
+than one. The page around it still follows the theme, so the plate starts below
+the shared header: the nav keeps the page's tokens and the plate keeps its own.
+
+Inside the plate every semantic token is remapped once (`--surface`,
+`--foreground`, `--ember`, `--border`, …), so `.brick`, `.mount` and plain
+Tailwind utilities pick up plate tones without any component knowing the plate
+exists. Two things that bite:
+
+- `--plate-ink` / `--plate-ink-mute` are separate tokens for the reason
+  `--success-ink` is: `--muted-foreground` is tuned against `--background` and
+  lands near 4:1 on this plate.
+- The rule sets `color:` explicitly as well as `--foreground`. `color` is
+  inherited from `<body>`, which resolved it long before the plate remapped the
+  token, so a variable override alone leaves untokenised text painted in page
+  ink — near-black on a dark plate in the light theme.
+
+`.brick-type` is display type moulded out of the same lattice: a `::before`
+reading `data-text` paints the extruded wall, and `.brick-type__face` paints the
+lit top face with `--studs-raised` clipped to the glyph. The stud pitch is in
+`em`, so a wordmark and a headline are one moulding at two distances. Always
+compose it through `<BrickText>` — the face and the extrusion read the same
+string from two places, and only the component keeps them from drifting.
+
+The face is knocked out with `-webkit-text-fill-color`, **never**
+`color: transparent`: the colour property stays at the tone the face actually
+paints, so `npm run a11y` measures the visible letterform instead of reading
+1:1 off a glyph it believes is invisible.
 
 ## Components
 
@@ -199,11 +304,7 @@ runtime image request on the critical path.
 | Asset | Source | Licence | Used by |
 | ----- | ------ | ------- | ------- |
 | AI provider logos | [`@lobehub/icons`](https://icons.lobehub.com) | MIT | `components/brand/provider-mark.tsx` |
-| Game genre icons | [Game-icons.net](https://game-icons.net) via `react-icons/gi` | CC BY 3.0 | `components/marketing/template-art.tsx` |
 | UI icons | [Lucide](https://lucide.dev) | ISC | everywhere |
-
-**Attribution is required for CC BY 3.0** and is rendered in the marketing
-footer. Do not remove it.
 
 Provider logos are trademarks of their owners and are shown solely to identify
 which company makes a given model. Two providers (Poolside, Dots Studio) are not
@@ -216,14 +317,6 @@ Add the brand to `lib/brand/providers.ts`, then map it to the icon component in
 `provider-mark.tsx`. If the icon set does not carry it, leave it unmapped — the
 lettermark fallback is deliberate, and inventing a logo is not an option.
 
-### Template art
-
-`TemplateArt` composes a genre icon over a two-stop gradient taken from the
-template's own `accent`. To add a template, pick a real Game Icons glyph, add it
-to `ArtIcon` and to the `ICONS` map. Never substitute a photo: stock photography
-tested poorly here — it was generic, inconsistent in mood, and frequently
-mismatched to the genre.
-
 ## Motion
 
 | Animation | Duration | Use |
@@ -235,9 +328,13 @@ mismatched to the genre.
 | `animate-breathe` | 2.2s loop | The *active* generation step only |
 | `animate-sweep` | 1.6s loop | Working indicator on the status rail |
 | `animate-caret` | 1.1s loop | Streaming cursor |
-| `animate-drift` | 22s loop | Ambient hero glow only |
+| `animate-drift` | 22s loop | Slow ambient drift. Defined; the hero glow itself now uses `.animate-forge`. |
 | `.lift` | 200ms | Cards that raise on hover |
 | `.stagger` | 45ms/child | Sequential list reveal (set `--i`) |
+| `.animate-forge` | 9s loop | The molten glow under the marketing hero, only |
+
+Material motion — `.land`, `.brick` travel, `.stud-brick` — belongs to the
+material and is documented under **Material** above.
 
 Two easing tokens, and only two: `--ease-enter` for arrivals, `--ease-exit` for
 departures. Exits are faster than entrances — leaving should feel immediate,

@@ -1,78 +1,56 @@
 import Link from "next/link";
 import { Logo } from "@/components/brand/logo";
 
-const COLUMNS = [
-  {
-    title: "Product",
-    links: [
-      { href: "/#how", label: "How it works" },
-      { href: "/#studio", label: "Studio bridge" },
-      { href: "/#models", label: "Models" },
-      { href: "/pricing", label: "Pricing" },
-    ],
-  },
-  {
-    title: "Start",
-    links: [
-      { href: "/sign-up", label: "Create an account" },
-      { href: "/sign-in", label: "Sign in" },
-      { href: "/templates", label: "Templates" },
-    ],
-  },
+/**
+ * The page above this is four sections long. A three-column sitemap under it
+ * was a bigger navigation surface than the site it indexed, so the same links
+ * ride in one band. Nothing was dropped — every destination the columns held
+ * is still here.
+ */
+const LINKS = [
+  { href: "/#how", label: "How it works" },
+  { href: "/#studio", label: "Studio bridge" },
+  { href: "/#brain", label: "The knowledge base" },
+  { href: "/pricing", label: "Pricing" },
+  { href: "/sign-up", label: "Create an account" },
+  { href: "/sign-in", label: "Sign in" },
 ];
 
 export function MarketingFooter() {
   return (
     <footer className="border-t border-border">
-      <div className="mx-auto grid max-w-6xl gap-10 px-5 py-14 sm:px-8 md:grid-cols-[1.5fr_1fr_1fr]">
-        <div>
+      <div className="mx-auto flex max-w-6xl flex-col gap-6 px-5 py-9 sm:px-8 lg:flex-row lg:items-start lg:gap-12">
+        <div className="lg:max-w-xs">
           <Logo />
-          <p className="mt-3 max-w-xs text-sm leading-relaxed text-muted-foreground">
-            An AI build partner for Roblox creators. Describe the mechanic, get
-            working Luau in your place.
+          <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+            An AI build partner for Roblox creators. Say what you want to
+            happen in your game, and get working Luau in your place.
           </p>
         </div>
 
-        {COLUMNS.map((column) => (
-          <div key={column.title}>
-            <h3 className="label-meta">{column.title}</h3>
-            <ul className="mt-3 space-y-2">
-              {column.links.map((link) => (
-                <li key={link.href}>
-                  <Link
-                    href={link.href}
-                    className="inline-flex min-h-11 min-w-11 items-center text-sm text-muted-foreground transition-colors hover:text-foreground sm:min-h-0"
-                  >
-                    {link.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-        ))}
+        <nav aria-label="Footer" className="lg:ml-auto">
+          <ul className="flex flex-wrap gap-x-6 gap-y-1">
+            {LINKS.map((link) => (
+              <li key={link.href}>
+                <Link
+                  href={link.href}
+                  className="tap-target inline-flex items-center justify-center rounded-md text-sm text-muted-foreground transition-colors hover:text-foreground focus-ember"
+                >
+                  {link.label}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </nav>
       </div>
 
       <div className="border-t border-border/60">
-        <div className="mx-auto flex max-w-6xl flex-col gap-2 px-5 py-5 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between sm:px-8">
+        <div className="mx-auto flex max-w-6xl flex-col gap-2 px-5 py-4 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between sm:px-8">
           <p>© {new Date().getFullYear()} Blockwright</p>
-          <div className="space-y-1 sm:text-right">
-            <p>
-              Not affiliated with, endorsed by, or sponsored by Roblox Corporation. Roblox and Luau
-              are trademarks of their respective owners.
-            </p>
-            <p>
-              Template icons by{" "}
-              <a
-                href="https://game-icons.net"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="underline underline-offset-2 hover:text-foreground"
-              >
-                Game-icons.net
-              </a>{" "}
-              (CC BY 3.0).
-            </p>
-          </div>
+          <p className="max-w-md sm:text-right">
+            Not affiliated with, endorsed by, or sponsored by Roblox Corporation. Roblox and Luau
+            are trademarks of their respective owners.
+          </p>
         </div>
       </div>
     </footer>

@@ -1,132 +1,182 @@
 import type { Metadata } from "next";
-import { Check, Minus } from "lucide-react";
-import { PricingCards } from "@/components/marketing/pricing-cards";
+import { CircleSlash, Coins, Gauge } from "lucide-react";
+import { BrickText } from "@/components/marketing/brick-text";
+import { CreditPacks } from "@/components/marketing/credit-packs";
+import { PlateBand } from "@/components/marketing/plate-band";
 import { Section, SectionHeading } from "@/components/marketing/section";
 import { MODELS, PROVIDER_LABEL } from "@/lib/ai/registry";
 
 export const metadata: Metadata = {
   title: "Pricing",
   description:
-    "Blockwright is metered in credits, charged from the token usage each AI provider reports.",
+    "Blockwright runs on credits. You pay for what the AI actually uses, at rates every model publishes up front.",
 };
+
+/**
+ * /pricing.
+ *
+ * The job is to make one unit legible — what a credit is, when it is spent,
+ * and what it costs to run each model — without becoming the three-column
+ * plan comparison this product does not have. There are no tiers to compare:
+ * every account has the same features and the same balance, so the page
+ * explains the meter, publishes the rates from the registry, and stops.
+ */
+const MECHANICS = [
+  {
+    icon: Gauge,
+    tone: "text-[var(--ember)]",
+    title: "You pay for what you use",
+    body: "A credit is one unit of AI use. Every model has a published rate, and a request costs whatever it actually used — counted by the provider that ran it, not guessed at by us.",
+  },
+  {
+    icon: CircleSlash,
+    tone: "text-[var(--signal)]",
+    title: "If it fails, it is free",
+    body: "A request that never gets to the AI — something did not check out, you hit a limit, a model is not set up — costs you nothing. You are only charged once it has finished writing.",
+  },
+  {
+    icon: Coins,
+    tone: "text-[var(--success)]",
+    title: "Running out is not a disaster",
+    body: "It stops and tells you so, and your projects stay exactly as they were. Nothing is deleted, nothing goes negative, and credits never expire.",
+  },
+];
 
 const FAQ = [
   {
-    q: "What is a credit?",
-    a: "An internal unit of AI usage. Each model has a published rate per million input and output tokens, and a request costs the sum of the two. The rates are listed below.",
-  },
-  {
-    q: "When am I charged?",
-    a: "After a generation finishes, from the token counts the provider actually reports. A request that fails before reaching a provider — a validation error, a rate limit, an unconfigured model — costs nothing.",
-  },
-  {
-    q: "What happens when I run out?",
-    a: "Generation stops with a clear message and your projects stay exactly as they are. Nothing is deleted and nothing goes negative.",
-  },
-  {
     q: "Does switching models cost more?",
-    a: "Yes, and the picker shows each model's output rate so you can decide. A common pattern is prototyping on a fast model and switching to a stronger one for the tricky part.",
+    a: "It can, and the picker shows you each model's rate before you switch. Most people rough things out on a fast cheap one and move up to a stronger one for the hard part — the conversation carries over either way.",
+  },
+  {
+    q: "What am I actually paying for?",
+    a: "Your message, the parts of your project it had to read, and any Roblox documentation it looked up. That is why planning first is cheap — it reads before it writes, instead of writing the same thing twice.",
   },
   {
     q: "Do I need Roblox Studio?",
-    a: "No. Blockwright writes and stores your project files regardless. The Studio plugin is what makes them appear as Instances in an open place, and you can connect it at any point.",
+    a: "No. Blockwright writes and saves your project either way. The plugin is what makes the scripts turn up inside a place you have open, and you can connect at any point.",
+  },
+  {
+    q: "Is there a paid plan I am missing?",
+    a: "No. Projects, files, history, the Studio bridge and every model are on every account. Credits are the only thing being counted.",
   },
 ];
 
 export default function PricingPage() {
+  const models = MODELS.filter((model) => model.enabled);
+
   return (
     <>
-      <Section className="pb-0">
-        <SectionHeading
-          as="h1"
-          eyebrow="Pricing"
-          title="One balance, every model"
-          description="No seats, no per-project fees. You pay for the generation you actually run."
+      <section className="relative -mt-16 overflow-hidden pt-16">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 top-0 h-[30rem] bg-[radial-gradient(112%_66%_at_50%_-6%,color-mix(in_oklch,var(--ember)_28%,transparent),transparent_66%)]"
         />
-        <PricingCards className="mt-12" headingLevel="h2" />
-      </Section>
+        <div className="relative mx-auto max-w-7xl px-3 pb-10 pt-4 sm:px-6 sm:pt-5">
+          <PlateBand className="px-5 py-7 sm:px-9 sm:py-9">
+            <p className="mount label-meta inline-flex items-center gap-2.5 rounded-lg px-3 py-1.5">
+              <span aria-hidden className="size-1.5 rounded-[2px] bg-[var(--ember)]" />
+              Pricing
+            </p>
+
+            <h1 className="mt-4 uppercase leading-[0.96]">
+              <span className="block text-[clamp(1rem,1.7vw,1.375rem)] font-bold tracking-[0.005em]">
+                One balance, every model.
+              </span>
+              <span className="mt-2.5 block text-[clamp(2rem,5.2vw,4.25rem)] sm:mt-3">
+                <BrickText>Credits,</BrickText> <BrickText tone="ember">nothing else.</BrickText>
+              </span>
+            </h1>
+
+            <div className="mt-6 grid gap-4 md:grid-cols-3">
+              {MECHANICS.map((item) => (
+                <div key={item.title} className="mount rounded-xl p-4 sm:p-5">
+                  <item.icon className={`size-4 ${item.tone}`} strokeWidth={1.75} aria-hidden />
+                  <h2 className="mt-3 text-[0.9375rem] font-semibold">{item.title}</h2>
+                  <p className="mt-2 text-[0.8125rem] leading-relaxed text-muted-foreground">
+                    {item.body}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </PlateBand>
+        </div>
+      </section>
 
       <Section className="border-t border-border">
         <SectionHeading
           eyebrow="Rates"
-          title="What each model costs"
-          description="Credits per million tokens. Input is what you send — your prompt plus the project context. Output is what the model writes."
+          title="What each model costs to run"
+          description="Credits per million tokens, straight out of the model list the product runs on. Input is what you send it — your message plus the bits of your project it read. Output is what it writes back."
         />
 
-        <div className="mt-12 overflow-x-auto rounded-xl border border-border">
-          <table className="w-full min-w-[36rem] text-sm">
-            <thead>
-              <tr className="border-b border-border bg-surface-sunken/60">
-                {["Model", "Provider", "Input / M", "Output / M", "Context"].map((heading) => (
-                  <th
-                    key={heading}
-                    scope="col"
-                    className="px-4 py-3 text-left font-mono text-[0.625rem] font-normal uppercase tracking-[0.12em] text-muted-foreground"
-                  >
-                    {heading}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {MODELS.filter((model) => model.enabled).map((model) => (
-                <tr key={model.id} className="border-b border-hairline last:border-0">
-                  <td className="px-4 py-3">
-                    <span className="font-medium">{model.name}</span>
-                    {model.recommended && (
-                      <span className="ml-2 rounded border border-[var(--ember)]/35 bg-[var(--ember)]/10 px-1.5 py-px font-mono text-[0.5625rem] uppercase tracking-wider text-[var(--ember-text)]">
-                        Default
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 text-muted-foreground">
-                    {PROVIDER_LABEL[model.provider]}
-                  </td>
-                  <td className="px-4 py-3 font-mono tabular-nums text-muted-foreground">
-                    {model.credits.input}
-                  </td>
-                  <td className="px-4 py-3 font-mono tabular-nums text-muted-foreground">
-                    {model.credits.output}
-                  </td>
-                  <td className="px-4 py-3 font-mono tabular-nums text-muted-foreground">
-                    {(model.contextWindow / 1000).toFixed(0)}k
-                  </td>
+        <div className="mount mt-8 overflow-hidden rounded-xl">
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[34rem] text-sm">
+              <caption className="sr-only">
+                Credit cost per million tokens for each available model
+              </caption>
+              <thead>
+                <tr className="border-b border-border bg-surface-sunken/60">
+                  {["Model", "Provider", "Input / M", "Output / M", "Context"].map((heading) => (
+                    <th
+                      key={heading}
+                      scope="col"
+                      className="px-4 py-3 text-left font-mono text-[0.625rem] font-normal uppercase tracking-[0.12em] text-muted-foreground"
+                    >
+                      {heading}
+                    </th>
+                  ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {models.map((model) => (
+                  <tr key={model.id} className="border-b border-hairline last:border-0">
+                    <th scope="row" className="px-4 py-3 text-left font-medium">
+                      {model.name}
+                      {model.recommended && (
+                        <span className="ml-2 rounded border border-[var(--ember)]/35 bg-[var(--ember)]/10 px-1.5 py-px font-mono text-[0.5625rem] uppercase tracking-wider text-[var(--ember-text)]">
+                          Default
+                        </span>
+                      )}
+                    </th>
+                    <td className="px-4 py-3 text-muted-foreground">
+                      {PROVIDER_LABEL[model.provider]}
+                    </td>
+                    <td className="px-4 py-3 font-mono tabular-nums text-muted-foreground">
+                      {model.credits.input}
+                    </td>
+                    <td className="px-4 py-3 font-mono tabular-nums text-muted-foreground">
+                      {model.credits.output}
+                    </td>
+                    <td className="px-4 py-3 font-mono tabular-nums text-muted-foreground">
+                      {(model.contextWindow / 1000).toFixed(0)}k
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
-
-        <ul className="mt-8 grid gap-3 sm:grid-cols-2">
-          {[
-            { included: true, text: "Every model on every plan" },
-            { included: true, text: "Unlimited projects and files" },
-            { included: true, text: "Roblox Studio bridge" },
-            { included: true, text: "File revisions and revert" },
-            { included: false, text: "Team workspaces — not yet" },
-            { included: false, text: "Published-game analytics — not yet" },
-          ].map((item) => (
-            <li key={item.text} className="flex items-start gap-2.5 text-[0.8125rem]">
-              {item.included ? (
-                <Check className="mt-0.5 size-3.5 shrink-0 text-[var(--success)]" strokeWidth={2.5} />
-              ) : (
-                <Minus className="mt-0.5 size-3.5 shrink-0 text-muted-foreground/50" />
-              )}
-              <span className="text-muted-foreground">
-                {item.text}
-              </span>
-            </li>
-          ))}
-        </ul>
       </Section>
 
-      <Section className="border-t border-border bg-surface-sunken/40">
+      <Section className="border-t border-border">
+        <SectionHeading
+          eyebrow="Topping up"
+          title="More credits, when you need them"
+          description="Same features, same balance. The only thing a pack changes is how many credits a dollar gets you."
+        />
+        <CreditPacks className="mt-8" />
+      </Section>
+
+      <Section className="border-t border-border">
         <SectionHeading eyebrow="Questions" title="The details" />
-        <dl className="mx-auto mt-12 max-w-2xl divide-y divide-border overflow-hidden rounded-xl border border-border bg-surface">
+        <dl className="mt-8 grid gap-4 sm:grid-cols-2">
           {FAQ.map((item) => (
-            <div key={item.q} className="p-5">
+            <div key={item.q} className="mount rounded-xl p-5">
               <dt className="text-[0.9375rem] font-semibold">{item.q}</dt>
-              <dd className="mt-2 text-sm leading-relaxed text-muted-foreground">{item.a}</dd>
+              <dd className="mt-2 text-[0.8125rem] leading-relaxed text-muted-foreground">
+                {item.a}
+              </dd>
             </div>
           ))}
         </dl>

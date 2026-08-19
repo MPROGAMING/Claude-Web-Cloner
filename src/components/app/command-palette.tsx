@@ -9,7 +9,6 @@ import {
   Coins,
   CornerDownLeft,
   Home,
-  LayoutTemplate,
   Map as MapIcon,
   Plug2,
   Search,
@@ -51,19 +50,11 @@ const COMMANDS: Command[] = [
   {
     id: "new-project",
     label: "New project",
-    hint: "Start from an idea or a template",
+    hint: "Describe a mechanic and start building",
     icon: Sparkles,
     keywords: "new create project game build start",
     group: "Create",
     run: (r) => r.push("/projects?start=1"),
-  },
-  {
-    id: "templates",
-    label: "Browse templates",
-    icon: LayoutTemplate,
-    keywords: "templates starter examples genres",
-    group: "Create",
-    run: (r) => r.push("/templates"),
   },
   {
     id: "dashboard",
@@ -136,6 +127,31 @@ function score(command: Command, query: string): number {
   return 10;
 }
 
+/**
+ * The palette is mounted in the layout and owns its own state, so a control
+ * elsewhere in the shell opens it by announcing rather than by lifting state
+ * into a provider that every page would then have to render inside.
+ */
+const OPEN_EVENT = "blockwright:command-palette";
+
+/** The visible half of ⌘K. A shortcut nobody can see is a shortcut nobody uses. */
+export function CommandPaletteTrigger({ className }: { className?: string }) {
+  return (
+    <button
+      type="button"
+      onClick={() => window.dispatchEvent(new CustomEvent(OPEN_EVENT))}
+      className={cn(
+        "tap-row hidden h-8 items-center gap-2 rounded-lg border border-border bg-surface px-2.5 text-[0.8125rem] text-muted-foreground transition-colors hover:text-foreground focus-ember md:inline-flex",
+        className,
+      )}
+    >
+      <Search className="size-3.5" strokeWidth={1.75} />
+      <span className="hidden lg:inline">Search</span>
+      <kbd className="font-mono text-[0.6875rem] tracking-[0.08em]">⌘K</kbd>
+    </button>
+  );
+}
+
 export function CommandPalette() {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -180,9 +196,14 @@ export function CommandPalette() {
         close();
       }
     };
+    const onRequest = () => setOpen(true);
 
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    window.addEventListener(OPEN_EVENT, onRequest);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      window.removeEventListener(OPEN_EVENT, onRequest);
+    };
   }, [open, close]);
 
   useEffect(() => {
@@ -209,10 +230,16 @@ export function CommandPalette() {
         aria-modal="true"
         aria-label="Command palette"
         onClick={(event) => event.stopPropagation()}
-        className="animate-pop w-full max-w-lg overflow-hidden rounded-2xl border border-border bg-surface shadow-[var(--shadow-raised)]"
+        className="mount animate-pop w-full max-w-lg overflow-hidden rounded-2xl"
       >
-        <div className="flex items-center gap-2.5 border-b border-border px-4">
-          <Search className="size-4 shrink-0 text-muted-foreground" />
+        {/* The search well is Inlet — the same lattice, pressed in — so the
+            query sits in a machined slot rather than on a flat rectangle. */}
+        <div className="relative flex items-center gap-2.5 border-b border-border px-4">
+          <div
+            aria-hidden
+            className="stud-plate-inlet pointer-events-none absolute inset-0 opacity-25 [--stud-pitch:24px]"
+          />
+          <Search className="relative size-4 shrink-0 text-muted-foreground" />
           <input
             ref={inputRef}
             value={query}
@@ -234,9 +261,9 @@ export function CommandPalette() {
             }}
             placeholder="Search commands…"
             aria-label="Search commands"
-            className="h-12 flex-1 bg-transparent text-[0.9375rem] outline-none placeholder:text-muted-foreground/60"
+            className="relative h-12 flex-1 bg-transparent text-[0.9375rem] outline-none placeholder:text-muted-foreground/60"
           />
-          <kbd className="hidden rounded border border-border px-1.5 py-0.5 font-mono text-[0.625rem] text-muted-foreground sm:block">
+          <kbd className="relative hidden rounded border border-border px-1.5 py-0.5 font-mono text-[0.625rem] text-muted-foreground sm:block">
             esc
           </kbd>
         </div>
@@ -264,10 +291,17 @@ export function CommandPalette() {
                       onMouseEnter={() => setActive(results.indexOf(command))}
                       onClick={() => run(command)}
                       className={cn(
-                        "flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left transition-colors",
+                        "relative flex w-full items-center gap-3 rounded-lg py-2 pl-5 pr-3 text-left transition-colors",
                         isActive ? "bg-accent" : "hover:bg-accent/60",
                       )}
                     >
+                      <span
+                        aria-hidden
+                        className={cn(
+                          "absolute left-1.5 size-1.5 rounded-[2px]",
+                          isActive ? "bg-[var(--ember)]" : "bg-transparent",
+                        )}
+                      />
                       <Icon className="size-4 shrink-0 text-muted-foreground" />
                       <span className="min-w-0 flex-1">
                         <span className="block truncate text-[0.875rem]">{command.label}</span>

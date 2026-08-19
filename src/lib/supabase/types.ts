@@ -59,7 +59,6 @@ export type Project = {
   description: string | null;
   status: ProjectStatus;
   model_id: string;
-  template_slug: string | null;
   icon: string;
   created_at: string;
   updated_at: string;

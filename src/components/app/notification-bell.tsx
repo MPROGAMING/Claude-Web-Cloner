@@ -186,7 +186,8 @@ export function NotificationBell({ className }: { className?: string }) {
               <span
                 aria-hidden
                 className={cn(
-                  "absolute right-0 top-0 min-w-4 rounded-full bg-[var(--ember)] px-1 text-[0.5625rem] font-semibold leading-4 text-[var(--ember-ink)]",
+                  // A stud, not a pip: rounded square, lit from above.
+                  "absolute right-0 top-0 min-w-4 rounded-[4px] bg-[var(--ember)] px-1 text-[0.5625rem] font-semibold leading-4 text-[var(--ember-ink)] shadow-[inset_0_1px_0_0_rgb(255_255_255/0.4),0_1px_0_0_rgb(0_0_0/0.35)]",
                   unread > 9 && "px-0.5",
                 )}
               >
@@ -245,7 +246,7 @@ export function NotificationBell({ className }: { className?: string }) {
                     {!item.readAt && (
                       <span
                         aria-hidden
-                        className="mt-1.5 size-1.5 shrink-0 rounded-full bg-[var(--ember)]"
+                        className="mt-1.5 size-1.5 shrink-0 rounded-[2px] bg-[var(--ember)]"
                       />
                     )}
                   </button>

@@ -7,7 +7,7 @@ export const metadata: Metadata = { title: "Sign in" };
 
 export default function SignInPage() {
   return (
-    <Suspense fallback={<Skeleton className="h-96 w-full max-w-sm rounded-xl" />}>
+    <Suspense fallback={<Skeleton className="h-[30rem] w-full rounded-2xl" />}>
       <AuthForm mode="sign-in" />
     </Suspense>
   );

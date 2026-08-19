@@ -5,7 +5,6 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { requireUser } from "@/lib/data/queries";
 import { AppError, toAppError } from "@/lib/errors";
-import { getTemplate } from "@/lib/templates";
 import { DEFAULT_MODEL_ID, getModel } from "@/lib/ai/registry";
 import { createPairingCode, disconnectStudio, enqueueStudioCommand, getConnection } from "@/lib/studio/service";
 import { MAX_CONTENT_CHARS, MEMORY_KINDS, type MemoryKind } from "@/lib/memory/facts";
@@ -36,13 +35,11 @@ export async function createProject(formData: FormData): Promise<never | ActionR
       .object({
         name: nameSchema,
         description: z.string().trim().max(500).optional(),
-        templateSlug: z.string().max(60).optional(),
         modelId: z.string().max(120).optional(),
       })
       .safeParse({
         name: formData.get("name"),
         description: formData.get("description") || undefined,
-        templateSlug: formData.get("templateSlug") || undefined,
         modelId: formData.get("modelId") || undefined,
       });
 
@@ -50,7 +47,6 @@ export async function createProject(formData: FormData): Promise<never | ActionR
       return { ok: false, error: parsed.error.issues[0]?.message ?? "Check the form." };
     }
 
-    const template = parsed.data.templateSlug ? getTemplate(parsed.data.templateSlug) : undefined;
     const modelId = getModel(parsed.data.modelId ?? "")?.id ?? DEFAULT_MODEL_ID;
 
     const { data: project, error } = await supabase
@@ -58,10 +54,9 @@ export async function createProject(formData: FormData): Promise<never | ActionR
       .insert({
         owner_id: user.id,
         name: parsed.data.name,
-        description: parsed.data.description ?? template?.tagline ?? null,
-        template_slug: template?.slug ?? null,
+        description: parsed.data.description ?? null,
         model_id: modelId,
-        icon: template?.icon ?? "blocks",
+        icon: "blocks",
       })
       .select("id")
       .single();
@@ -82,12 +77,12 @@ export async function createProject(formData: FormData): Promise<never | ActionR
       project_id: project.id,
       kind: "project.created",
       summary: `Created project "${parsed.data.name}"`,
-      detail: { template: template?.slug ?? null } as never,
+      detail: {} as never,
     });
 
     revalidatePath("/projects");
     revalidatePath("/dashboard");
-    redirect(`/projects/${project.id}${template ? `?seed=${template.slug}` : ""}`);
+    redirect(`/projects/${project.id}`);
   } catch (error) {
     // redirect() throws by design — let it through.
     if (error && typeof error === "object" && "digest" in error) throw error;
@@ -156,7 +151,6 @@ export async function duplicateProject(projectId: string): Promise<ActionResult<
         name: `${source.name} copy`.slice(0, 80),
         description: source.description,
         model_id: source.model_id,
-        template_slug: source.template_slug,
         icon: source.icon,
       })
       .select("id")

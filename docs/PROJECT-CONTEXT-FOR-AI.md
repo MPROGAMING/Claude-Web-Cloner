@@ -5,8 +5,9 @@ instead of uploading the repository. It contains everything needed to reason
 about the project, write good prompts for it, and avoid the mistakes that are
 expensive here. It is written to be self-contained.
 
-**Last verified:** 19 August 2026, against a clean `tsc`, `lint`, 304 passing
-tests and a successful production build.
+**Last verified:** 19 August 2026, against `npx vitest run` — **468 tests
+across 21 files, all passing**. Counts below were recounted against the tree on
+the same day.
 
 > If you are the assistant reading this: the numbers, file paths and API names
 > below were extracted from the codebase, not remembered. Trust them over your
@@ -45,10 +46,10 @@ AI responses anywhere.
 | Components | **shadcn/ui on Base UI** — *not Radix* |
 | AI | **Vercel AI SDK v7** |
 | Database | **Supabase** (Postgres + **pgvector**), RLS everywhere |
-| Tests | **Vitest** — 15 files, 304 tests |
+| Tests | **Vitest** — 21 files, 468 tests |
 | Provider | **OpenRouter** (the only one configured in practice) |
 
-Size: 163 TypeScript/TSX files, ~22,500 lines in `src/`.
+Size: 180 tracked TypeScript/TSX files, ~27,900 lines in `src/`.
 
 ### Commands
 
@@ -79,22 +80,24 @@ src/
   app/
     (marketing)/      landing, pricing
     (auth)/           sign-in, sign-up, reset, verify, callback
-    (app)/            dashboard, projects, projects/[id], templates,
-                      activity, credits, settings
+    (app)/            dashboard, projects, projects/[id], activity,
+                      credits, settings
     api/
       chat                          the single AI entry point
       blueprint, blueprint/[id]{,/approve,/section}
-      agent/changesets/[id]/{approve,apply,undo}
+      agent/changesets/[id]/{approve,apply,undo,diff}
       agent/runs/[id]/cancel
       knowledge/status
       notifications, notifications/read
-      projects/[id]/files
+      projects/[id]/files, projects/[id]/files/[fileId]/revisions
+      projects/[id]/memory
       studio/{pair,poll,status}
   components/
     ui/         shadcn on Base UI
     app/        dashboard, sidebar, project card, command palette, dialogs
-    marketing/  hero composer, showcase, workspace preview, pricing, templates
-    workspace/  chat, composer, code viewer, file tree, changeset card, studio
+    marketing/  hero composer, workspace preview, studio flow, pricing, footer
+    workspace/  chat, composer, code editor, diff, file tree, changeset card,
+                memory panel, studio
     blueprint/  blueprint dialog, question flow, blueprint view
     brand/      logo, provider marks, StudBuild (the signature mark)
   lib/
@@ -105,15 +108,20 @@ src/
     knowledge/  retriever, chunker, embeddings, symbols, context-builder,
                 pre-retrieval, generation-config, tool
     credits/    pricing (pure), service (server)
+    editor/     luau-editing (Tab/Enter/comment rules), fuzzy (go-to-file)
+    memory/     facts (pure), service (server), tool
     notifications/ events (pure), service (server), announced (client-only)
-    roblox/     project-model, luau-validator
+    roblox/     project-model, luau-validator, luau-highlight
     studio/     protocol, service, liveness
     supabase/   client, server, admin, types
     actions/    server actions
     data/       server-component queries
+    diff.ts     Myers line/token diff, no dependency
+    inspiration.ts  16 mechanics in play language; a deterministic slice of 4
+                    seeds the workspace empty state (see §5.1)
   proxy.ts      (Next.js 16 renamed middleware.ts -> proxy.ts)
 
-supabase/migrations/   0001 … 0011
+supabase/migrations/   0001 … 0012
 scripts/roblox-brain/  ingest, evaluate, validate, verify-* acceptance scripts
 roblox-plugin/         the Roblox Studio plugin (Luau)
 docs/                  ARCHITECTURE, DESIGN_SYSTEM, PRODUCT_SPEC,
@@ -202,11 +210,11 @@ cannot be edited while approved.
 
 ## 5. Data model
 
-25 tables, all RLS. Owner-scoped unless stated.
+26 tables, all RLS. Owner-scoped unless stated.
 
 - **Identity/billing:** `profiles`, `credit_balances`, `credit_transactions`
 - **Work:** `projects`, `project_files`, `file_revisions`, `conversations`,
-  `messages`, `activity_events`, `ai_requests`
+  `messages`, `activity_events`, `ai_requests`, `project_memory`
 - **Studio:** `studio_connections`, `studio_commands`
 - **Agent:** `agent_runs`, `agent_steps`, `agent_tool_calls`, `agent_changesets`
 - **Blueprint:** `game_blueprints`
@@ -217,7 +225,22 @@ cannot be edited while approved.
   `knowledge_documents`, `knowledge_chunks`, `knowledge_embeddings`,
   `knowledge_api_symbols`, `knowledge_code_examples`, `knowledge_retrieval_logs`
 
-Migrations `0001`–`0011`. `0006` and `0007` exist because of real bugs — see §7.
+Migrations `0001`–`0012`. `0006` and `0007` exist because of real bugs — see §7.
+
+### 5.1 There is no templates product
+
+The template gallery, `/templates`, `lib/templates.ts` and the template artwork
+were **deleted**. Inspiration now lives inside the conversation:
+`src/lib/inspiration.ts` is a pure module holding 16 real Roblox mechanics
+written in play language ("lava that kills you the moment you touch it"), and
+`mechanicsFor(seed)` returns a deterministic rotating slice of four — 32-bit
+FNV-1a over the seed, no `Math.random`, so the server and the client render the
+same chips. The workspace empty state is its consumer.
+
+`projects.template_slug` **is still in `0001_init.sql` on purpose.** It is
+nullable, nothing reads or writes it, and it is gone from the `Project` type in
+`lib/supabase/types.ts`. Dropping a column is destructive and only the
+user-facing product was in scope, so there is no migration. Do not "fix" it.
 
 ---
 
@@ -351,7 +374,7 @@ callback that learns the news.
   project yet.
 - Studio *scripting* proven against a real place (607,544 terrain cells written
   and verified by query).
-- 347 unit tests, clean lint/typecheck/build.
+- **468 unit tests across 21 files**, all passing (`npx vitest run`, 19 Aug).
 
 ### Known gaps — do not describe these as done
 1. **Visual identity** still reads closer to a generic dev tool than to a Roblox
@@ -372,8 +395,11 @@ callback that learns the news.
 8. **Notification delivery is only as durable as the chat request.** It is
    emitted from the same `onEnd` that charges credits, so a request killed on
    client disconnect loses both. A queue would fix it; there isn't one.
-9. Not built yet: project memory, world builder, asset registry, onboarding
-   beyond the blueprint flow.
+9. Not built yet: world builder, asset registry, onboarding beyond the
+   blueprint flow. (Project memory **is** built — migration `0010`,
+   `lib/memory/`, the `remember_fact` tool and a workspace Memory tab.)
+10. **There is no templates product.** The gallery and its route were deleted;
+    inspiration is conversational now — see §5.1.
 
 ---
 
@@ -420,11 +446,19 @@ workshop lit by something molten.
 - **Signal** `oklch(0.76 0.115 200)` — reserved for **live Studio state only**, so
   a glowing cyan always means something is genuinely connected.
 - Success / warning / danger for validation and destructive states.
-- Type: **Archivo** at 118% width for display, **Figtree** for body, **Geist Mono**
-  for code and real ordinals only.
+- Type: **Archivo** on its `wdth` axis at `font-stretch: 118%` for display,
+  **Figtree** for body, **Geist Mono** for code and real ordinals only.
 - The signature mark is `StudBuild` — an isometric structure of **studded**
   blocks lit from beneath. Studs are the one piece of visual vocabulary that is
   unmistakably Roblox.
+- **The stud is a material, not a texture.** A stud is a *rounded square*, not a
+  circle — the old `radial-gradient(circle …)` is exactly why the plate used to
+  read as a dotted background. Roblox's own two surface types, `Studs` (raised)
+  and `Inlet` (recessed), are the same lattice inverted and supply the
+  rest/pressed pair. `--stud-pitch` is the lattice; `.stud-plate` /
+  `.stud-plate-inlet` are the surfaces; `.brick`, `.mount` and `.land` are the
+  parts mounted on them. The tile carries no hue, so one definition serves both
+  themes over any background colour. Full spec in `docs/DESIGN_SYSTEM.md`.
 - Mono all-caps eyebrow labels were deliberately removed; they are the most
   worn-out device in developer-tool marketing.
 

@@ -1,11 +1,15 @@
 import type { Metadata } from "next";
-import { Activity } from "lucide-react";
+import Link from "next/link";
+import { Activity, ArrowRight } from "lucide-react";
 import { Topbar } from "@/components/app/topbar";
-import { PageBody, PageHeader } from "@/components/app/page-header";
+import { PageBody } from "@/components/app/page-header";
 import { ActivityTimeline } from "@/components/app/activity-timeline";
 import { EmptyState } from "@/components/app/empty-state";
 import { NewProjectDialog } from "@/components/app/new-project-dialog";
+import { BrickText } from "@/components/marketing/brick-text";
 import { getCreditBalance, getProfile, listActivity, listProjects, requireUser } from "@/lib/data/queries";
+import { formatCredits } from "@/lib/credits/pricing";
+import { relativeTime } from "@/lib/format";
 import {
   RunHistory,
   type RunIssue,
@@ -19,6 +23,18 @@ export const metadata: Metadata = { title: "Activity" };
 /** Per-run cap, so one pathological run cannot crowd out every other run's. */
 const TOOLS_PER_RUN = 25;
 
+/**
+ * The build log.
+ *
+ * Two records of the same work at two resolutions: the agent runs, which are
+ * the unit a creator actually thinks in ("what did that build do?"), and the
+ * raw event feed underneath them. Runs lead because the feed is a firehose and
+ * a run is a decision.
+ *
+ * The plate carries only what can be read at a glance — how much was built,
+ * what it cost, and whether anything is waiting on you. Everything below it is
+ * the detail, on the page's own surface where dense rows belong.
+ */
 export default async function ActivityPage({
   searchParams,
 }: {
@@ -136,6 +152,13 @@ export default async function ActivityPage({
     };
   });
 
+  // Summary, all of it arithmetic over the rows above — nothing modelled.
+  const awaiting = runs.filter((r) => r.changeset?.status === "pending_approval");
+  const filesChanged = runs.reduce((sum, r) => sum + (r.changeset?.operationCount ?? 0), 0);
+  const creditsSpent = runs.reduce((sum, r) => sum + r.creditsCharged, 0);
+  const toolsRun = runs.reduce((sum, r) => sum + r.toolCalls, 0);
+  const lastRun = runs[0];
+
   // Group by calendar day so a long feed stays scannable.
   const groups = new Map<string, typeof events>();
   for (const event of events) {
@@ -151,11 +174,67 @@ export default async function ActivityPage({
     <>
       <Topbar balance={balance?.balance ?? 0} email={user.email ?? ""} displayName={profile?.display_name} />
 
-      <PageBody className="max-w-3xl">
-        <PageHeader
-          title="Activity"
-          description="Every build Blockwright has run for you — what it made, whether it worked, and what it cost."
-        />
+      <PageBody className="max-w-5xl">
+        <section className="plate relative overflow-hidden rounded-[1.5rem] px-5 py-6 sm:rounded-[1.75rem] sm:px-8 sm:py-7">
+          <div
+            aria-hidden
+            className="stud-plate pointer-events-none absolute inset-0 opacity-[0.38] [--stud-pitch:38px]"
+          />
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgb(255_255_255/0.075),transparent_34%,rgb(0_0_0/0.16))]"
+          />
+
+          <div className="relative">
+            <p className="mount label-meta inline-flex items-center gap-2.5 rounded-lg px-3 py-1.5">
+              <span aria-hidden className="size-1.5 rounded-[2px] bg-[var(--signal)]" />
+              Build log
+            </p>
+
+            <h1 className="mt-4 font-display text-[clamp(2.25rem,7vw,3.5rem)] font-semibold uppercase leading-[0.9]">
+              <BrickText>Activity</BrickText>
+            </h1>
+
+            <div className="mount mt-6 rounded-2xl px-4 py-4 sm:px-6 sm:py-5">
+              <p className="max-w-[46rem] text-[0.9375rem] leading-relaxed text-muted-foreground">
+                Every build Blockwright has run for you — what it made, whether it worked, and what
+                it cost. The tool-by-tool replay is inside each row.
+              </p>
+
+              <dl className="mt-4 grid grid-cols-2 gap-4 border-t border-hairline pt-4 sm:grid-cols-4">
+                <Figure label="Files changed" value={filesChanged.toLocaleString("en-US")} />
+                <Figure label="Credits spent" value={formatCredits(creditsSpent)} />
+                <Figure label="Tools run" value={toolsRun.toLocaleString("en-US")} />
+                <Figure
+                  label="Last build"
+                  value={lastRun ? relativeTime(lastRun.createdAt) : "—"}
+                />
+              </dl>
+            </div>
+
+            {/* The one thing on this page that is a decision rather than a
+                record, so it gets the ember and the only link on the plate. */}
+            {awaiting.length > 0 && (
+              <div className="mount mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 rounded-xl border border-[var(--ember)]/45 px-4 py-3.5">
+                <p className="min-w-0 flex-1 text-[0.875rem] leading-relaxed">
+                  <span className="font-semibold">
+                    {awaiting.length} change set{awaiting.length === 1 ? "" : "s"}
+                  </span>{" "}
+                  {awaiting.length === 1 ? "is" : "are"} waiting for your approval
+                  {awaiting.length === 1 && ` in ${awaiting[0].projectName}`}. Nothing reaches your
+                  place until you say so.
+                </p>
+                <Link
+                  href={awaiting.length === 1 ? `/projects/${awaiting[0].projectId}` : "/projects"}
+                  className="brick tap-row inline-flex shrink-0 items-center gap-2 rounded-lg px-4 py-2 text-[0.8125rem] font-semibold text-[var(--ember-ink)] outline-none focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-[var(--ember)]"
+                >
+                  Review {awaiting.length === 1 ? "the changes" : "in projects"}
+                  <ArrowRight aria-hidden className="size-3.5" />
+                </Link>
+              </div>
+            )}
+          </div>
+        </section>
 
         <Tabs defaultValue="runs" className="mt-8">
           <TabsList>
@@ -176,13 +255,16 @@ export default async function ActivityPage({
                 action={<NewProjectDialog />}
               />
             ) : (
-              <div className="space-y-9">
+              <div className="space-y-8">
                 {[...groups.entries()].map(([day, dayEvents]) => (
                   <section key={day}>
                     <h2 className="label-meta sticky top-14 z-10 -mx-1 bg-background/90 px-1 py-2 backdrop-blur">
                       {day}
+                      <span className="ml-2 normal-case tracking-normal opacity-70">
+                        {dayEvents.length} event{dayEvents.length === 1 ? "" : "s"}
+                      </span>
                     </h2>
-                    <div className="mt-2">
+                    <div className="mt-2 rounded-xl border border-border bg-surface px-4 py-4">
                       <ActivityTimeline
                         events={dayEvents.map((event) => ({
                           ...event,
@@ -198,9 +280,19 @@ export default async function ActivityPage({
             )}
           </TabsContent>
         </Tabs>
-
       </PageBody>
     </>
+  );
+}
+
+function Figure({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="min-w-0">
+      <dt className="label-meta leading-[1.4]">{label}</dt>
+      <dd className="mt-1 truncate font-display text-xl font-semibold tabular-nums sm:text-2xl">
+        {value}
+      </dd>
+    </div>
   );
 }
 

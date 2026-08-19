@@ -117,6 +117,15 @@ checked. The audit resolves colours through a canvas now and composites
 translucent layers, which is why it suddenly has opinions it did not have
 before.
 
+**The stud is a rounded square**, not a circle. `radial-gradient(circle …)` is
+why the plate used to read as a dotted background rather than a surface. Roblox
+ships `Studs` (raised) and `Inlet` (recessed) — the same lattice inverted — so
+`.stud-plate` / `.stud-plate-inlet` are the rest/pressed pair, inherited rather
+than invented; do not add a third. Everything mounted on a plate measures in
+whole `--stud-pitch` steps, and under `prefers-reduced-motion` the travel goes
+but the bevel stays. Geometry and the press/snap/mount verbs:
+`docs/DESIGN_SYSTEM.md`.
+
 ## Code style
 
 - TypeScript strict, no `any`.
@@ -155,7 +164,7 @@ src/
   app/
     (marketing)/   landing, pricing
     (auth)/        sign-in, sign-up, callback
-    (app)/         dashboard, projects, templates, activity, credits, settings
+    (app)/         dashboard, projects, activity, credits, settings
     api/           chat, studio/{pair,poll,status}, projects/[id]/files,
                    notifications/{,read}
                    agent/changesets/[id]/{approve,apply,undo,diff}
@@ -165,9 +174,9 @@ src/
     credits/       pricing (pure) · service (server)
     memory/        facts (pure) · service (server) · tool
     notifications/ events (pure) · service (server) · announced (client)
-    roblox/        project-model, luau-validator
     diff.ts        Myers line/token diff (no dependency)
     editor/        luau-editing (Tab/Enter/comment rules) · fuzzy (go-to-file)
+    inspiration.ts 16 mechanics in play language · deterministic slice of 4
     roblox/        project-model, luau-validator, luau-highlight
     studio/        protocol, service, liveness
     supabase/      client, server, admin, types

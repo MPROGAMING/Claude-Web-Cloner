@@ -5,6 +5,7 @@ import { ArrowUp, Paperclip, Square, X } from "lucide-react";
 import { toast } from "sonner";
 import { playSound } from "@/lib/sound";
 import { ModelSelector } from "@/components/workspace/model-selector";
+import { PART, PART_ICON, PART_INK } from "@/components/workspace/material";
 import { estimateCredits } from "@/lib/credits/pricing";
 import { getModelOrDefault, type ClientModel } from "@/lib/ai/registry";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -17,8 +18,16 @@ const MAX_ATTACHMENT_BYTES = 128_000;
 /**
  * Prompt composer.
  *
- * Enter sends, Shift+Enter inserts a newline. The textarea auto-grows to a
- * ceiling and then scrolls, so a long prompt never eats the conversation.
+ * The loudest, most obviously pressable object on the surface, and never
+ * empty on arrival. Physically it is a tray bolted to the plate: a recessed
+ * well for the text, and a moulded ember part that travels when you press it.
+ * That is deliberate — the competitor's single most-criticised control is a
+ * grey Generate button on a grey slab that reads as disabled.
+ *
+ * The text itself is owned by the workspace, because a mechanic chip and the
+ * seeded project idea both write it from outside. Enter sends, Shift+Enter
+ * inserts a newline. The textarea auto-grows to a ceiling and then scrolls, so
+ * a long prompt never eats the conversation.
  */
 export function ChatComposer({
   models,
@@ -27,7 +36,10 @@ export function ChatComposer({
   onSubmit,
   onStop,
   status,
-  seededPrompt,
+  value,
+  onValueChange,
+  fillToken,
+  sendLabel,
   disabledReason,
   contextFileCount,
   catalogFetchedAt,
@@ -38,26 +50,31 @@ export function ChatComposer({
   onSubmit: (text: string) => void;
   onStop: () => void;
   status: "ready" | "submitted" | "streaming" | "error";
-  seededPrompt?: string;
+  value: string;
+  onValueChange: (value: string) => void;
+  /** Bumped whenever something other than typing writes `value`. */
+  fillToken: number;
+  /** "Build it" on an empty conversation, "Send" once it is under way. */
+  sendLabel: string;
   disabledReason?: string;
   contextFileCount: number;
   catalogFetchedAt?: string;
 }) {
-  // A template's prompt is the composer's *initial* value, not something an
-  // effect pushes in later — that keeps the first paint correct and means the
-  // user's own typing is never clobbered.
-  const [value, setValue] = useState(seededPrompt ?? "");
   const [attachments, setAttachments] = useState<{ name: string; content: string }[]>([]);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
+  // Fires on mount for the seeded prompt, and again each time a chip fills the
+  // box. Keyed on the token rather than on `value` so it never fights typing.
   useEffect(() => {
-    if (!seededPrompt) return;
     const element = textareaRef.current;
     if (!element) return;
-    element.focus();
+    element.style.height = "auto";
     element.style.height = `${Math.min(element.scrollHeight, 220)}px`;
-  }, [seededPrompt]);
+    if (!element.value) return;
+    element.focus();
+    element.setSelectionRange(element.value.length, element.value.length);
+  }, [fillToken]);
 
   const busy = status === "submitted" || status === "streaming";
   const canSend = (value.trim().length > 0 || attachments.length > 0) && !busy && !disabledReason;
@@ -108,7 +125,7 @@ export function ChatComposer({
 
     playSound("send");
     onSubmit(body);
-    setValue("");
+    onValueChange("");
     setAttachments([]);
     if (textareaRef.current) textareaRef.current.style.height = "auto";
   };
@@ -118,165 +135,166 @@ export function ChatComposer({
     element.style.height = `${Math.min(element.scrollHeight, 220)}px`;
   };
 
-  const attachmentChips = attachments.length > 0 && (
-    <div className="mb-2 flex flex-wrap gap-1.5">
-      {attachments.map((file, index) => (
-        <span
-          key={`${file.name}-${index}`}
-          className="flex items-center gap-1.5 rounded-md border border-border bg-surface px-2 py-1 text-[0.7rem]"
-        >
-          <Paperclip className="size-3 text-muted-foreground" />
-          <span className="max-w-[14rem] truncate font-mono">{file.name}</span>
-          <span className="text-muted-foreground">
-            {(file.content.length / 1024).toFixed(1)}KB
-          </span>
-          <button
-            type="button"
-            aria-label={`Remove ${file.name}`}
-            onClick={() => setAttachments((prev) => prev.filter((_, i) => i !== index))}
-            className="rounded text-muted-foreground transition-colors hover:text-foreground focus-ember"
-          >
-            <X className="size-3" />
-          </button>
-        </span>
-      ))}
-    </div>
-  );
-
   return (
-    <div className="border-t border-border bg-background/95 px-3 pb-3 pt-2.5 backdrop-blur md:px-4 md:pb-4">
-      {disabledReason && (
-        <p
-          role="status"
-          className="mx-auto mb-2 max-w-3xl rounded-lg border border-[var(--warning)]/35 bg-[var(--warning)]/8 px-3 py-2 text-[0.75rem] text-[var(--warning)]"
-        >
-          {disabledReason}
-        </p>
-      )}
-
-      <div className="mx-auto max-w-3xl">{attachmentChips}</div>
-
-      <div
-        className={cn(
-          "mx-auto max-w-3xl rounded-xl border bg-surface transition-colors",
-          "border-border focus-within:border-[var(--ember)]/50 focus-within:shadow-[0_0_0_3px_var(--ember-soft)]",
+    <div className="stud-plate shrink-0 bg-[var(--plate)] p-2 md:p-2.5">
+      <div className="mx-auto max-w-3xl">
+        {disabledReason && (
+          <p
+            role="status"
+            className="mount mb-2 rounded-lg px-3 py-2 text-[0.75rem] text-[var(--warning)]"
+          >
+            {disabledReason}
+          </p>
         )}
-      >
-        <label htmlFor="composer" className="sr-only">
-          Describe what you want to build
-        </label>
-        <textarea
-          id="composer"
-          ref={textareaRef}
-          rows={1}
-          value={value}
-          disabled={Boolean(disabledReason)}
-          placeholder="Describe a mechanic, or ask for a change…"
-          onChange={(event) => {
-            setValue(event.target.value);
-            grow(event.target);
-          }}
-          onKeyDown={(event) => {
-            if (event.key === "Enter" && !event.shiftKey) {
-              event.preventDefault();
-              send();
-            }
-          }}
-          className="max-h-[13.75rem] w-full resize-none bg-transparent px-3.5 pb-1 pt-3 text-[0.875rem] leading-relaxed outline-none placeholder:text-muted-foreground disabled:opacity-50"
-        />
 
-        <div className="flex items-center gap-2 px-2.5 pb-2.5 pt-1">
-          <ModelSelector
-            models={models}
-            value={modelId}
-            onChange={onModelChange}
-            compact
-            align="start"
-            disabled={busy}
-            catalogFetchedAt={catalogFetchedAt}
-          />
-
-          <Tooltip>
-            <TooltipTrigger
-              render={
-                <span className="hidden shrink-0 items-center gap-1 rounded-md border border-border px-1.5 py-1 font-mono text-[0.625rem] text-muted-foreground sm:inline-flex">
-                  {contextFileCount} file{contextFileCount === 1 ? "" : "s"}
+        {attachments.length > 0 && (
+          <div className="mb-2 flex flex-wrap gap-1.5">
+            {attachments.map((file, index) => (
+              <span
+                key={`${file.name}-${index}`}
+                className="mount flex items-center gap-1.5 rounded-md px-2 py-1 text-[0.7rem]"
+              >
+                <Paperclip className="size-3 text-muted-foreground" />
+                <span className="max-w-[14rem] truncate font-mono">{file.name}</span>
+                <span className="text-muted-foreground">
+                  {(file.content.length / 1024).toFixed(1)}KB
                 </span>
-              }
-            />
-            <TooltipContent>
-              The project&apos;s file list is included with every message so the AI knows what
-              already exists.
-            </TooltipContent>
-          </Tooltip>
+                <button
+                  type="button"
+                  aria-label={`Remove ${file.name}`}
+                  onClick={() => setAttachments((prev) => prev.filter((_, i) => i !== index))}
+                  className="rounded text-muted-foreground transition-colors hover:text-foreground focus-ember"
+                >
+                  <X className="size-3" />
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
 
-          {estimate > 0 && (
-            <span className="hidden font-mono text-[0.625rem] text-muted-foreground/70 md:inline">
-              ~{estimate} credits
-            </span>
-          )}
-
-          <div className="ml-auto flex items-center gap-1.5">
-            <input
-              ref={fileRef}
-              type="file"
-              multiple
-              accept=".luau,.lua,.txt,.md,.json"
-              // Visually hidden but still in the accessibility tree, so it needs
-              // its own name — the button that opens it is a separate element.
-              aria-label="Choose scripts to attach"
-              className="sr-only"
-              onChange={(event) => void attachFiles(event.target.files)}
+        {/* The tray. Mounted onto the plate, so the studs stop at its edge. */}
+        <div className="mount rounded-2xl p-2">
+          <label htmlFor="composer" className="sr-only">
+            Describe what you want to build
+          </label>
+          {/* The well the text sits in — the same relationship Roblox's Inlet
+              surface has to Studs, one step deeper than the tray. */}
+          <div className="rounded-xl bg-surface-sunken px-1 py-1">
+            <textarea
+              id="composer"
+              ref={textareaRef}
+              rows={1}
+              value={value}
+              disabled={Boolean(disabledReason)}
+              placeholder="Describe a mechanic, or ask for a change…"
+              onChange={(event) => {
+                onValueChange(event.target.value);
+                grow(event.target);
+              }}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" && !event.shiftKey) {
+                  event.preventDefault();
+                  send();
+                }
+              }}
+              className="max-h-[13.75rem] w-full resize-none bg-transparent px-2.5 py-2 text-[0.9375rem] leading-relaxed outline-none placeholder:text-muted-foreground disabled:opacity-50"
             />
+          </div>
+
+          <div className="mt-2 flex items-center gap-2">
+            <ModelSelector
+              models={models}
+              value={modelId}
+              onChange={onModelChange}
+              compact
+              align="start"
+              disabled={busy}
+              catalogFetchedAt={catalogFetchedAt}
+            />
+
             <Tooltip>
               <TooltipTrigger
                 render={
-                  <button
-                    type="button"
-                    disabled={busy}
-                    onClick={() => fileRef.current?.click()}
-                    aria-label="Attach a script"
-                    className="tap-target flex items-center justify-center rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50 focus-ember"
-                  >
-                    <Paperclip className="size-4" />
-                  </button>
+                  <span className="hidden shrink-0 items-center gap-1 rounded-md bg-surface-sunken px-1.5 py-1 font-mono text-[0.625rem] text-muted-foreground sm:inline-flex">
+                    {contextFileCount} file{contextFileCount === 1 ? "" : "s"}
+                  </span>
                 }
               />
-              <TooltipContent>Attach a script to include its source</TooltipContent>
+              <TooltipContent>
+                The project&apos;s file list is included with every message so the AI knows what
+                already exists.
+              </TooltipContent>
             </Tooltip>
 
-            {busy ? (
-              <button
-                type="button"
-                onClick={onStop}
-                aria-label="Stop generating"
-                className="tap-target flex size-8 items-center justify-center rounded-lg border border-border bg-surface transition-colors hover:bg-accent focus-ember"
-              >
-                <Square className="size-3 fill-current" />
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={send}
-                disabled={!canSend}
-                aria-label="Send message"
-                className={cn(
-                  "tap-target flex size-8 items-center justify-center rounded-lg transition-all focus-ember",
-                  canSend
-                    ? "bg-[var(--ember)] text-[var(--ember-ink)] hover:brightness-108"
-                    : "bg-muted text-muted-foreground",
-                )}
-              >
-                <ArrowUp className="size-4" strokeWidth={2.5} />
-              </button>
+            {estimate > 0 && (
+              <span className="hidden font-mono text-[0.625rem] text-muted-foreground md:inline">
+                ~{estimate} credits
+              </span>
             )}
+
+            <div className="ml-auto flex items-center gap-2">
+              <input
+                ref={fileRef}
+                type="file"
+                multiple
+                accept=".luau,.lua,.txt,.md,.json"
+                // Visually hidden but still in the accessibility tree, so it needs
+                // its own name — the button that opens it is a separate element.
+                aria-label="Choose scripts to attach"
+                className="sr-only"
+                onChange={(event) => void attachFiles(event.target.files)}
+              />
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <button
+                      type="button"
+                      disabled={busy}
+                      onClick={() => fileRef.current?.click()}
+                      aria-label="Attach a script"
+                      className={cn(PART_ICON, "disabled:opacity-50 focus-ember")}
+                    >
+                      <Paperclip className="size-4" />
+                    </button>
+                  }
+                />
+                <TooltipContent>Attach a script to include its source</TooltipContent>
+              </Tooltip>
+
+              {busy ? (
+                <button
+                  type="button"
+                  onClick={onStop}
+                  aria-label="Stop generating"
+                  className={cn(PART, "tap-target flex h-9 items-center gap-1.5 px-3 focus-ember")}
+                >
+                  <Square className="size-3 fill-current" />
+                  <span className="text-[0.8125rem] font-semibold">Stop</span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={send}
+                  disabled={!canSend}
+                  className={cn(
+                    "brick tap-target flex h-9 items-center gap-1.5 rounded-lg px-3.5 text-[0.875rem] font-semibold focus-ember",
+                    canSend
+                      ? `[--lift:5px] ${PART_INK}`
+                      : "[--brick-face:var(--plate-raised)] [--lift:3px] text-muted-foreground",
+                  )}
+                >
+                  {sendLabel}
+                  <ArrowUp className="size-4" strokeWidth={2.5} />
+                </button>
+              )}
+            </div>
           </div>
+
+          <p className="mt-2 text-center font-mono text-[0.625rem] text-muted-foreground">
+            Enter to send · Shift + Enter for a new line
+          </p>
         </div>
       </div>
-
-      <p className="mx-auto mt-2 max-w-3xl text-center font-mono text-[0.625rem] text-muted-foreground">
-        Enter to send · Shift + Enter for a new line
-      </p>
     </div>
   );
 }

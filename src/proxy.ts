@@ -14,7 +14,6 @@ import { publicEnv } from "@/lib/env";
 const PROTECTED_PREFIXES = [
   "/dashboard",
   "/projects",
-  "/templates",
   "/activity",
   "/credits",
   "/settings",

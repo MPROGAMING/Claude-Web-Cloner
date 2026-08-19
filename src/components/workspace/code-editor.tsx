@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Check,
+  CircleCheck,
   ChevronDown,
   ChevronUp,
   Copy,
@@ -18,7 +19,7 @@ import {
   X,
 } from "lucide-react";
 import { toast } from "sonner";
-import { formatBytes } from "@/lib/format";
+import { destinationOf, fileIdentity } from "@/components/workspace/file-identity";
 import { validateLuau } from "@/lib/roblox/luau-validator";
 import { highlightLines } from "@/lib/roblox/luau-highlight";
 import { revertFile } from "@/lib/actions/projects";
@@ -38,6 +39,11 @@ import {
 
 /**
  * The file surface: read, edit, and compare.
+ *
+ * It is titled the way Studio titles it — the Instance name, its job, and only
+ * then the path — and its footer answers "is this code good, and where does it
+ * end up in my place" rather than reporting the caret position and the byte
+ * count. Everything a developer needs is still here; none of it leads.
  *
  * A transparent textarea over a highlighted layer, rather than a code-editor
  * dependency. Measured, not assumed: the whole mini-IDE — this file, the diff,
@@ -105,6 +111,7 @@ export function CodeEditor({
   /** The line auto-dedent last touched, so `else` → `elseif` does not dedent twice. */
   const dedentedLine = useRef<number | null>(null);
 
+  const identity = useMemo(() => fileIdentity(file.path, file.kind), [file.path, file.kind]);
   const lines = useMemo(() => value.split("\n"), [value]);
   const highlighted = useMemo(() => highlightLines(value, file.path), [value, file.path]);
   const isLuau = /\.luau?$/i.test(file.path);
@@ -322,11 +329,28 @@ export function CodeEditor({
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <div className="flex h-10 shrink-0 items-center gap-1 border-b border-hairline px-2">
-        <span className="min-w-0 flex-1 truncate font-mono text-[0.6875rem] text-muted-foreground">
-          {file.path}
-          {dirty && <span className="ml-1.5 text-[var(--ember)]">•</span>}
-        </span>
+      <div className="flex min-h-10 shrink-0 items-center gap-1 border-b border-hairline px-2 py-1">
+        {/* Name first, job second, path third. The path is still on screen —
+            this is a receipt and a receipt has to stay checkable — it just
+            stops being the loudest thing in the panel. */}
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-[0.8125rem] font-semibold leading-tight">
+            {identity.name}
+            {dirty && (
+              <span className="ml-1.5 text-[var(--ember)]" aria-label="Unsaved changes">
+                •
+              </span>
+            )}
+          </p>
+          <p
+            title={file.path}
+            className="truncate text-[0.625rem] leading-tight text-muted-foreground"
+          >
+            <span className="text-foreground/80">{identity.role}</span>
+            <span aria-hidden> · </span>
+            <span className="font-mono">{file.path}</span>
+          </p>
+        </div>
 
         {dirty && (
           <>
@@ -576,21 +600,28 @@ export function CodeEditor({
           </>
         )}
 
-        <div className="flex items-center gap-3 px-3 py-1.5 font-mono text-[0.5625rem] text-muted-foreground">
-          <span className="tabular-nums">
-            Ln {caret.line}, Col {caret.column}
-          </span>
-          <span className="tabular-nums">{lines.length} lines</span>
-          <span className="hidden tabular-nums sm:inline">
-            {formatBytes(dirty ? new Blob([value]).size : file.size_bytes)}
-          </span>
+        {/* The verdict, when the validator has nothing to complain about. It
+            only claims what `validateLuau` actually returned, and only for the
+            files it can read. */}
+        {isLuau && diagnostics && diagnostics.diagnostics.length === 0 && (
+          <p className="flex items-center gap-1.5 px-3 py-1.5 text-[0.6875rem] text-[var(--success-ink)]">
+            <CircleCheck className="size-3 shrink-0" strokeWidth={2.2} />
+            Checked · no errors
+          </p>
+        )}
+
+        {/* Where this piece ends up in the place, which is the question a
+            creator has. What used to sit here — caret position, byte count,
+            revision number — was chrome for somebody else. */}
+        <div className="flex items-center gap-3 px-3 py-1.5 text-[0.625rem] text-muted-foreground">
+          <span className="min-w-0 truncate">{destinationOf(identity)}</span>
           {draftDiff && (
-            <span className="tabular-nums">
+            <span className="ml-auto shrink-0 font-mono tabular-nums">
               <span className="text-[var(--diff-add-ink)]">+{draftDiff.added}</span>{" "}
-              <span className="text-[var(--diff-remove-ink)]">−{draftDiff.removed}</span>
+              <span className="text-[var(--diff-remove-ink)]">−{draftDiff.removed}</span>{" "}
+              unsaved
             </span>
           )}
-          <span className="ml-auto tabular-nums">rev {file.revision}</span>
         </div>
       </div>
     </div>

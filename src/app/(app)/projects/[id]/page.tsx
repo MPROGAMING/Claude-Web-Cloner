@@ -12,7 +12,6 @@ import {
 } from "@/lib/data/queries";
 import { listClientModels } from "@/lib/ai/providers";
 import { getConnection } from "@/lib/studio/service";
-import { getTemplate } from "@/lib/templates";
 import { touchProject } from "@/lib/actions/projects";
 import type { BlockwrightUIMessage } from "@/lib/ai/types";
 import { createClient } from "@/lib/supabase/server";
@@ -40,12 +39,10 @@ async function createConversationFor(projectId: string, userId: string) {
 
 export default async function ProjectWorkspacePage({
   params,
-  searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ seed?: string }>;
 }) {
-  const [{ id }, { seed }] = await Promise.all([params, searchParams]);
+  const { id } = await params;
   const { supabase, user } = await requireUser();
 
   const project = await getProject(id);
@@ -100,8 +97,6 @@ export default async function ProjectWorkspacePage({
   // Fire-and-forget: a failed "last opened" write must not block the page.
   void touchProject(project.id).catch(() => {});
 
-  const template = seed ? getTemplate(seed) : undefined;
-
   return (
     <Workspace
       project={project}
@@ -114,12 +109,10 @@ export default async function ProjectWorkspacePage({
       email={user.email ?? ""}
       displayName={profile?.display_name}
       // On an untouched project the composer opens on the idea the project was
-      // created from — a template's prompt, or the description the user typed on
-      // the landing page. Once there is a conversation, it seeds nothing.
+      // created from — the description typed when it was created. Once there is
+      // a conversation, it seeds nothing.
       seededPrompt={
-        initialMessages.length === 0
-          ? (template?.prompt ?? project.description ?? undefined)
-          : undefined
+        initialMessages.length === 0 ? (project.description ?? undefined) : undefined
       }
       studioConnected={connection?.status === "connected"}
       blueprint={approvedBlueprint}

@@ -74,7 +74,7 @@ export function GenerationStatus({
       aria-live="polite"
       aria-label="Generation progress"
       className={cn(
-        "relative overflow-hidden rounded-xl border border-border bg-surface-sunken/70 px-3.5 py-3",
+        "relative overflow-hidden rounded-xl bg-surface-sunken px-3.5 py-3",
         className,
       )}
     >
@@ -148,7 +148,7 @@ export function GenerationSummary({
   return (
     <div
       className={cn(
-        "flex animate-rise flex-wrap items-center gap-x-3 gap-y-1 rounded-lg border border-hairline bg-surface-sunken/60 px-3 py-2",
+        "mt-5 flex animate-rise flex-wrap items-center gap-x-3 gap-y-1 rounded-lg bg-surface-sunken px-3 py-2",
         className,
       )}
     >

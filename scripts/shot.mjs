@@ -1,167 +1,164 @@
 #!/usr/bin/env node
 /**
- * Deterministic page screenshots via headless Chrome over CDP.
+ * Screenshots of real rendered pages, for design comparison.
  *
- * The in-app browser pane returns black or torn frames after scrolling, because
- * a backgrounded tab stops compositing — every visual review in this project has
- * hit it. Driving Chrome directly avoids the whole class of problem and makes
- * before/after comparisons trustworthy, which is the point of taking them.
- *
- * Authenticated pages: set BW_COOKIE to a `name=value; name2=value2` string and
- * the cookies are installed before navigation, so signed-in surfaces can be
- * captured without a browser session. `scripts/session-cookie.mjs` mints one.
+ * Shares the a11y harness's approach — spawn headless Chrome, drive it over
+ * raw CDP — because the questions design review asks are the same kind the
+ * a11y audit asks: they can only be answered after the page has actually
+ * painted. Fonts, theme class, Base UI composition and every CSS variable
+ * have to resolve before a capture means anything.
  *
  * Usage:
- *   node scripts/shot.mjs <url> <out.png> [width] [height] [scrollY|full]
+ *   node scripts/shot.mjs <url> [url...] --out <dir> [--name a,b] \
+ *     [--width 1440] [--height 900] [--theme dark|light] [--full] [--wait 1400]
+ *
+ * BW_COOKIE=... captures an authenticated app surface.
  */
 
 import { spawn } from "node:child_process";
 import { mkdirSync, writeFileSync } from "node:fs";
-import { dirname } from "node:path";
+import { resolve, join } from "node:path";
 
 const CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
-const [, , url, out, w = "1440", h = "900", scroll = "0"] = process.argv;
 
-if (!url || !out) {
-  console.error("usage: shot.mjs <url> <out.png> [width] [height] [scrollY|full]");
+const argv = process.argv.slice(2);
+const flag = (name, fallback) =>
+  argv.includes(`--${name}`) ? argv[argv.indexOf(`--${name}`) + 1] : fallback;
+const has = (name) => argv.includes(`--${name}`);
+
+const OUT = resolve(flag("out", "screenshots"));
+const WIDTH = Number(flag("width", 1440));
+const HEIGHT = Number(flag("height", 900));
+const THEME = flag("theme", "dark");
+const WAIT = Number(flag("wait", 1400));
+const FULL = has("full");
+const NAMES = flag("name", "").split(",").filter(Boolean);
+
+const urls = argv.filter((a, i) => a.startsWith("http") && !argv[i - 1]?.startsWith("--"));
+if (urls.length === 0) {
+  console.error("usage: shot.mjs <url> [url...] --out <dir> [--width] [--height] [--theme] [--full] [--wait]");
   process.exit(2);
 }
 
-const PORT = 9400 + Math.floor(Math.random() * 400);
-const profile = `/tmp/bw-shot-${PORT}`;
+mkdirSync(OUT, { recursive: true });
 
+const PORT = 9300 + Math.floor(Math.random() * 400);
 const chrome = spawn(CHROME, [
   "--headless=new",
   `--remote-debugging-port=${PORT}`,
-  `--user-data-dir=${profile}`,
-  `--window-size=${w},${h}`,
+  `--user-data-dir=/tmp/bw-shot-${PORT}`,
+  `--window-size=${WIDTH},${HEIGHT}`,
   "--hide-scrollbars",
-  "--force-device-scale-factor=2",
   "--no-first-run",
   "--disable-extensions",
+  "--force-device-scale-factor=2",
   "about:blank",
 ], { stdio: "ignore" });
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-/**
- * The page target, not the browser target.
- *
- * /json/version returns the browser-level socket, which does not implement the
- * Page domain — captureScreenshot there silently returns nothing.
- */
 async function endpoint() {
   for (let i = 0; i < 60; i += 1) {
     try {
       const res = await fetch(`http://127.0.0.1:${PORT}/json/list`);
       if (res.ok) {
-        const targets = await res.json();
-        const page = targets.find((t) => t.type === "page" && t.webSocketDebuggerUrl);
+        const page = (await res.json()).find((t) => t.type === "page" && t.webSocketDebuggerUrl);
         if (page) return page.webSocketDebuggerUrl;
       }
-    } catch {
-      /* chrome still starting */
-    }
+    } catch { /* still starting */ }
     await sleep(250);
   }
   throw new Error("chrome did not expose a page target");
 }
 
-/** Minimal CDP client — one socket, sequential commands, no dependency. */
 async function connect(wsUrl) {
-  // Node 22+ ships a global WebSocket, so no dependency is needed.
   const socket = new WebSocket(wsUrl);
   await new Promise((res, rej) => {
     socket.addEventListener("open", res, { once: true });
     socket.addEventListener("error", rej, { once: true });
   });
-
   let id = 0;
   const pending = new Map();
   socket.addEventListener("message", (event) => {
     const msg = JSON.parse(event.data);
-    const resolve = pending.get(msg.id);
-    if (resolve) {
-      pending.delete(msg.id);
-      resolve(msg.result ?? {});
-    }
+    const resolveFn = pending.get(msg.id);
+    if (resolveFn) { pending.delete(msg.id); resolveFn(msg.result ?? {}); }
   });
-
   return {
     send(method, params = {}) {
       id += 1;
       const mine = id;
-      return new Promise((resolve) => {
-        pending.set(mine, resolve);
-        socket.send(JSON.stringify({ id: mine, method, params }));
-      });
+      return new Promise((res) => { pending.set(mine, res); socket.send(JSON.stringify({ id: mine, method, params })); });
     },
     close: () => socket.close(),
   };
 }
 
-try {
-  const cdp = await connect(await endpoint());
+/** A capture is only meaningful once webfonts have swapped in and entrance
+ *  animations have settled — otherwise every shot races the design. */
+const SETTLE = `(async () => {
+  try { await document.fonts.ready; } catch {}
+  // The Next.js dev overlay injects a fixed badge that is not part of the
+  // design and would be judged as one. It never ships to production, so a
+  // capture that includes it is measuring the wrong thing.
+  document.querySelectorAll('nextjs-portal, [data-nextjs-toast], #__next-build-watcher').forEach((el) => el.remove());
+  document.querySelectorAll('*').forEach((el) => {
+    const s = getComputedStyle(el);
+    if (s.animationName && s.animationName !== 'none' && s.animationIterationCount === 'infinite') {
+      el.style.animationPlayState = 'paused';
+    }
+  });
+  window.scrollTo(0, 0);
+  return document.documentElement.scrollHeight;
+})()`;
 
-  await cdp.send("Page.enable");
+const cdp = await connect(await endpoint());
+await cdp.send("Page.enable");
+await cdp.send("Runtime.enable");
+
+if (process.env.BW_COOKIE) {
+  await cdp.send("Network.enable");
+  await cdp.send("Network.setCookies", {
+    cookies: process.env.BW_COOKIE.split(";").map((p) => p.trim()).filter(Boolean).map((p) => {
+      const eq = p.indexOf("=");
+      return { name: p.slice(0, eq), value: p.slice(eq + 1), domain: "localhost", path: "/" };
+    }),
+  });
+}
+
+const results = [];
+for (const [i, url] of urls.entries()) {
+  await cdp.send("Emulation.setEmulatedMedia", {
+    features: [{ name: "prefers-color-scheme", value: THEME }, { name: "prefers-reduced-motion", value: "no-preference" }],
+  });
   await cdp.send("Emulation.setDeviceMetricsOverride", {
-    width: Number(w),
-    height: Number(h),
-    deviceScaleFactor: 2,
-    mobile: Number(w) < 768,
+    width: WIDTH, height: HEIGHT, deviceScaleFactor: 2, mobile: WIDTH < 768,
   });
 
-  // Install the session cookies before the first navigation, otherwise the app
-  // redirects to sign-in and the screenshot is of a login form.
-  const cookieHeader = process.env.BW_COOKIE;
-  if (cookieHeader) {
-    const { hostname } = new URL(url);
-    const cookies = cookieHeader
-      .split(";")
-      .map((pair) => pair.trim())
-      .filter(Boolean)
-      .map((pair) => {
-        const eq = pair.indexOf("=");
-        return {
-          name: pair.slice(0, eq),
-          value: pair.slice(eq + 1),
-          domain: hostname,
-          path: "/",
-        };
-      });
-    await cdp.send("Network.enable");
-    await cdp.send("Network.setCookies", { cookies });
-  }
-
   await cdp.send("Page.navigate", { url });
-  // Fonts, images and the entrance animations all need a moment to settle;
-  // a screenshot taken too early is a screenshot of a skeleton.
-  await sleep(3800);
+  await sleep(WAIT);
+  // next-themes writes the class from localStorage; force it so the capture
+  // shows the theme that was asked for rather than whatever was last stored.
+  await cdp.send("Runtime.evaluate", {
+    expression: `document.documentElement.classList.remove("dark","light");document.documentElement.classList.add(${JSON.stringify(THEME)});document.documentElement.style.colorScheme=${JSON.stringify(THEME)};`,
+  });
+  await sleep(320);
+  const settled = await cdp.send("Runtime.evaluate", { expression: SETTLE, awaitPromise: true, returnByValue: true });
+  const docHeight = Math.min(Number(settled.result?.value) || HEIGHT, 20000);
 
-  if (scroll === "full") {
-    const { result } = await cdp.send("Runtime.evaluate", {
-      expression: "document.documentElement.scrollHeight",
-      returnByValue: true,
-    });
-    await cdp.send("Emulation.setDeviceMetricsOverride", {
-      width: Number(w),
-      height: Math.min(result.value, 20000),
-      deviceScaleFactor: 1,
-      mobile: false,
-    });
-    await sleep(1200);
-  } else if (Number(scroll) > 0) {
-    await cdp.send("Runtime.evaluate", { expression: `window.scrollTo(0, ${Number(scroll)})` });
-    await sleep(1400);
-  }
+  const shot = await cdp.send("Page.captureScreenshot", {
+    format: "png",
+    captureBeyondViewport: FULL,
+    ...(FULL ? { clip: { x: 0, y: 0, width: WIDTH, height: docHeight, scale: 1 } } : {}),
+  });
 
-  const shot = await cdp.send("Page.captureScreenshot", { format: "png", captureBeyondViewport: false });
-  if (!shot?.data) throw new Error("captureScreenshot returned no data");
-  mkdirSync(dirname(out), { recursive: true });
-  writeFileSync(out, Buffer.from(shot.data, "base64"));
-  console.log(`${out}  ${w}x${h}${scroll !== "0" ? ` @${scroll}` : ""}`);
-
-  cdp.close();
-} finally {
-  chrome.kill();
+  const name = NAMES[i] || new URL(url).hostname.replace(/\W+/g, "-") + (new URL(url).pathname.replace(/\//g, "-") || "");
+  const file = join(OUT, `${name}.png`);
+  writeFileSync(file, Buffer.from(shot.data, "base64"));
+  results.push({ url, file, height: FULL ? docHeight : HEIGHT });
+  console.log(`${file}  [${THEME} ${WIDTH}x${FULL ? docHeight : HEIGHT}]  ${url}`);
 }
+
+cdp.close();
+chrome.kill();
+process.exit(0);

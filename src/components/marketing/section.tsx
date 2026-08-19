@@ -11,7 +11,7 @@ export function Section({
 }) {
   return (
     <section id={id} className={cn("scroll-mt-16", className)}>
-      <div className="mx-auto max-w-6xl px-5 py-14 sm:px-8 sm:py-16">{children}</div>
+      <div className="mx-auto max-w-6xl px-5 py-12 sm:px-8 sm:py-14">{children}</div>
     </section>
   );
 }
@@ -20,7 +20,7 @@ export function SectionHeading({
   eyebrow,
   title,
   description,
-  align = "center",
+  align = "left",
   as: Heading = "h2",
 }: {
   eyebrow: string;
@@ -52,11 +52,11 @@ export function SectionHeading({
         <span aria-hidden className="size-1.5 rounded-[2px] bg-[var(--ember)]" />
         {eyebrow}
       </span>
-      <Heading className="mt-3 text-3xl font-bold leading-[1.03] tracking-[-0.03em] sm:text-[2.75rem]">
+      <Heading className="mt-2.5 text-[1.75rem] font-bold leading-[1.05] tracking-[-0.03em] sm:text-[2.25rem]">
         {title}
       </Heading>
       {description && (
-        <p className="mt-5 text-base leading-relaxed text-muted-foreground">{description}</p>
+        <p className="mt-4 text-[0.9375rem] leading-relaxed text-muted-foreground">{description}</p>
       )}
     </div>
   );

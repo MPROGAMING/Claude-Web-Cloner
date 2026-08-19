@@ -21,6 +21,7 @@ import { Markdown } from "@/components/workspace/markdown";
 import { getModelOrDefault } from "@/lib/ai/registry";
 import type { BlockwrightUIMessage, CitationData } from "@/lib/ai/types";
 import { ChangesetCard } from "@/components/workspace/changeset-card";
+import { fileIdentity } from "@/components/workspace/file-identity";
 import { cn } from "@/lib/utils";
 
 /**
@@ -31,28 +32,30 @@ import { cn } from "@/lib/utils";
  * for when something goes wrong.
  */
 
+/**
+ * "Updating RoundService (server script)" rather than
+ * "Updating src/server/RoundService.luau". Same event, said in the vocabulary
+ * of the person reading the thread; the path is still on the expanded detail.
+ */
+function onFile(verb: string) {
+  return (input: Record<string, unknown>) => {
+    const path = input?.path;
+    if (typeof path !== "string" || !path) return `${verb} a file`;
+    const identity = fileIdentity(path);
+    return `${verb} ${identity.name} (${identity.role.toLowerCase()})`;
+  };
+}
+
 const TOOL_META: Record<
   string,
   { label: (input: Record<string, unknown>) => string; icon: typeof Wrench }
 > = {
   plan_build: { label: () => "Planning the build", icon: ListChecks },
   list_files: { label: () => "Reading the project", icon: Wrench },
-  read_file: {
-    label: (input) => `Reading ${String(input?.path ?? "a file")}`,
-    icon: Wrench,
-  },
-  create_file: {
-    label: (input) => `Creating ${String(input?.path ?? "a file")}`,
-    icon: FilePlus2,
-  },
-  update_file: {
-    label: (input) => `Updating ${String(input?.path ?? "a file")}`,
-    icon: FilePen,
-  },
-  delete_file: {
-    label: (input) => `Deleting ${String(input?.path ?? "a file")}`,
-    icon: FileX2,
-  },
+  read_file: { label: onFile("Reading"), icon: Wrench },
+  create_file: { label: onFile("Creating"), icon: FilePlus2 },
+  update_file: { label: onFile("Updating"), icon: FilePen },
+  delete_file: { label: onFile("Deleting"), icon: FileX2 },
   validate_scripts: { label: () => "Validating scripts", icon: ShieldCheck },
   studio_status: { label: () => "Checking Roblox Studio", icon: Plug2 },
   search_roblox_knowledge: {
@@ -91,13 +94,13 @@ function ToolCallRow({
   const detail = errorText ?? (output ? JSON.stringify(output, null, 2) : null);
 
   return (
-    <div className="rounded-lg border border-border bg-surface-sunken/60">
+    <div className="overflow-hidden rounded-lg bg-surface-sunken">
       <button
         type="button"
         onClick={() => detail && setOpen((v) => !v)}
         aria-expanded={detail ? open : undefined}
         className={cn(
-          "flex w-full items-center gap-2 px-2.5 py-1.5 text-left text-[0.75rem] transition-colors",
+          "tap-row flex w-full items-center gap-2 px-2.5 py-1.5 text-left text-[0.75rem] transition-colors",
           detail && "hover:bg-accent/50",
         )}
       >
@@ -138,12 +141,12 @@ function CitationBlock({ citations }: { citations: CitationData["citations"] }) 
   if (!citations.length) return null;
 
   return (
-    <div className="rounded-lg border border-border bg-surface-sunken/60">
+    <div className="overflow-hidden rounded-lg bg-surface-sunken">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
-        className="flex w-full items-center gap-2 px-2.5 py-1.5 text-left text-[0.75rem] text-muted-foreground transition-colors hover:bg-accent/50"
+        className="tap-row flex w-full items-center gap-2 px-2.5 py-1.5 text-left text-[0.75rem] text-muted-foreground transition-colors hover:bg-accent/50"
       >
         <BookOpen className="size-3 shrink-0 text-[var(--signal)]" />
         <span>
@@ -193,8 +196,8 @@ function CitationBlock({ citations }: { citations: CitationData["citations"] }) 
 
 function PlanBlock({ goal, steps }: { goal: string; steps: string[] }) {
   return (
-    <div className="rounded-lg border border-[var(--ember)]/25 bg-[var(--ember)]/5 p-3">
-      <p className="flex items-center gap-1.5 text-[0.75rem] font-medium text-[var(--ember)]">
+    <div className="rounded-lg border-l-2 border-l-[var(--ember)] bg-surface-sunken p-3">
+      <p className="label-meta flex items-center gap-1.5 text-[var(--ember)]">
         <ListChecks className="size-3.5" />
         Build plan
       </p>
@@ -239,7 +242,9 @@ export const ChatMessage = memo(function ChatMessage({
   if (isUser) {
     return (
       <div className="flex justify-end">
-        <div className="max-w-[85%] rounded-xl rounded-br-sm bg-surface-raised px-3.5 py-2.5 text-[0.875rem] leading-relaxed whitespace-pre-wrap sm:max-w-[75%]">
+        {/* A part seated in the transcript: opaque and raised, so the message
+            you wrote reads as the thing that started this turn. */}
+        <div className="mount max-w-[85%] whitespace-pre-wrap rounded-xl rounded-br-sm px-3.5 py-2.5 text-[0.875rem] leading-relaxed [--surface:var(--plate-raised)] sm:max-w-[75%]">
           {text}
         </div>
       </div>
@@ -262,8 +267,8 @@ export const ChatMessage = memo(function ChatMessage({
 
           if (part.type === "reasoning") {
             return part.text ? (
-              <details key={key} className="rounded-lg border border-border bg-surface-sunken/60">
-                <summary className="cursor-pointer px-2.5 py-1.5 text-[0.75rem] text-muted-foreground">
+              <details key={key} className="overflow-hidden rounded-lg bg-surface-sunken">
+                <summary className="tap-row flex cursor-pointer items-center px-2.5 py-1.5 text-[0.75rem] text-muted-foreground">
                   Reasoning
                 </summary>
                 <div className="border-t border-hairline px-2.5 py-2 text-[0.75rem] leading-relaxed text-muted-foreground">

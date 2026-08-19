@@ -14,6 +14,7 @@ import {
 import { toast } from "sonner";
 import { playSound } from "@/lib/sound";
 import { Button } from "@/components/ui/button";
+import { PART_INK } from "@/components/workspace/material";
 import { StatusDot } from "@/components/ui/status-dot";
 import { relativeTime } from "@/lib/format";
 import {
@@ -157,13 +158,13 @@ export function StudioPanel({ projectId }: { projectId: string }) {
     <div className="space-y-3 p-3">
       <div
         className={cn(
-          "rounded-lg border p-3 transition-colors",
-          connected ? "border-[var(--signal)]/35 bg-[var(--signal)]/6" : "border-border bg-surface",
+          "rounded-xl bg-surface-sunken p-3 transition-colors",
+          connected && "border-l-2 border-l-[var(--signal)]",
         )}
       >
         <div className="flex items-center gap-2">
           <StatusDot tone={connected ? "live" : "idle"} pulse={connected} />
-          <p className="text-[0.8125rem] font-medium">
+          <p className="text-[0.8125rem] font-semibold">
             {connected ? "Studio connected" : "Studio not connected"}
           </p>
           <button
@@ -183,7 +184,12 @@ export function StudioPanel({ projectId }: { projectId: string }) {
               {state?.lastSeenAt && ` · seen ${relativeTime(state.lastSeenAt)}`}
             </p>
             <div className="mt-3 flex gap-1.5">
-              <Button size="sm" onClick={sync} disabled={pending} className="flex-1">
+              <Button
+                size="sm"
+                onClick={sync}
+                disabled={pending}
+                className={cn("brick h-8 flex-1 font-semibold", PART_INK)}
+              >
                 {pending ? <Loader2 className="size-3 animate-spin" /> : <Upload className="size-3" />}
                 Sync all files
               </Button>
@@ -197,16 +203,36 @@ export function StudioPanel({ projectId }: { projectId: string }) {
             <p className="text-[0.75rem] leading-relaxed text-muted-foreground">
               In Roblox Studio, open the Blockwright plugin and enter this code:
             </p>
+            {/* Six characters, six moulded tiles. The code is the one thing on
+                this panel that is unique to a live session, so it is the one
+                thing given real relief — and it is only ever rendered from a
+                code the server actually issued. */}
             <button
               type="button"
               onClick={copyCode}
-              className="mt-2.5 flex w-full items-center justify-center gap-2 rounded-lg border border-[var(--ember)]/40 bg-[var(--ember)]/8 py-2.5 font-mono text-xl tracking-[0.3em] text-[var(--ember)] transition-colors hover:bg-[var(--ember)]/12 focus-ember"
+              className="mt-2.5 flex w-full items-center justify-center gap-1.5 rounded-lg py-1 focus-ember"
               aria-label={`Pairing code ${pairCode.split("").join(" ")}. Click to copy.`}
             >
-              {pairCode}
-              {copied ? <Check className="size-3.5" /> : <Copy className="size-3.5 opacity-60" />}
+              {pairCode.split("").map((character, index) => (
+                <span
+                  key={`${character}-${index}`}
+                  aria-hidden
+                  className={cn(
+                    "brick flex size-8 items-center justify-center rounded-md font-mono text-[0.9375rem] font-semibold",
+                    "[--lift:3px]",
+                    PART_INK,
+                  )}
+                >
+                  {character}
+                </span>
+              ))}
+              {copied ? (
+                <Check className="ml-1 size-3.5 text-[var(--success)]" />
+              ) : (
+                <Copy className="ml-1 size-3.5 text-muted-foreground" />
+              )}
             </button>
-            <p className="mt-2 text-center font-mono text-[0.5625rem] text-muted-foreground">
+            <p className="mt-3 text-center font-mono text-[0.5625rem] text-muted-foreground">
               expires in 10 minutes
             </p>
           </div>
@@ -216,7 +242,12 @@ export function StudioPanel({ projectId }: { projectId: string }) {
               Link this project to the place you have open, and generated scripts land in Studio
               automatically.
             </p>
-            <Button size="sm" onClick={connect} disabled={pending} className="mt-3 w-full">
+            <Button
+              size="sm"
+              onClick={connect}
+              disabled={pending}
+              className={cn("brick mt-3 h-8 w-full font-semibold", PART_INK)}
+            >
               {pending ? <Loader2 className="size-3 animate-spin" /> : <Plug2 className="size-3" />}
               Connect Roblox Studio
             </Button>
@@ -231,7 +262,7 @@ export function StudioPanel({ projectId }: { projectId: string }) {
             {state.commands.map((command) => (
               <li
                 key={command.id}
-                className="flex items-center gap-2 rounded-md border border-border bg-surface px-2.5 py-1.5"
+                className="flex items-center gap-2 rounded-md bg-surface-sunken px-2.5 py-1.5"
               >
                 {command.status === "succeeded" ? (
                   <Check className="size-3 shrink-0 text-[var(--success)]" strokeWidth={2.5} />

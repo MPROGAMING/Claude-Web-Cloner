@@ -14,6 +14,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { DiffView, diffStats, type DiffMode } from "@/components/workspace/diff-view";
 import { ModeToggle } from "@/components/workspace/code-editor";
+import { fileIdentity } from "@/components/workspace/file-identity";
 import type { ChangesetData } from "@/lib/ai/types";
 import { cn } from "@/lib/utils";
 
@@ -160,14 +161,14 @@ export function ChangesetReview({
   }
 
   return (
-    <div className="fixed inset-0 z-[90] flex bg-background/80 p-2 backdrop-blur-sm md:p-6">
+    <div className="stud-plate fixed inset-0 z-[90] flex bg-[var(--plate)]/92 p-2 backdrop-blur-sm md:p-4">
       <div
         role="dialog"
         aria-modal="true"
         aria-label="Review proposed changes"
-        className="animate-pop flex min-h-0 w-full flex-col overflow-hidden rounded-xl border border-border bg-surface shadow-[var(--shadow-overlay)]"
+        className="mount animate-pop flex min-h-0 w-full flex-col overflow-hidden rounded-2xl"
       >
-        <header className="flex shrink-0 items-center gap-3 border-b border-border px-4 py-2.5">
+        <header className="flex shrink-0 items-center gap-3 border-b border-hairline px-4 py-2.5">
           <div className="min-w-0">
             <h2 className="text-[0.9375rem] font-semibold">Review changes</h2>
             <p className="truncate font-mono text-[0.625rem] text-muted-foreground">
@@ -198,7 +199,7 @@ export function ChangesetReview({
         <div className="flex min-h-0 flex-1 flex-col md:flex-row">
           <nav
             aria-label="Changed files"
-            className="shrink-0 overflow-auto border-b border-hairline md:w-64 md:border-b-0 md:border-r"
+            className="shrink-0 overflow-auto border-b border-hairline bg-surface-sunken md:w-64 md:border-b-0 md:border-r"
           >
             <ul className="flex md:block">
               {(files ?? []).map((file, fileIndex) => {
@@ -240,11 +241,16 @@ export function ChangesetReview({
                     >
                       <Icon className={cn("size-3.5 shrink-0", TONE[file.kind])} />
                       <span className="min-w-0 flex-1">
-                        <span className="block truncate font-mono text-[0.6875rem]">
-                          {(file.toPath ?? file.path).split("/").pop()}
+                        {/* Name and job lead; the exact path stays underneath,
+                            because this is the screen where somebody consents
+                            to a specific set of writes. */}
+                        <span className="block truncate text-[0.75rem] font-medium">
+                          {fileIdentity(filePath).name}
                         </span>
-                        <span className="hidden truncate font-mono text-[0.5625rem] text-muted-foreground md:block">
-                          {file.toPath ?? file.path}
+                        <span className="hidden truncate text-[0.5625rem] text-muted-foreground md:block">
+                          {fileIdentity(filePath).role}
+                          <span aria-hidden> · </span>
+                          <span className="font-mono">{filePath}</span>
                         </span>
                       </span>
                       <span className="shrink-0 font-mono text-[0.5625rem] tabular-nums">
@@ -293,7 +299,7 @@ export function ChangesetReview({
           </div>
         </div>
 
-        <footer className="shrink-0 border-t border-border px-4 py-2.5">
+        <footer className="shrink-0 border-t border-hairline px-4 py-2.5">
           {blocking.length > 0 && (
             <ul className="mb-2 space-y-0.5">
               {blocking.map((issue) => (
@@ -321,6 +327,7 @@ export function ChangesetReview({
                   // list would record a narrowing that never happened.
                   onClick={() => onApprove(allIncluded ? undefined : includedPaths)}
                   disabled={busy || blocking.length > 0 || includedPaths.length === 0}
+                  className="brick h-8 px-3 font-semibold text-[var(--ember-ink)]"
                 >
                   {busy ? <Loader2 className="size-3 animate-spin" /> : <Check className="size-3" />}
                   {allIncluded

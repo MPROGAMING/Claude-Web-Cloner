@@ -1,11 +1,17 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import { AlertCircle, Check, Loader2, ShieldCheck } from "lucide-react";
-import { AuthCard, AuthLink, FormMessage } from "@/components/auth/auth-shell";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import Link from "next/link";
+import { AlertCircle, Check, ShieldCheck } from "lucide-react";
+import {
+  AuthCard,
+  AuthLink,
+  AuthSubmit,
+  FormMessage,
+  authFieldClass,
+} from "@/components/auth/auth-shell";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { updatePassword, type AuthActionState } from "@/lib/actions/auth";
 import { cn } from "@/lib/utils";
 
@@ -26,15 +32,19 @@ export function ResetPasswordForm({ hasSession }: { hasSession: boolean }) {
     return (
       <AuthCard
         icon={AlertCircle}
+        eyebrow="Dead link"
         title="This link has expired"
         subtitle="Password reset links are valid for one hour and can only be used once."
         footer={<AuthLink href="/sign-in">Back to sign in</AuthLink>}
       >
-        <Button
-          size="lg"
-          className="mt-6 h-10 w-full"
-          render={<a href="/forgot-password">Request a new link</a>}
-        />
+        {/* An anchor, not a Button with `render` — Base UI's Button asserts
+            native button semantics and a forced anchor breaks Enter/Space. */}
+        <Link
+          href="/forgot-password"
+          className="brick tap-row mb-1.5 mt-6 inline-flex w-full items-center justify-center rounded-xl px-5 py-3 font-display text-[1rem] font-extrabold uppercase tracking-[0.045em] text-[var(--ember-ink)] no-underline outline-none focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-[var(--ember)]"
+        >
+          Request a new link
+        </Link>
       </AuthCard>
     );
   }
@@ -42,11 +52,12 @@ export function ResetPasswordForm({ hasSession }: { hasSession: boolean }) {
   return (
     <AuthCard
       icon={ShieldCheck}
+      eyebrow="Nearly done"
       title="Choose a new password"
       subtitle="You'll be signed in as soon as it's saved."
     >
-      <form action={formAction} className="mt-7 space-y-4">
-        <div className="space-y-1.5">
+      <form action={formAction} className="mt-6 space-y-4">
+        <div className="space-y-2">
           <Label htmlFor="password">New password</Label>
           <Input
             id="password"
@@ -58,22 +69,26 @@ export function ResetPasswordForm({ hasSession }: { hasSession: boolean }) {
             autoFocus
             value={password}
             onChange={(event) => setPassword(event.target.value)}
+            className={authFieldClass}
           />
         </div>
 
-        <ul className="space-y-1">
+        {/* Pressed into the tray: a semantic colour needs the sunken tone
+            behind it to clear 4.5:1 on this plate, and a checklist reads as a
+            gauge rather than as copy. */}
+        <ul className="space-y-1.5 rounded-lg bg-surface-sunken px-3 py-2.5 shadow-[inset_0_1px_3px_0_rgb(0_0_0/0.42),inset_0_-1px_0_0_rgb(255_255_255/0.05)]">
           {RULES.map((rule) => {
             const met = rule.test(password);
             return (
               <li
                 key={rule.id}
                 className={cn(
-                  "flex items-center gap-1.5 text-[0.75rem] transition-colors",
+                  "flex items-center gap-2 text-[0.75rem] transition-colors",
                   met ? "text-[var(--success)]" : "text-muted-foreground",
                 )}
               >
                 <Check
-                  className={cn("size-3 transition-opacity", met ? "opacity-100" : "opacity-35")}
+                  className={cn("size-3 transition-opacity", met ? "opacity-100" : "opacity-40")}
                   strokeWidth={2.5}
                 />
                 {rule.label}
@@ -82,7 +97,7 @@ export function ResetPasswordForm({ hasSession }: { hasSession: boolean }) {
           })}
         </ul>
 
-        <div className="space-y-1.5">
+        <div className="space-y-2">
           <Label htmlFor="confirm">Confirm password</Label>
           <Input
             id="confirm"
@@ -91,6 +106,7 @@ export function ResetPasswordForm({ hasSession }: { hasSession: boolean }) {
             required
             minLength={8}
             autoComplete="new-password"
+            className={authFieldClass}
           />
         </div>
 
@@ -101,10 +117,9 @@ export function ResetPasswordForm({ hasSession }: { hasSession: boolean }) {
           </FormMessage>
         )}
 
-        <Button type="submit" size="lg" className="h-10 w-full" disabled={pending}>
-          {pending && <Loader2 className="size-4 animate-spin" />}
+        <AuthSubmit pending={pending} pendingLabel="Saving" className="mt-5">
           Save password
-        </Button>
+        </AuthSubmit>
       </form>
     </AuthCard>
   );
