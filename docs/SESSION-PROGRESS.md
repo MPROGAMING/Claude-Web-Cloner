@@ -63,8 +63,8 @@ npm run studio:verify     # 16/16
 
 | Piece | Owner | Bar | Status |
 |---|---|---|---|
-| Project Memory | builder agent | — | running |
-| Notifications + run history | builder agent | — | running |
+| Project Memory | builder agent | — | **merged, migration applied, probed live** |
+| Notifications + run history | builder agent | — | **merged, migration applied, probed live** |
 | Mini-IDE (diff view, editing, tabs) | builder agent | Cursor | running |
 | Horror demo place | this session | DOORS | next |
 | Cube-backed world generation | this session | — | next |
@@ -84,9 +84,9 @@ npm run studio:verify     # 16/16
 
 | | |
 |---|---|
-| Tests | 324 passing, 15 files |
+| Tests | 380 passing, 17 files |
 | `npm run check` | clean — 0 errors |
-| `npm run verify:security` | 37/37 live |
+| `npm run verify:security` | **44/44 live** — includes project_memory and notifications |
 | `npm run agent:verify` | 44/44 live (free router) |
 | `npm run studio:verify` | **16/16 live, inside Studio** |
 | `npm run blueprint:verify` | 23/24 — needs a real model |

@@ -426,12 +426,9 @@ can read every fact and delete any of it.
 **Verified:** `npm run check` — lint, typecheck, **336 tests across 16 files**
 (32 new in `tests/memory.test.ts`), production build with 24 routes.
 
-**Not yet verified:** the migration has not been applied to the live project and
-`npm run verify:security` has not been run against it — this session had no
-credentials for the live database. Three new probes are staged in
-`scripts/verify-security.mjs` (anon read of `project_memory`, a forged insert,
-and a cross-project write being unreadable by the project's owner). Run them
-before trusting the RLS, per the standing rule that the live probe outranks the
-SQL.
+**Verified live (19 Aug):** migration applied to the Blockwright project and
+probed by `npm run verify:security` — **44/44**, including anon read of
+`project_memory` refused, a forged insert into another user's project refused,
+and a cross-project write being unreadable by that project's owner.
 
 6. Run `verify:security` against a live project to cover migration `0010`.
