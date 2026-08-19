@@ -61,36 +61,46 @@ export function TemplateArt({
   const [from, to] = template.accent;
   const Icon = ICONS[template.art];
 
-  // Where a place has actually been built for this genre, show the place. The
-  // glyph below is honest decoration, but decoration is what a competitor was
-  // faulted for, and the same criticism lands on every card without a capture.
-  if (template.capture) {
+  // A real image for the genre when one is sourced; the glyph below otherwise.
+  if (template.banner) {
     return (
       <span
         role="img"
-        aria-label={template.capture.alt}
-        className={cn("relative block h-full w-full overflow-hidden bg-black", className)}
+        aria-label={template.banner.alt}
+        className={cn("relative block h-full w-full overflow-hidden", className)}
+        style={{ backgroundColor: `color-mix(in oklch, ${from} 22%, black)` }}
       >
         <Image
-          src={template.capture.src}
+          src={template.banner.src}
           alt=""
           fill
           priority={priority}
           sizes="(max-width: 640px) 100vw, 320px"
           className="object-cover"
-          style={{ objectPosition: template.capture.focal ?? "50% 50%" }}
+          style={{ objectPosition: template.banner.focal ?? "50% 50%" }}
         />
-        {/* Says what it is. It was built in Studio, not produced by a prompt,
-            and the label must not imply otherwise. */}
-        <span className="absolute bottom-2 left-2 rounded border border-white/25 bg-black/55 px-1.5 py-px font-mono text-[0.5625rem] uppercase tracking-wider text-white/90 backdrop-blur-sm">
-          Real place
-        </span>
+
+        {/* The source art is lit against a flat neutral background, which reads
+            as muted next to the saturated cards this is measured against. A
+            soft wash of the template's own accent, in `overlay` so the scene's
+            own light and shade survive it, gives the card its genre colour
+            without tinting the props into mud. */}
+        <span
+          aria-hidden
+          className="absolute inset-0 mix-blend-overlay"
+          style={{
+            backgroundImage: `linear-gradient(135deg, ${from}, ${to})`,
+            opacity: 0.55,
+          }}
+        />
+
+        {/* Bottom fade so the title below keeps its contrast. */}
         <span
           aria-hidden
           className="absolute inset-0"
           style={{
             backgroundImage:
-              "linear-gradient(to bottom, transparent 45%, color-mix(in oklch, var(--surface) 82%, transparent) 100%)",
+              "linear-gradient(to bottom, transparent 42%, color-mix(in oklch, var(--surface) 88%, transparent) 100%)",
           }}
         />
       </span>

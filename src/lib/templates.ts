@@ -58,18 +58,14 @@ export interface Template {
   accent: [string, string];
   imageAlt: string;
   /**
-   * A real Roblox capture for this genre, when one exists.
+   * Real sourced artwork for this genre.
    *
-   * Most cards carry generated glyph art, which is honest decoration. Where a
-   * place has actually been built and captured in Studio, the card shows that
-   * instead — a critic comparing us to a competitor made the point that its
-   * genre cards all resolved to decorative assets rather than user output, and
-   * the same criticism lands here for every card that has no `capture`.
-   *
-   * Nothing here claims a prompt produced the image. The card labels it as a
-   * place built in Studio, which is what it is.
+   * Glyph art is honest decoration but it does not tell a creator what the
+   * genre looks like. These are real images, sourced rather than built — a
+   * scene constructed by hand purely to fill a banner is a picture of nothing
+   * anyone will ever play, and costs far more than it communicates.
    */
-  capture?: { src: string; alt: string; focal?: string };
+  banner?: { src: string; alt: string; focal?: string; credit?: string };
   /** Seeded into the composer when a project is created from this template. */
   prompt: string;
   highlights: string[];
@@ -134,11 +130,6 @@ export const TEMPLATES: Template[] = [
     category: "Horror",
     icon: "ghost",
     art: "GiGhost",
-    capture: {
-      src: "/demos/hero-corridor.jpg",
-      alt: "A dark hotel corridor in Roblox lit by warm wall sconces, with numbered doors",
-      focal: "50% 46%",
-    },
     accent: ["oklch(0.5 0.14 300)", "oklch(0.3 0.1 265)"],
     imageAlt: "Abstract scene of a torch beam cutting through fog",
     prompt:
@@ -199,11 +190,6 @@ export const TEMPLATES: Template[] = [
     category: "RPG",
     icon: "scroll",
     art: "GiScrollUnfurled",
-    capture: {
-      src: "/demos/islands.jpg",
-      alt: "Floating grass islands in Roblox joined by a rope bridge, with a stone arch and an open treasure chest",
-      focal: "50% 54%",
-    },
     accent: ["oklch(0.7 0.15 300)", "oklch(0.55 0.16 260)"],
     imageAlt: "Abstract scene of a quest marker above a branching path",
     prompt:
