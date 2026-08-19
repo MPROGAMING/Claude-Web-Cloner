@@ -304,7 +304,9 @@ export function WorkspacePreview({ className }: { className?: string }) {
         </span>
         <span className="inline-flex items-center gap-1 rounded-md border border-border px-1.5 py-0.5 font-mono text-[0.625rem] text-muted-foreground">
           <Plug className="size-2.5" />
-          Sonnet 4.5
+          {/* The mock advertised a model the product does not lead with, and
+              which this deployment has no key for. */}
+          GPT-5.6 Sol
         </span>
       </div>
     </div>

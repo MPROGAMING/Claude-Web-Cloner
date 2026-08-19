@@ -1,4 +1,8 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+// generation-config is server-only; the constant under test is a plain string.
+vi.mock("server-only", () => ({}));
+
 import {
   CREDIT_PACKS,
   MINIMUM_BALANCE_TO_START,
@@ -7,6 +11,7 @@ import {
   formatCredits,
 } from "@/lib/credits/pricing";
 import { MODELS, getModel, getModelOrDefault, DEFAULT_MODEL_ID } from "@/lib/ai/registry";
+import { DEFAULT_BRAIN_MODEL } from "@/lib/knowledge/generation-config";
 
 const sonnet = getModel("anthropic:claude-sonnet-4-5")!;
 const flash = getModel("google:gemini-2.5-flash")!;
@@ -169,5 +174,33 @@ describe("credit packs", () => {
   it("keeps the start threshold small enough to be reachable", () => {
     expect(MINIMUM_BALANCE_TO_START).toBeGreaterThan(0);
     expect(MINIMUM_BALANCE_TO_START).toBeLessThan(1000);
+  });
+});
+
+// ---------------------------------------------------------------------------
+describe("the default model is one this deployment can actually run", () => {
+  /**
+   * DEFAULT_MODEL_ID used to be `anthropic:claude-sonnet-4-5` — a direct
+   * provider needing a key that is not configured. Every new project was
+   * created pointing at a model it could not run, and /settings displayed it
+   * as the account default. The runtime papered over it by falling back, so
+   * nothing failed loudly; it was visible only in the UI, saying the wrong
+   * thing.
+   *
+   * registry.ts cannot import generation-config (that module imports this one),
+   * so the two constants are pinned here instead of by the type system.
+   */
+  it("matches the configured Roblox Brain model", () => {
+    expect(DEFAULT_MODEL_ID).toBe(`openrouter:${DEFAULT_BRAIN_MODEL}`);
+  });
+
+  it("routes through OpenRouter, which is the only provider wired for generation", () => {
+    expect(getModel(DEFAULT_MODEL_ID)?.provider).toBe("openrouter");
+  });
+
+  it("is enabled and carries the Roblox recommendation", () => {
+    const model = getModel(DEFAULT_MODEL_ID);
+    expect(model?.enabled).toBe(true);
+    expect(model?.labels).toContain("recommended-roblox");
   });
 });

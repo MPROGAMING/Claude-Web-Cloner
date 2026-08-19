@@ -360,7 +360,21 @@ export const MODELS: ModelDefinition[] = [
   },
 ];
 
-export const DEFAULT_MODEL_ID = "anthropic:claude-sonnet-4-5";
+/**
+ * The model a project gets when nobody has chosen one.
+ *
+ * This was `anthropic:claude-sonnet-4-5`, a direct-provider model needing a key
+ * this deployment does not have — so every new project was created pointing at
+ * a model it could not run, and /settings displayed that as the account
+ * default. The runtime survived it by falling back, but the stored value and
+ * the displayed one were both wrong, and it contradicted the product's own
+ * positioning: the Roblox-tuned model is the point.
+ *
+ * Must stay equal to `openrouter:` + DEFAULT_BRAIN_MODEL from
+ * `lib/knowledge/generation-config`. It cannot import it — that module imports
+ * this one — so `tests/credits.test.ts` pins the two together instead.
+ */
+export const DEFAULT_MODEL_ID = "openrouter:openai/gpt-5.6-sol";
 
 export function getModel(id: string, catalog: ModelDefinition[] = MODELS) {
   return catalog.find((m) => m.id === id && m.enabled);

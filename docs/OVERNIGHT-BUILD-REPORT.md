@@ -160,6 +160,45 @@ syncs into Studio and **the creator presses Publish**. Nothing claims otherwise.
 
 ---
 
+## Accessibility
+
+`npm run a11y` was written this session: headless Chrome, real rendered pages,
+measured results. Static analysis cannot answer whether a colour pair clears
+WCAG once every CSS variable and opacity has resolved, whether a control has an
+accessible name after Base UI composed it, or whether a target is thumb-sized
+under a coarse pointer.
+
+Structure and contrast came back nearly clean — **zero contrast failures in
+either theme**, one missing `h1` on `/pricing`, and no `<main>` landmark
+anywhere in the authenticated app. Touch targets did not: **52 failures**.
+
+The fix that mattered was at the source. The shared `Button` size variants now
+carry a 44px floor under `pointer-coarse`, which fixed every button using them
+in one change; only the controls that had bypassed the shared component needed
+individual attention. The criterion is the pointer rather than the viewport — a
+32px button is fine with a trackpad at 390px and bad with a finger at 1024px —
+so **the desktop layout does not move by a pixel**.
+
+Three of the findings were about the tool rather than the app, and each is now
+fixed in the tool:
+
+- `@apply pointer-coarse:*` inside a custom utility is **silently dropped** by
+  Tailwind v4. The classes appeared on the elements and no rule was ever
+  emitted, so controls stayed 28px while the markup claimed otherwise.
+- CDP's `setEmulatedMedia` has **no `pointer` feature**. Without touch
+  emulation the page answered `(pointer: coarse)` with false and the entire
+  touch-target pass measured the desktop layout. The audit now prints the
+  pointer state it actually got, so a silent emulation failure cannot make the
+  check vacuously pass.
+- Two rules were over-strict: WCAG 2.5.8 exempts a target inside a sentence,
+  and the stretched-link pattern means a 23px card title's real hit area is the
+  whole card.
+
+Clean now across `/`, `/pricing`, `/dashboard`, `/templates`, `/activity`,
+`/credits` and `/settings`, in both themes, at 1440px and 390px.
+
+---
+
 ## Spend
 
 Ceiling: **$3.00 USD**.
