@@ -65,7 +65,7 @@ export function ChangesetReview({
 }: {
   changeset: ChangesetData;
   onClose: () => void;
-  onApprove: () => void;
+  onApprove: (paths?: string[]) => void;
   busy: boolean;
   applied: boolean;
 }) {
@@ -73,6 +73,14 @@ export function ChangesetReview({
   const [error, setError] = useState<string | null>(null);
   const [index, setIndex] = useState(0);
   const [mode, setMode] = useState<DiffMode>("inline");
+  /**
+   * Which files the user is taking.
+   *
+   * Everything starts included — the common case is agreeing with the whole
+   * proposal, and making people opt in file by file would turn the normal path
+   * into work. Excluding is the exception, so excluding is what costs a click.
+   */
+  const [excluded, setExcluded] = useState<ReadonlySet<string>>(new Set());
 
   const blocking = changeset.issues.filter((issue) => issue.severity === "error");
 
@@ -138,6 +146,19 @@ export function ChangesetReview({
 
   const active = files?.[index];
 
+  const pathOf = (file: DiffFile) => file.toPath ?? file.path;
+  const includedPaths = (files ?? []).map(pathOf).filter((path) => !excluded.has(path));
+  const allIncluded = excluded.size === 0;
+
+  function toggle(path: string) {
+    setExcluded((prev) => {
+      const next = new Set(prev);
+      if (next.has(path)) next.delete(path);
+      else next.add(path);
+      return next;
+    });
+  }
+
   return (
     <div className="fixed inset-0 z-[90] flex bg-background/80 p-2 backdrop-blur-sm md:p-6">
       <div
@@ -184,16 +205,37 @@ export function ChangesetReview({
                 const Icon = ICONS[file.kind as keyof typeof ICONS] ?? FilePen;
                 const stat = stats[fileIndex];
                 const selected = fileIndex === index;
+                const filePath = file.toPath ?? file.path;
+                const included = !excluded.has(filePath);
 
                 return (
                   <li key={`${file.kind}-${file.path}`} className="shrink-0">
+                    <span
+                      className={cn(
+                        "flex w-full items-center transition-colors",
+                        selected ? "bg-accent" : "hover:bg-accent/50",
+                        included ? "" : "opacity-45",
+                      )}
+                    >
+                      {/* Taking part of a proposal is the whole point of a
+                          review. Without this the only outcomes are all or
+                          nothing, so one wrong delete costs every good change
+                          in the set. */}
+                      <label className="tap-target flex shrink-0 cursor-pointer items-center justify-center pl-2.5">
+                        <input
+                          type="checkbox"
+                          checked={included}
+                          onChange={() => toggle(filePath)}
+                          aria-label={`Include ${filePath}`}
+                          className="size-3.5 accent-[var(--ember)]"
+                        />
+                      </label>
                     <button
                       type="button"
                       onClick={() => setIndex(fileIndex)}
                       aria-current={selected ? "true" : undefined}
                       className={cn(
-                        "tap-row flex w-full items-center gap-2 px-3 py-2 text-left transition-colors focus-ember",
-                        selected ? "bg-accent" : "hover:bg-accent/50",
+                        "tap-row flex min-w-0 flex-1 items-center gap-2 px-2.5 py-2 text-left focus-ember",
                       )}
                     >
                       <Icon className={cn("size-3.5 shrink-0", TONE[file.kind])} />
@@ -210,6 +252,7 @@ export function ChangesetReview({
                         <span className="text-[var(--diff-remove-ink)]">−{stat.removed}</span>
                       </span>
                     </button>
+                    </span>
                   </li>
                 );
               })}
@@ -272,14 +315,26 @@ export function ChangesetReview({
               </span>
             ) : (
               <>
-                <Button size="sm" onClick={onApprove} disabled={busy || blocking.length > 0}>
+                <Button
+                  size="sm"
+                  // Send the subset only when it IS a subset. Passing the full
+                  // list would record a narrowing that never happened.
+                  onClick={() => onApprove(allIncluded ? undefined : includedPaths)}
+                  disabled={busy || blocking.length > 0 || includedPaths.length === 0}
+                >
                   {busy ? <Loader2 className="size-3 animate-spin" /> : <Check className="size-3" />}
-                  Approve and apply
+                  {allIncluded
+                    ? "Approve and apply"
+                    : `Apply ${includedPaths.length} of ${files?.length ?? 0}`}
                 </Button>
                 <span className="text-[0.72rem] text-muted-foreground">
                   {blocking.length > 0
                     ? "Fix the errors above before applying."
-                    : "Nothing is written until you approve."}
+                    : includedPaths.length === 0
+                      ? "Nothing is selected."
+                      : allIncluded
+                        ? "Nothing is written until you approve."
+                        : `${excluded.size} change${excluded.size === 1 ? "" : "s"} will be left out.`}
                 </span>
               </>
             )}

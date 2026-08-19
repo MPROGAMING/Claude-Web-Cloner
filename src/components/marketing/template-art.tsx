@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import {
   GiCampfire,
   GiChessRook,
@@ -59,6 +60,42 @@ export function TemplateArt({
 }) {
   const [from, to] = template.accent;
   const Icon = ICONS[template.art];
+
+  // Where a place has actually been built for this genre, show the place. The
+  // glyph below is honest decoration, but decoration is what a competitor was
+  // faulted for, and the same criticism lands on every card without a capture.
+  if (template.capture) {
+    return (
+      <span
+        role="img"
+        aria-label={template.capture.alt}
+        className={cn("relative block h-full w-full overflow-hidden bg-black", className)}
+      >
+        <Image
+          src={template.capture.src}
+          alt=""
+          fill
+          priority={priority}
+          sizes="(max-width: 640px) 100vw, 320px"
+          className="object-cover"
+          style={{ objectPosition: template.capture.focal ?? "50% 50%" }}
+        />
+        {/* Says what it is. It was built in Studio, not produced by a prompt,
+            and the label must not imply otherwise. */}
+        <span className="absolute bottom-2 left-2 rounded border border-white/25 bg-black/55 px-1.5 py-px font-mono text-[0.5625rem] uppercase tracking-wider text-white/90 backdrop-blur-sm">
+          Real place
+        </span>
+        <span
+          aria-hidden
+          className="absolute inset-0"
+          style={{
+            backgroundImage:
+              "linear-gradient(to bottom, transparent 45%, color-mix(in oklch, var(--surface) 82%, transparent) 100%)",
+          }}
+        />
+      </span>
+    );
+  }
 
   return (
     <span

@@ -57,15 +57,26 @@ export function ChangesetCard({ changeset }: { changeset: ChangesetData }) {
   const blocking = changeset.issues.filter((issue) => issue.severity === "error");
   const busy = phase === "approving" || phase === "applying" || phase === "undoing";
 
-  async function call(path: string, label: string) {
+  async function call(
+    path: string,
+    label: string,
+    body?: unknown,
+  ): Promise<{ applied?: number; reverted?: number }> {
     const response = await fetch(`/api/agent/changesets/${changeset.changesetId}/${path}`, {
       method: "POST",
+      ...(body === undefined
+        ? {}
+        : { headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }),
     });
-    const body = await response.json().catch(() => ({}));
+    const payload = (await response.json().catch(() => ({}))) as {
+      error?: { message?: string };
+      applied?: number;
+      reverted?: number;
+    };
     if (!response.ok) {
-      throw new Error(body?.error?.message ?? `Could not ${label}.`);
+      throw new Error(payload?.error?.message ?? `Could not ${label}.`);
     }
-    return body;
+    return payload;
   }
 
   /**
@@ -74,10 +85,13 @@ export function ChangesetCard({ changeset }: { changeset: ChangesetData }) {
    * record is still written, and it is still impossible to reach apply without
    * it.
    */
-  async function approveAndApply() {
+  async function approveAndApply(paths?: string[]) {
     setPhase("approving");
     try {
-      await call("approve", "approve these changes");
+      // `paths` is present only when the user narrowed the set in the review
+      // dialog. Absent means the whole proposal, which keeps the recorded
+      // approval honest about what was actually agreed to.
+      await call("approve", "approve these changes", paths ? { paths } : undefined);
       setPhase("applying");
       const result = await call("apply", "apply these changes");
       setPhase("applied");
@@ -178,7 +192,7 @@ export function ChangesetCard({ changeset }: { changeset: ChangesetData }) {
           </Button>
         ) : phase === "undone" ? null : (
           <>
-            <Button size="sm" onClick={approveAndApply} disabled={busy || blocking.length > 0}>
+            <Button size="sm" onClick={() => approveAndApply()} disabled={busy || blocking.length > 0}>
               {busy ? <Loader2 className="size-3 animate-spin" /> : <Check className="size-3" />}
               {phase === "approving"
                 ? "Approving…"

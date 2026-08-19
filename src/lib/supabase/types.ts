@@ -354,6 +354,8 @@ export type AgentChangesetRow = {
   run_id: string;
   owner_id: string;
   project_id: string;
+  /** NULL means every operation — see migration 0012. */
+  approved_paths: string[] | null;
   status: string;
   operations: unknown[];
   issues: unknown[];

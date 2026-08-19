@@ -154,6 +154,12 @@ export interface Changeset {
   status: ChangesetStatus;
   createdAt: string;
   approvedAt?: string;
+  /**
+   * The paths the user actually approved. `undefined` means every operation,
+   * which is what a change set approved before partial approval existed means.
+   * Apply replays exactly this subset — see migration 0012.
+   */
+  approvedPaths?: string[];
   appliedAt?: string;
   issues: ChangesetValidationIssue[];
 }

@@ -142,7 +142,7 @@ export async function loadChangeset(
 ): Promise<Changeset | null> {
   const { data, error } = await supabase
     .from("agent_changesets")
-    .select("id, run_id, owner_id, project_id, status, operations, issues, created_at, approved_at, applied_at")
+    .select("id, run_id, owner_id, project_id, status, operations, issues, created_at, approved_at, approved_paths, applied_at")
     .eq("id", changesetId)
     .maybeSingle();
 
@@ -159,6 +159,7 @@ export async function loadChangeset(
     issues: (data.issues ?? []) as Changeset["issues"],
     createdAt: data.created_at,
     approvedAt: data.approved_at ?? undefined,
+    approvedPaths: data.approved_paths ?? undefined,
     appliedAt: data.applied_at ?? undefined,
   };
 }
@@ -167,11 +168,12 @@ export async function setChangesetStatus(
   supabase: Client,
   changesetId: string,
   status: Changeset["status"],
-  extra: { approvedAt?: string; appliedAt?: string } = {},
+  extra: { approvedAt?: string; appliedAt?: string; approvedPaths?: string[] } = {},
 ): Promise<void> {
   const patch: Partial<Database["public"]["Tables"]["agent_changesets"]["Row"]> = { status };
   if (extra.approvedAt) patch.approved_at = extra.approvedAt;
   if (extra.appliedAt) patch.applied_at = extra.appliedAt;
+  if (extra.approvedPaths) patch.approved_paths = extra.approvedPaths;
 
   const { error } = await supabase.from("agent_changesets").update(patch).eq("id", changesetId);
   if (error) logger.warn("agent.changeset.status_failed", { changesetId, error: error.message });

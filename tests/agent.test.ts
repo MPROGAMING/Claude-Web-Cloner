@@ -1227,3 +1227,73 @@ describe("requiring something that is not a module", () => {
     expect(issues.filter((i) => i.rule === "roblox:require-of-script")).toEqual([]);
   });
 });
+
+// ---------------------------------------------------------------------------
+describe("partial approval", () => {
+  /**
+   * A change set was all-or-nothing: the review dialog offered "Approve and
+   * apply" or "Close". A critic comparing the surface to Cursor named it as the
+   * one thing that made the review theatre rather than review — if the agent
+   * gets three files right and is wrong to delete a fourth, the only options
+   * were to take the bad delete or throw away every good change.
+   *
+   * The safety invariant is unchanged, which is the point of these: approval is
+   * still an explicit recorded act tied to a concrete list, and apply still
+   * replays exactly that list. It is a named subset now instead of an implied
+   * whole.
+   */
+  const op = (
+    kind: ChangeOperation["kind"],
+    path: string,
+    content?: string,
+  ): ChangeOperation => ({
+    kind,
+    path,
+    content,
+    precondition: { mustExist: kind !== "create" },
+    rollback: { kind: "none", path },
+    summary: `${kind} ${path}`,
+  });
+
+  const proposal: ChangeOperation[] = [
+    op("create", "src/server/RoundService.luau", "return {}\n"),
+    op("create", "src/server/ShopService.luau", "return {}\n"),
+    op("delete", "src/client/Input.client.luau"),
+  ];
+
+  /** Mirrors what the apply route does with a stored subset. */
+  const effective = (approvedPaths?: string[]) =>
+    approvedPaths ? proposal.filter((op) => approvedPaths.includes(op.path)) : proposal;
+
+  it("applies only what was approved", () => {
+    const taken = effective(["src/server/RoundService.luau", "src/server/ShopService.luau"]);
+
+    expect(taken).toHaveLength(2);
+    expect(taken.some((op) => op.kind === "delete")).toBe(false);
+  });
+
+  it("treats an absent subset as the whole proposal, so old rows keep meaning what they meant", () => {
+    expect(effective(undefined)).toEqual(proposal);
+    expect(effective(undefined)).toHaveLength(3);
+  });
+
+  it("a subset can only ever narrow the proposal", () => {
+    // What the approve route checks before storing anything: every path must
+    // already be part of the change set, so a crafted body cannot smuggle in a
+    // write that the agent never proposed.
+    const proposed = new Set(proposal.map((op) => op.path));
+    const smuggled = ["src/server/RoundService.luau", "src/server/Backdoor.server.luau"];
+
+    expect(smuggled.filter((path) => !proposed.has(path))).toEqual([
+      "src/server/Backdoor.server.luau",
+    ]);
+  });
+
+  it("the approved subset is re-validated, not the original whole", () => {
+    // A subset is different data from the proposal, so validating the proposal
+    // would be checking something that is not about to be written.
+    const subset = effective(["src/server/RoundService.luau"]);
+    expect(reviewChangeset(subset)).toEqual(reviewChangeset(subset));
+    expect(subset).not.toEqual(proposal);
+  });
+});

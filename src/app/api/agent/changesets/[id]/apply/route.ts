@@ -56,9 +56,24 @@ export async function POST(_request: Request, context: { params: Promise<{ id: s
       throw new AppError(code, decision.message ?? "Not allowed.", code === "unauthorized" ? 401 : 403);
     }
 
-    // Re-validate the stored operations. A change set is data, and data that
-    // reaches a write is re-checked no matter who stored it.
-    const validation = validateChangesetFiles(changeset.operations);
+    // Apply exactly what was approved. When the user approved a subset, the
+    // rest of the proposal is not "pending" — it was declined, and replaying it
+    // would write something nobody agreed to.
+    const approved = changeset.approvedPaths
+      ? changeset.operations.filter((op) => changeset.approvedPaths!.includes(op.path))
+      : changeset.operations;
+
+    if (approved.length === 0) {
+      throw new AppError("invalid_request", "No changes were approved.", 400);
+    }
+
+    const effective = { ...changeset, operations: approved };
+
+    // Re-validate what is about to be written. A change set is data, and data
+    // that reaches a write is re-checked no matter who stored it — and a subset
+    // is not the same data as the whole, so validating the whole would be
+    // checking something else.
+    const validation = validateChangesetFiles(approved);
     if (!validation.ok) {
       await setChangesetStatus(supabase, id, "failed");
       logger.warn("agent.apply.validation_failed", {
@@ -76,7 +91,7 @@ export async function POST(_request: Request, context: { params: Promise<{ id: s
       );
     }
 
-    const result = await applyChangeset(supabase, changeset, user.id);
+    const result = await applyChangeset(supabase, effective, user.id);
 
     await setChangesetStatus(supabase, id, result.ok ? "applied" : "failed", {
       appliedAt: result.ok ? new Date().toISOString() : undefined,
