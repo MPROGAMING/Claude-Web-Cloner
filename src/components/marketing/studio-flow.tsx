@@ -59,7 +59,7 @@ export function StudioFlow({ className }: { className?: string }) {
               </div>
 
               {stage.code && (
-                <span className="ml-auto rounded-md border border-border bg-surface-sunken px-2.5 py-1 font-mono text-sm tracking-[0.22em] text-[var(--ember)]">
+                <span className="ml-auto rounded-md border border-border bg-surface-sunken px-2.5 py-1 font-mono text-sm tracking-[0.22em] text-[var(--ember-text)]">
                   {stage.code}
                 </span>
               )}

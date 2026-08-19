@@ -260,7 +260,7 @@ export function RunHistory({
                   </span>
 
                   {awaiting && (
-                    <span className="shrink-0 rounded-md border border-[var(--ember)]/40 bg-[var(--ember)]/10 px-2 py-1 text-[0.6875rem] font-medium text-[var(--ember)]">
+                    <span className="shrink-0 rounded-md border border-[var(--ember)]/40 bg-[var(--ember)]/10 px-2 py-1 text-[0.6875rem] font-medium text-[var(--ember-text)]">
                       Needs approval
                     </span>
                   )}

@@ -45,13 +45,13 @@ export function TemplateGallery({ className }: { className?: string }) {
                 "tap-row inline-flex shrink-0 items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[0.75rem] font-medium",
                 "transition-[background-color,border-color,transform] duration-150 active:scale-[0.97]",
                 active
-                  ? "border-[var(--ember)]/45 bg-[var(--ember)]/10 text-[var(--ember)]"
+                  ? "border-[var(--ember)]/45 bg-[var(--ember)]/10 text-[var(--ember-text)]"
                   : "border-border text-muted-foreground hover:bg-accent hover:text-foreground",
               )}
             >
               {option === "All" && <LayoutGrid className="size-3" />}
               {option}
-              <span className="font-mono text-[0.5625rem] opacity-60">{count}</span>
+              <span className="font-mono text-[0.5625rem] opacity-80">{count}</span>
             </button>
           );
         })}

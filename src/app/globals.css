@@ -56,6 +56,7 @@
   --color-ember: var(--ember);
   --color-ember-soft: var(--ember-soft);
   --color-ember-ink: var(--ember-ink);
+  --color-ember-text: var(--ember-text);
   --color-signal: var(--signal);
   --color-signal-soft: var(--signal-soft);
   --color-success: var(--success);
@@ -167,6 +168,15 @@
      read against the page; on a 10% wash of themselves they fall to 2.5–3.4:1,
      which is how a yellow credit badge audited as fine and was unreadable. Use
      `--x-ink` for the text and `--x` for the fill, never one for both. */
+  /* Small text in a tinted pill. --ember and --signal are picked so a solid
+     fill of them looks right; as 9-11px text on a 10% wash of themselves they
+     land at 3.2-3.6:1. Same split as --success-ink below, for the same reason.
+     Found by the a11y audit only after its colour parser was fixed — Tailwind
+     opacity modifiers on an oklch token compute as oklab(), which the old
+     rgba() regex could not read, so these elements were skipped rather than
+     checked and reported clean. */
+  --ember-text: oklch(0.5 0.16 47);
+
   --success-ink: oklch(0.45 0.14 152);
   --warning-ink: oklch(0.5 0.13 76);
   --danger-ink: oklch(0.48 0.2 26);
@@ -245,6 +255,8 @@
   --sidebar-accent-foreground: oklch(0.96 0.004 85);
   --sidebar-border: oklch(1 0 0 / 0.075);
   --sidebar-ring: var(--ring);
+
+  --ember-text: oklch(0.8 0.15 58);
 
   --success-ink: oklch(0.82 0.14 155);
   --warning-ink: oklch(0.85 0.14 80);

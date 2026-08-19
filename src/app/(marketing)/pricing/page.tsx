@@ -74,7 +74,7 @@ export default function PricingPage() {
                   <td className="px-4 py-3">
                     <span className="font-medium">{model.name}</span>
                     {model.recommended && (
-                      <span className="ml-2 rounded border border-[var(--ember)]/35 bg-[var(--ember)]/10 px-1.5 py-px font-mono text-[0.5625rem] uppercase tracking-wider text-[var(--ember)]">
+                      <span className="ml-2 rounded border border-[var(--ember)]/35 bg-[var(--ember)]/10 px-1.5 py-px font-mono text-[0.5625rem] uppercase tracking-wider text-[var(--ember-text)]">
                         Default
                       </span>
                     )}

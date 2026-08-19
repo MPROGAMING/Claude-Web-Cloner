@@ -60,7 +60,7 @@ export function PricingCards({
             )}
           >
             {pack.highlight && (
-              <span className="absolute -top-2.5 left-6 rounded-full border border-[var(--ember)]/40 bg-background px-2.5 py-0.5 font-mono text-[0.5625rem] uppercase tracking-[0.12em] text-[var(--ember)]">
+              <span className="absolute -top-2.5 left-6 rounded-full border border-[var(--ember)]/40 bg-background px-2.5 py-0.5 font-mono text-[0.5625rem] uppercase tracking-[0.12em] text-[var(--ember-text)]">
                 Most credits per dollar
               </span>
             )}
