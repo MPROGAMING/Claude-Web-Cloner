@@ -10,7 +10,6 @@ import {
   canTransition,
   isTerminal,
 } from "@/lib/agent/state-machine";
-import type { AgentState } from "@/lib/agent/state-machine";
 import {
   ChangesetBuilder,
   finalState,
@@ -26,7 +25,7 @@ import { contextFor, reviewFile, reviewFiles } from "@/lib/agent/security";
 import { decideRepair, validateChangesetFiles, validateFiles } from "@/lib/agent/repair";
 import { planSchema, reviewPlan, planToSteps } from "@/lib/agent/planner";
 import { rankRelevantFiles, renderTree } from "@/lib/agent/context";
-import type { Changeset } from "@/lib/agent/types";
+import type { AgentState, Changeset } from "@/lib/agent/types";
 
 /**
  * Step 7 — agent layer.
