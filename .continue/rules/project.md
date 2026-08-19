@@ -138,6 +138,11 @@ a lazy initial value, or move the write into the callback that learns the news.
 - Every path the model proposes goes through `validateProjectPath`.
 - Studio commands are allowlisted verbs. Never send the plugin code to execute.
 - Internal error detail is logged, never returned to the browser.
+- Project memory is model-written text replayed into the model on every later
+  turn, so it is untrusted data twice over. It enters the prompt only through
+  `buildMemoryContext`, which fences it, sanitises it and states that it is not
+  instructions — the same contract `lib/knowledge/context-builder.ts` holds for
+  retrieved documentation. Never interpolate a remembered fact anywhere else.
 
 ## Structure
 
@@ -152,6 +157,7 @@ src/
   lib/
     ai/            registry, providers, tools, system-prompt, types
     credits/       pricing (pure) · service (server)
+    memory/        facts (pure) · service (server) · tool
     roblox/        project-model, luau-validator
     studio/        protocol, service, liveness
     supabase/      client, server, admin, types

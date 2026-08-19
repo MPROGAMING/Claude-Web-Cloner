@@ -14,6 +14,7 @@ import { formatDiagnostics, validateLuau } from "@/lib/roblox/luau-validator";
 import { enqueueStudioCommand, getConnection, listRecentCommands } from "@/lib/studio/service";
 import { STUDIO_ACTIONS, studioActionSchema } from "@/lib/studio/protocol";
 import { buildKnowledgeTools } from "@/lib/knowledge/tool";
+import { buildMemoryTools } from "@/lib/memory/tool";
 import type { ChangesetBuilder } from "@/lib/agent/changesets";
 import { toPreview } from "@/lib/agent/changesets";
 import { authorizeApply } from "@/lib/agent/authorization";
@@ -215,6 +216,17 @@ export function buildTools(ctx: ToolContext) {
     // system stays independently replaceable — swapping the retriever must not
     // require touching the agent's file/Studio tools.
     ...buildKnowledgeTools({ onActivity: ctx.onActivity }),
+
+    // Durable per-project context. Separate from the knowledge tools because
+    // the two are opposites: knowledge is global reference material the agent
+    // reads, memory is this project's own history that the agent writes.
+    ...buildMemoryTools({
+      supabase: ctx.supabase,
+      projectId: ctx.projectId,
+      userId: ctx.userId,
+      runId: ctx.runId ?? null,
+      onActivity: ctx.onActivity,
+    }),
 
     plan_build: tool({
       description:

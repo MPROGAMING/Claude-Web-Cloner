@@ -283,3 +283,79 @@ Sign In / Providers → Confirm email.
 3. Diff view in the code panel using `file_revisions`.
 4. Conversation summarisation past ~150 messages.
 5. Stripe checkout behind the existing `CREDIT_PACKS` interface.
+
+## Step 6 — Real generation model (verified)
+
+Roblox Brain generates through OpenRouter `openai/gpt-5.6-sol`
+(`ROBLOX_BRAIN_MODEL` overrides). Retrieval runs before generation; citations
+reach the UI. Verified by a real authenticated request through `/api/chat`:
+21/21 end-to-end checks, 212 unit tests, 31 live security checks, clean build.
+
+Three defects were found by that verification and fixed — an unintended
+`authenticated` EXECUTE grant from Supabase default privileges (migration 0006),
+the Brain model never reaching the route (0007 + `resolveChatModelId`), and a
+highlighter that leaked CSS class names into displayed code. Full detail in
+`docs/roblox-brain/reports/STEP-6-REPORT.md`.
+
+Verification commands:
+- `npm run brain:verify-generation` — pipeline, one real request
+- `node scripts/roblox-brain/verify-chat-route.mjs [--keep]` — authenticated end-to-end
+
+## Step 7 — Production agent + Studio execution layer (verified)
+
+The Brain is now an agent: classify → plan → retrieve → generate → validate →
+propose change set → **human approval** → apply → verify → undo.
+
+Preview is the default mode and writes nothing. Apply replays the exact approved
+operation list; the model is not consulted at apply time and cannot approve its
+own work — chat assent ("do it", "looks good") is explicitly refused.
+
+Acceptance 44/44, unit tests 284, live security 37/37. Five real defects were
+found by running the acceptance test; all fixed and pinned. Detail and the one
+partial requirement (§12 repair loop is model-driven, not server-driven) in
+`docs/roblox-brain/reports/STEP-7-REPORT.md`.
+
+Commands:
+- `npm run agent:verify` — full agent acceptance against a running dev server
+- `npm run verify:security` — live RLS/grants, now including the agent tables
+
+## Overnight session — 18/19 Aug 2026
+
+Game Blueprint shipped: idea -> 4-6 clarifying questions -> sectioned plan ->
+explicit approval, verified 24/24 against real model calls. An approved plan is
+binding context on every later build turn.
+
+Landing page won a blind A/B against live lemonade.gg after a real hero composer
+was added. Command palette (Cmd/Ctrl+K) added. Studio integration proven against
+a real place (607,544 terrain cells written and verified by query).
+
+Fixed: the output-token budget was declared but never passed to streamText;
+provider credit exhaustion reported as an internal fault; an icon-only button
+with no accessible name.
+
+304 tests, 37 live security checks, clean build.
+Full detail: `docs/OVERNIGHT-BUILD-REPORT.md`.
+
+Commands added: `npm run blueprint:verify`.
+
+## Project Memory (written, not yet verified live)
+
+Durable per-project context that survives between conversations, so a decision
+made last week ("the currency is called Sparks") is not contradicted this week.
+
+Shipped: migration `0010_project_memory.sql`, `src/lib/memory/`, a
+`remember_fact` tool, the memory block in the system prompt, `GET
+/api/projects/[id]/memory`, and a Memory tab in the workspace where a creator
+can read every fact and delete any of it.
+
+**Verified:** `npm run check` — lint, typecheck, **336 tests across 16 files**
+(32 new in `tests/memory.test.ts`), production build with 24 routes.
+
+**Not yet verified:** the migration has not been applied to the live project and
+`npm run verify:security` has not been run against it — this session had no
+credentials for the live database. Three new probes are staged in
+`scripts/verify-security.mjs` (anon read of `project_memory`, a forged insert,
+and a cross-project write being unreadable by the project's owner). Run them
+before trusting the RLS, per the standing rule that the live probe outranks the
+SQL.
+

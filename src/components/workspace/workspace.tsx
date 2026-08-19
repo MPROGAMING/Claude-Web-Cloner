@@ -26,6 +26,7 @@ import { GenerationStatus, GenerationSummary } from "@/components/workspace/gene
 import { FileTree } from "@/components/workspace/file-tree";
 import { CodeViewer } from "@/components/workspace/code-viewer";
 import { StudioPanel } from "@/components/workspace/studio-panel";
+import { MemoryPanel } from "@/components/workspace/memory-panel";
 import { BlueprintDialog } from "@/components/blueprint/blueprint-dialog";
 import type { Blueprint, BlueprintIssue } from "@/lib/blueprint/schema";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -88,6 +89,9 @@ export function Workspace({
   const [mobilePanel, setMobilePanel] = useState<"files" | "studio" | null>(null);
   const [statuses, setStatuses] = useState<StatusData[]>([]);
   const [atBottom, setAtBottom] = useState(true);
+  // Bumped when a turn ends so the Memory panel re-reads. A counter rather than
+  // a fetch here: the panel owns its own data, this only says "it may be stale".
+  const [memoryRevision, setMemoryRevision] = useState(0);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const anyProviderAvailable = models.some((model) => model.available);
@@ -128,6 +132,7 @@ export function Workspace({
         setStatuses([]);
         // The agent wrote files server-side; pull the new tree.
         void refreshFiles();
+        setMemoryRevision((v) => v + 1);
         router.refresh();
       },
     });
@@ -278,7 +283,7 @@ export function Workspace({
         <button
           type="button"
           onClick={() => setMobilePanel(mobilePanel === "studio" ? null : "studio")}
-          aria-label="Toggle Studio panel"
+          aria-label="Toggle Studio and Memory panel"
           className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground lg:hidden focus-ember"
         >
           <Plug2 className="size-4" />
@@ -425,6 +430,7 @@ export function Workspace({
             <TabsList className="m-2 shrink-0">
               <TabsTrigger value="code">Code</TabsTrigger>
               <TabsTrigger value="studio">Studio</TabsTrigger>
+              <TabsTrigger value="memory">Memory</TabsTrigger>
             </TabsList>
 
             <TabsContent value="code" className="min-h-0 flex-1 overflow-hidden">
@@ -439,6 +445,10 @@ export function Workspace({
 
             <TabsContent value="studio" className="min-h-0 flex-1 overflow-y-auto">
               <StudioPanel projectId={project.id} />
+            </TabsContent>
+
+            <TabsContent value="memory" className="min-h-0 flex-1 overflow-y-auto">
+              <MemoryPanel projectId={project.id} revision={memoryRevision} />
             </TabsContent>
           </Tabs>
         </aside>
@@ -482,9 +492,20 @@ export function Workspace({
                 />
               )
             ) : (
-              <div className="min-h-0 flex-1 overflow-y-auto">
-                <StudioPanel projectId={project.id} />
-              </div>
+              // Studio and Memory share the one overlay rather than adding a
+              // third header button — the mobile bar is already at its limit.
+              <Tabs defaultValue="studio" className="flex min-h-0 flex-1 flex-col gap-0">
+                <TabsList className="m-2 shrink-0">
+                  <TabsTrigger value="studio">Studio</TabsTrigger>
+                  <TabsTrigger value="memory">Memory</TabsTrigger>
+                </TabsList>
+                <TabsContent value="studio" className="min-h-0 flex-1 overflow-y-auto">
+                  <StudioPanel projectId={project.id} />
+                </TabsContent>
+                <TabsContent value="memory" className="min-h-0 flex-1 overflow-y-auto">
+                  <MemoryPanel projectId={project.id} revision={memoryRevision} />
+                </TabsContent>
+              </Tabs>
             )}
           </div>
         </div>

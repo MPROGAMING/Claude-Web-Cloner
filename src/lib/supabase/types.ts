@@ -382,6 +382,27 @@ export type GameBlueprintRow = {
   approved_at: string | null;
 };
 
+/**
+ * Project memory — durable per-project context the agent carries between
+ * conversations. Live facts are those with `superseded_by` null; a correction
+ * points the old row forward rather than rewriting it.
+ */
+export type ProjectMemoryRow = {
+  id: string;
+  project_id: string;
+  owner_id: string;
+  kind: "decision" | "constraint" | "preference" | "terminology" | "fact";
+  content: string;
+  source: "agent" | "user" | "blueprint";
+  source_run_id: string | null;
+  source_message_id: string | null;
+  superseded_by: string | null;
+  superseded_at: string | null;
+  content_key: string;
+  created_at: string;
+  updated_at: string;
+};
+
 type TableDef<Row, Insert = Partial<Row>, Update = Partial<Row>> = {
   Row: Row;
   Insert: Insert;
@@ -416,6 +437,7 @@ export type Database = {
       agent_tool_calls: TableDef<AgentToolCall, Omit<AgentToolCall, "id" | "created_at">>;
       agent_changesets: TableDef<AgentChangesetRow>;
       game_blueprints: TableDef<GameBlueprintRow, Partial<GameBlueprintRow>>;
+      project_memory: TableDef<ProjectMemoryRow, Partial<ProjectMemoryRow>>;
     };
     Views: Record<never, never>;
     Functions: {

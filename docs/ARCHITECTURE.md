@@ -171,6 +171,50 @@ Postgres holds a row lock for that whole statement, so check-and-decrement
 cannot interleave. No `RETURNING` row means the `WHERE` failed → raise
 `INSUFFICIENT_CREDITS`.
 
+## Project memory
+
+```
+lib/memory/facts.ts     Pure: normalisation, dedup key, the prompt block.
+lib/memory/service.ts   Server: read, record, supersede, forget (user's client).
+lib/memory/tool.ts      The agent's remember_fact tool.
+```
+
+Every turn already rebuilds context from the file tree and the recent messages,
+which means anything decided outside that window is simply gone. Project memory
+is the durable half: short, atomic, attributable facts that outlive a
+conversation.
+
+Three properties do the work:
+
+- **Corrections supersede, they do not overwrite.** `superseded_by` points
+  forward at the row that replaced this one, so the history of a renamed
+  currency survives. The FK is `ON DELETE CASCADE` rather than `SET NULL` —
+  with `SET NULL`, deleting a correction would silently make the fact it
+  corrected live again.
+- **Dedup is a unique partial index** on `(project_id, content_key)` over live
+  rows only. `content_key` is normalised content: case, punctuation and a short
+  list of restatement prefixes are ignored, and *nothing else is* — dropping
+  stopwords would collide "we are not doing a shop" with its opposite.
+- **Memory is untrusted data twice over.** It is written by the model and fed
+  back to the model on every later turn, so an injection that lands once would
+  otherwise persist for the life of the project. It reaches the prompt only via
+  `buildMemoryContext`, which sanitises control characters, code fences and the
+  block's own terminator, and wraps the result in a standing directive to ignore
+  any line that reads as an instruction. Same contract as retrieved
+  documentation, and for a sharper reason.
+
+Reading is not a tool — live facts are already in the system prompt, so a recall
+tool would only spend a step fetching what the model was handed. Writing is,
+because only the model knows which sentence in a long turn was the decision.
+
+`remember_fact` writes in preview runs as well as apply runs. That is the one
+place memory departs from the changeset model: preview is the default mode, so
+gating memory on apply would mean almost nothing was ever remembered. What makes
+it safe is that the write is owner-scoped, capped per run and per project, and
+listed in the workspace's Memory panel with a delete button next to it. Memory
+the creator cannot inspect is a system quietly forming opinions about their
+game; memory they cannot correct is worse.
+
 ## Roblox Studio bridge
 
 Studio plugins can make **outbound** HTTP requests but cannot accept inbound
