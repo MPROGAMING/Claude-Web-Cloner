@@ -2,7 +2,7 @@
 
 Updated as work happens. Every value here is real; nothing is aspirational.
 
-**Last updated:** 19 Aug 2026, 11:05 — horror demo built through the real pipeline
+**Last updated:** 19 Aug 2026, 11:10 — blind critic ruled for Blockwright vs Lemonade
 
 ---
 
@@ -66,8 +66,9 @@ npm run studio:verify     # 16/16
 | Project Memory | builder agent | — | **merged, migration applied, probed live** |
 | Notifications + run history | builder agent | — | **merged, migration applied, probed live** |
 | Horror demo place | this session | DOORS | **built + playtested + 2 bugs fixed** |
-| Mini-IDE (diff view, editing, tabs) | builder agent | Cursor | running |
-| Blind critic vs Lemonade | critic agent | Lemonade.gg | running |
+| Mini-IDE (diff view, editing, tabs) | builder agent | Cursor | **merged** |
+| Blind critic vs Lemonade | critic agent | Lemonade.gg | **Blockwright wins** |
+| Blind critic vs Cursor | critic agent | Cursor | running |
 
 ---
 
@@ -125,6 +126,36 @@ in the tree are deliberately fake test fixtures.
 
 ---
 
+## Gauntlet: product experience vs live Lemonade.gg
+
+A fresh-context critic, told only "Page A" and "Page B" and not which was whose,
+was required to pick a winner and name one gap.
+
+> **VERDICT: PAGE B WINS** (Blockwright)
+
+Its measurements, not mine:
+
+| | Lemonade.gg | Blockwright |
+|---|---|---|
+| Whole page height | 1,609px (2.2 viewports) | — |
+| Body copy | 97 words | 1,269 words |
+| "publish" / "Studio" / "place" / "script" | **0 occurrences each** | place 11x, Studio 15x, publish 3x |
+
+It also went past the marketing page into the signed-in workspace and found
+10 real Luau files, a change set labelled "2 update, 1 create, 1 delete" behind
+"Nothing is written until you approve", and activity entries naming specific
+work ("Synced 7 scripts into Studio").
+
+The one gap it named lands on **Lemonade**, not us: 0 of its 121 images link to
+a playable game, and the twelve genre cards filling its second scroll resolve to
+decorative `/visuals/*.webp`, not user output.
+
+Worth keeping honest about: part of what the critic saw as proof was a seeded
+fixture project left behind by the mini-IDE work. The files, change set and
+approval gate are real, but that particular project was staged for testing.
+
+---
+
 ## Queued
 
 - Expanded visual templates
@@ -138,7 +169,7 @@ in the tree are deliberately fake test fixtures.
 
 | | |
 |---|---|
-| Tests | 386 passing, 17 files |
+| Tests | 464 passing, 21 files |
 | `npm run check` | clean — 0 errors |
 | `npm run verify:security` | **44/44 live** — includes project_memory and notifications |
 | `npm run agent:verify` | 44/44 live (free router) |
