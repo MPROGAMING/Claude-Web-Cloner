@@ -1,246 +1,229 @@
 # Overnight build report
 
-Session of 18–19 August 2026. Autonomous product-engineering pass over
-Blockwright.
+Session of 2026-08-19 · branch `master` · 8 commits from `8353bae` to `8823ad0`
+· 43 files changed, +2,701 / −236
 
-**Headline:** the product's missing centrepiece — idea → questions → plan →
-approval — now exists and works against real model calls. The landing page won a
-blind A/B against the live reference. Roblox Studio integration was proven
-against a real place. Three real defects were found and fixed, one of them a
-cost-control gap I had specified and never wired.
+The brief was to keep going until Blockwright wins the comparison or the
+remaining improvement is blocked. Some of it is blocked, and the blocker is
+named at the bottom rather than buried.
 
 ---
 
-## Starting state
+## What actually got proven
 
-- 97 uncommitted files on a single "Initial commit". All of Steps 1–7 unversioned.
-- 284 tests, 37 live security checks, agent acceptance 44/44.
-- Roadmap items 4, 5, 14, 18, 23, 39 (intent → questions → blueprint → approval)
-  entirely absent.
-
----
-
-## Completed
-
-### 1. The work was secured first
-
-97 files committed in two meaningful commits. The 34MB / 5,464-file normalized
-corpus is now gitignored: it is *derived* output, rebuilt deterministically from
-the commits pinned in `source-lock.json`, while the provenance (source lock,
-ingestion manifest, coverage report, step reports) stays versioned.
-
-### 2. Game Blueprint — the missing headline experience
-
-Roadmap 4, 5, 14, 18, 23, 39.
-
-An idea now becomes a plan the creator reviews before any code exists:
-
-- **Questions** (4–6, schema-constrained). Only asked when the answer changes
-  what gets built; every option states its consequence. One is pre-selected so
-  the flow can be accepted without reading everything.
-- **Blueprint** — 15 possible sections, each with prose, concrete decisions and
-  the Roblox services involved. Grounded in the Roblox Brain, so it names real
-  services rather than guessing. Honest scope signal and an explicit
-  out-of-scope list.
-- **Review** — sections regenerate independently, so fixing the economy does not
-  discard the combat.
-- **Approval** — its own endpoint, like the change-set approval. It is the
-  authorization event for autonomous building, and an approved plan becomes
-  binding context on every later build turn. An approved plan cannot be edited
-  out from under the agent.
-
-Verified end to end against real model calls: **24/24**. Generated *"Deadbolt
-House"* — medium scope, ~34 scripts, 15 sections, zero blocking issues,
-networking section correctly stating what the server owns.
-
-New: `src/lib/blueprint/{schema,generate}.ts`,
-`src/components/blueprint/{blueprint-dialog,question-flow,blueprint-view}.tsx`,
-four API routes, migration `0009`, 17 unit tests,
-`scripts/roblox-brain/verify-blueprint.mjs`.
-
-### 3. Landing page — Gauntlet win
-
-Captured the real lemonade.gg at 1440×900 and Blockwright at the same viewport.
-
-The gap was that Blockwright's hero was marketing copy and two buttons, while
-the reference put a working prompt box front and centre. Fixed by building a
-**real hero composer**: typing an idea carries it through sign-up into a project
-whose dialog is pre-filled and whose workspace composer is seeded with it.
-Display type enlarged, subhead cut to one line.
-
-A fresh-context critic, given both live pages and forced to a binary choice:
-
-> **VERDICT: PAGE B WINS** *(Blockwright)*
-
-Its criticism of Blockwright stands and is recorded below under "known gaps":
-the visual identity reads as the standard dev-tool uniform, the register is
-pitched at engineers rather than teenage creators, and the product never shows
-an actual game.
-
-### 4. Roblox Studio — proven, not asserted
-
-Studio MCP was live. I built a real landscape in the open place from here:
-terrain generated from layered noise across a 900-stud area, water basin, four
-materials, Atmosphere, Bloom, ColorCorrection, SunRays, and a framed camera.
-
-Verified by query: **607,544 terrain cells**, atmosphere haze 2.1, bloom present,
-ClockTime 17.4, 9 lighting children. The write path from this environment into a
-real Roblox place works.
-
-### 5. Command palette (roadmap 41, 42)
-
-⌘K / Ctrl+K, mounted once in the app shell. Nine commands, grouped, with
-prefix / substring / keyword / subsequence matching — "npj" finds "New project".
-Verified live in the browser: opens, filters, arrow-navigates, escapes.
-
-Every entry is a real navigation. Nothing is listed that the app cannot do.
-
-### 6. Zero-placeholder pass (roadmap 9)
-
-Scanned for the full list of placeholder markers. Three hits, two of them real
-dead controls, both now real:
-
-- **Attach a file "(coming soon)"** → real script attachment. Reads `.luau`,
-  `.lua`, `.txt`, `.md`, `.json` client-side and inlines the source into the
-  message, so "fix this script" works. No storage, no retention question.
-- **"Checkout coming soon"** (disabled button) → a CTA that does something.
-  There is no payment provider, so the card leads where credits actually come
-  from today: a free account.
-
-The third hit is an instruction telling the model *not* to write TODOs, which is
-correct and stays.
-
----
-
-## Defects found and fixed
-
-**1. The output-token budget was declared and never enforced.** `budgets.ts`
-defines `maxOutputTokens`, and the chat route never passed it to `streamText` —
-so every request reserved the model's full 65,536-token window. It surfaced when
-the provider refused the reservation on a low balance and the run died at
-GENERATING with no usable error. This is exactly the cost control section 19
-asked for, specified and not wired. Fixed, and pinned by a test that reads the
-route source, because the alternative is spending real credit to discover it was
-dropped again.
-
-**2. Provider credit exhaustion reported as an internal fault.** "Something went
-wrong on our side" for a problem only the account owner can fix. Now mapped to a
-402 that says what to do.
-
-**3. An icon-only button with no accessible name.** The workspace "Plan" control
-keeps its label in `hidden sm:inline`, so below the `sm` breakpoint it became an
-unnamed button — on exactly the devices most Roblox creators use. Given an
-explicit `aria-label`. A sweep for the same pattern across all components found
-no others.
-
-**4. Provider schema constraint.** OpenAI strict structured outputs require every
-property to appear in `required`; an `.optional()` field is rejected outright.
-Optional blueprint fields are now nullable. Found by a real 500, not by reading
-docs.
-
----
-
-## Verification
+Not "implemented" — run, against the live system, with the output read back.
 
 | Check | Result |
-|---|---|
-| Corpus validation | PASS — 5,456 documents, 0 errors |
-| Knowledge DB validation | PASS — 14,012 chunks / 14,012 embeddings |
-| Retrieval evaluation | Recall@5 **98.7%**, MRR **0.910** (unchanged — untouched) |
-| `tsc --noEmit` | clean |
-| ESLint | clean |
-| Unit tests | **304 passed**, 15 files (up from 284) |
-| Production build | success, 29 routes |
-| `verify:security` | **37 passed, 0 failed** |
-| Blueprint acceptance | **24/24** against real model calls |
-| Agent acceptance | 44/44 before the balance ran out; blocked after (see below) |
+| ----- | ------ |
+| `npm run check` | lint, typecheck, **321 tests / 15 files**, production build, 30 routes |
+| `npm run verify:security` | **37 / 37** against the real Supabase project |
+| `npm run agent:verify` | **44 / 44** end to end through the real pipeline |
+| `npm run blueprint:verify` | **23 / 24** — the miss is a free-model artefact, explained below |
+
+### The end-to-end run
+
+`agent:verify` puts the section-24 scenario — *"Create a simple Roblox round
+system…"* — through the running application with a real provider, a real
+database and a real signed-in user, then reads the result out of Postgres.
+
+The assertions that matter are the negative ones:
+
+- **preview wrote 0 files** — it staged a change set and touched nothing
+- **apply was refused while pending** — 403 `changeset_not_approved`
+- **apply was refused unauthenticated** — 401
+- **another user could not approve it** — 404
+- only after an explicit owner approval did 3/3 operations apply
+- a second apply was refused
+- undo reverted all three
+
+The generated Luau used `game:GetService`, kept round state on the server, and
+connected the halves with a RemoteEvent. Nothing in the stream contained a
+secret or the service-role key.
+
+This is the run that licenses saying the pipeline works. Before it, that claim
+rested on unit tests against fakes.
 
 ---
 
-## Gauntlet record
+## Three bugs the verification found
 
-| Surface | Reference | Verdict |
-|---|---|---|
-| Landing page | lemonade.gg (live, 1440×900) | **Blockwright wins** (fresh-context critic, binary) |
-| Blueprint UI | — | Built and inspected in-browser: 15 sections, correct order, approved state, section summaries when collapsed |
-| Command palette | — | Verified live: open, fuzzy filter, keyboard nav, escape |
+None of these were visible by reading the code. All three were found by running
+the system and looking at what came back.
 
-The critic's criticism of Blockwright is recorded honestly rather than filed as
-a win. See known gaps.
+### 1. Runs stranded forever on a provider error
 
----
+A provider that rejects a call outright — exhausted balance, dead key, model
+withdrawn — fails *before* the stream starts, so AI SDK's `onEnd` never fires.
+The route's `onError` only logged. The `agent_runs` row stayed in `GENERATING`
+with a null `completed_at`.
 
-## Blocked
+Consequences: a permanent spinner in the run history, and a table that
+accumulates rows nothing will ever close. `onError` now closes the run itself,
+guarded so a mid-stream failure cannot double-write.
 
-**Roblox Studio screenshots.** The Studio window is minimized, and viewport
-capture requires a compositing window. Terrain, lighting and atmosphere were all
-written and verified by query — only the image is unavailable. Un-minimize
-Studio and `capture_screenshot` will work; nothing in code needs to change.
+Verified in both directions: an exhausted account now walks
+`ANALYZING → RETRIEVING_KNOWLEDGE → GENERATING → FAILED`.
 
-**OpenRouter account balance.** Ran out mid-session:
-*"You requested up to 65536 tokens, but can only afford 21983."* All paid calls
-stopped at that point per the budget rule. The agent acceptance test cannot
-re-run until the account is topped up — it passed 44/44 earlier in the session,
-and the only code change to that path since is the token-ceiling fix, which
-makes the failure mode strictly better.
+### 2. Every unexpected 500 was invisible
 
-To be precise about the two different budgets: the **$3 authorization was not
-exhausted** — this session spent roughly **$0.30** on external calls (two
-blueprint generations at ~$0.13 each plus two failed agent runs). The constraint
-that stopped work is the **OpenRouter account's own balance**, which is separate
-from the spending ceiling I was given.
+`errors.ts` opens by promising internal detail is "logged server-side and never
+sent to the browser". The second half was true. The first was not — the one
+function every route funnels through logged nothing at all.
 
----
+Found because a blueprint run failed with `POST /api/blueprint 500 in 57s`
+against a completely empty error log. With logging added, the cause named itself
+on the very next run: `AI_NoObjectGeneratedError`.
 
-## Known gaps
+Which surfaced a second problem: the creator was being told *"Something went
+wrong on our side"* when the model had failed to hold the schema. Nothing was
+wrong on our side, and the two have completely different fixes — only one of
+which is available to the person reading the message. It now says the model did
+not return a usable plan, and suggests retrying or a stronger model.
 
-Ranked by how much they cost the product.
+### 3. A duplicated blueprint section passed review
 
-1. **Visual identity is not distinctive.** The critic's words: dark charcoal,
-   amber accent, uppercase mono eyebrows, bordered cards — "swap the wordmark and
-   this is a dozen other dev tools." This is a real loss against the reference
-   and the largest remaining design problem.
-2. **The product never shows a game.** For a game-creation product it shows code,
-   file trees and validation ticks. The intended fix — build a scene in Studio
-   and screenshot it — is written and executed; only the capture is blocked.
-   Creator Store search is heavily keyword-spammed (a "low poly tree pack"
-   returned a weapons pack), so asset-hunting needs visual verification of every
-   candidate; Roblox's own assets are reliable but 2008-era blocky.
-3. **Register is pitched at engineers.** "Server-authoritative damage",
-   "allowlisted actions only". Accurate, and not how a thirteen-year-old creator
-   reads a landing page.
-4. **Blueprint generation is slow** — 122–136s for the plan. It is one large
-   structured-output call; streaming section by section would make the wait
-   legible.
-5. **The repair loop is still model-driven**, not a server-driven re-prompt loop
-   (carried over from Step 7, unchanged).
-6. **Roadmap not reached tonight:** notifications (43), agent run-history UI (44),
-   project memory (45), world builder (24), asset registry (33), live progress
-   page (57), onboarding (39 beyond the blueprint flow).
+A live plan came back with sections `… networking, persistence, economy,
+networking`. `reviewBlueprint` built a `Set` of keys, so the duplicate collapsed
+and the review reported **zero issues**.
 
----
+Not cosmetic — every consumer keys by `section.key`:
 
-## GitHub
+- React saw duplicate keys in the section list
+- one expand toggle opened both panels
+- **"rewrite this section" mapped over the array and replaced both**, so asking
+  for one rewrite silently produced two identical sections
 
-Two commits on `master`, both verified before committing (tsc, lint, tests,
-build, security):
+Fixed at three levels: the prompt now states each key appears exactly once,
+generation dedupes and logs when it has to, and review reports a duplicate as a
+blocking error.
 
-- `7f48632` — Roblox Brain, real generation, and the agent layer
-- `a6a5ce7` — Game Blueprint: questions, plan, approval
+### Also, from the UI work
 
-A third commit covers the command palette, the budget fix and the accessibility
-fix. Nothing was pushed with failing checks and no history was rewritten.
+- The Studio "connected" chime fired **every three seconds, forever**. The
+  callback was memoized on `[projectId]` but read `state?.status`, frozen at its
+  first-render `null`, so the "already connected?" guard was permanently true.
+  Fixing it with a ref also wired up the `disconnect` sound, which had been
+  written and never used.
+- The landing page's workspace mock gated its summary paragraph and live dot on
+  `elapsed > 6800` while the tick stopped at `3600`. **Neither could ever
+  render.** The panel finished in three seconds and then sat there with the
+  space its summary was meant to fill left empty — which is exactly the "half
+  empty mock" a reviewer had measured. Every time-gate now derives from one
+  table the tick is required to outlast.
 
 ---
 
-## Budget
+## The landing page
 
-| | |
-|---|---|
-| Authorized | $3.00 |
-| Estimated spend this session | **~$0.30** |
-| Paid calls | 2 blueprint generations (questions + plan, ×2), 2 failed agent runs |
-| Free/local | Studio MCP, Lemonade capture, browser QA, all validation, all tests |
-| Stopped because | The OpenRouter account balance ran out, not the authorization |
+### Real Roblox replaced catalogue art
 
-No purchases, no subscriptions, no upgrades.
+The page had been showing three Creator Store asset renders — a wall, some
+towers, a standing zombie on flat blue — which the page itself had to caption
+"Roblox Creator Store model". A catalogue thumbnail is not a game; captioning it
+honestly only made that legible.
+
+Two real places replaced them, both built in Studio and captured with Studio's
+own screenshot tool:
+
+- a sconce-lit hotel corridor
+- a floating-island scene: terrain islands, 17 trees, a 61-stud catenary rope
+  bridge, volumetric clouds, and a stone arch at the far end so the bridge has
+  somewhere to go
+
+The island scene started the session as bare grass discs with one prop — a
+blockout, not a game. The chest, arch and one tree were generated as meshes from
+text descriptions; the terrain, bridge, lighting and atmosphere were built in
+the place.
+
+**No caption claims a prompt produced any of it**, because none did. That
+caption is reserved for a place an end-to-end run actually builds.
+
+### One thing that was tried and reverted
+
+A review called the corridor too dark to read at thumbnail size, so it was
+relit brighter. That made it worse: lifting the ambient flattened the frame into
+a single amber field, and the sconces stopped reading as light sources because
+no shadow was left for them to be brighter than. Four passes chasing it back —
+cooler fill, tighter falloff, higher contrast, Neon fixtures — recovered
+contrast but never the mood.
+
+The original is back. Dark is the point, and the legibility concern is answered
+better by what now sits beside it: the daylit island scene gives the row the
+contrast a single dim image lacked.
+
+### Copy
+
+The page never once mentioned publishing, players or friends — it described
+building and stopped there, which is the least interesting true thing about it.
+Three sentences now carry it to the outcome, and they stay accurate: Blockwright
+syncs into Studio and **the creator presses Publish**. Nothing claims otherwise.
+
+---
+
+## Spend
+
+Ceiling: **$3.00 USD**.
+
+| Source | Figure |
+| ------ | ------ |
+| OpenRouter usage today (UTC) | **$0.23** |
+| This key, lifetime | $3.39 |
+| Account credits purchased | $10.00 |
+| Account credits remaining | **$0.20** |
+
+Nothing was purchased and no subscription was created.
+
+The app's own ledger for the same period, from `ai_requests`:
+
+| Model | Calls | Failed | Input | Output | Credits |
+| ----- | ----: | -----: | ----: | -----: | ------: |
+| `openai/gpt-5.6-sol` | 13 | 1 | 2,982,583 | 78,598 | 868 |
+| `openrouter/free` | 5 | 0 | 250,782 | 29,440 | 0 |
+| `openai/gpt-5.6-luna` | 3 | 0 | 72,848 | 3,394 | 3 |
+
+`verify-agent.mjs` gained a `--model` flag during this session precisely so the
+acceptance could keep running at zero cost. It is a test of the state machine,
+the approval gate and the write barrier — none of which care which model wrote
+the Luau.
+
+---
+
+## Blocked, and by what
+
+**The OpenRouter account has $0.20 left.** That is the blocker on further live
+generation work, and it is not something to route around:
+
+- The agent path tolerates the free router, because tool calls are validated and
+  repaired — that is how the 44/44 acceptance ran for nothing.
+- **The blueprint path does not.** `generateObject` needs the model to hold a
+  strict schema across a long response, and the free router fails that with
+  `AI_NoObjectGeneratedError` roughly as often as it succeeds. Blueprint work
+  needs a real model.
+
+Topping the account up is a purchase, so it is the account owner's call, not
+something to be done unattended.
+
+**The Studio plugin cycle has still never run inside Roblox Studio.** The
+service-role key is configured and pairing, polling and command queueing are all
+verified from the web side. What has not happened is a real plugin in a real
+place completing pair → poll → execute → report. That is the last unverified
+path in the product and it needs a person in Studio.
+
+---
+
+## Not done
+
+Named plainly rather than left to be discovered:
+
+- Studio plugin cycle inside a real place (above)
+- Notifications
+- Admin control centre
+- Vercel deploy and post-deploy verification
+- Mini-IDE compared against Cursor
+- Project Memory as a visible surface
+- Template expansion beyond the current 12
+- Leaked-password protection — a Supabase dashboard toggle with no API behind it
+
+`docs/IMPLEMENTATION_STATUS.md` is current as of this session and is the place
+to look for what is verified versus merely written. It had drifted badly — it
+still claimed 166 tests and that no generation had ever run.
