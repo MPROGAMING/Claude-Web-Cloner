@@ -2,7 +2,7 @@
 
 Updated as work happens. Every value here is real; nothing is aspirational.
 
-**Last updated:** 19 Aug 2026, 11:10 — blind critic ruled for Blockwright vs Lemonade
+**Last updated:** 19 Aug 2026, 11:35 — template banners: sourcing real CC0 art
 
 ---
 
@@ -153,6 +153,48 @@ decorative `/visuals/*.webp`, not user output.
 Worth keeping honest about: part of what the critic saw as proof was a seeded
 fixture project left behind by the mini-IDE work. The files, change set and
 approval gate are real, but that particular project was staged for testing.
+
+---
+
+## Template banners
+
+Redirected mid-session: stop building Roblox scenes to fill banners, source
+real existing cartoon art instead. The two cards wired to hand-built places
+were reverted; the image mechanism stayed, because sourced art needs it.
+
+**Both Roblox image sources were tested and reported before choosing.**
+
+| Source | Result |
+|---|---|
+| Creator Store asset thumbnails | Available at 700x700, but they are isolated props on white. Pulled one: a brown box, no scene, no character. Wrong kind of image entirely. Searches also returned keyword-stuffed reuploads of DOORS assets by spam accounts. |
+| Roblox experience thumbnails | 768x432, professionally made, exactly the right register — but each is a specific published game by another studio, shown on a card offering to build that genre for you. |
+
+Called it rather than picking silently. Direction chosen: **licensed cartoon
+game art** — real, existing, CC0, no misrepresentation.
+
+Source: **kenney.nl**, licence verified on the pack page as Creative Commons
+CC0. Each pack carries a 918x515 `sample.png` that is a composed isometric
+scene (the `preview.png` beside it is a contact sheet and is not usable). The
+licence strip and wordmark are baked into the bottom ~55px and have to be
+cropped off.
+
+### The measured gap, which is not about the picture
+
+| | Lemonade | Blockwright |
+|---|---|---|
+| Card | 178x232 portrait (0.77:1) | 260x260 square |
+| Image share of the card | **100%** | **43%** (a 112px band) |
+| Image content | Roblox character, full height, saturated | flat vector glyph on a gradient |
+
+Their card is a poster. Ours is a header strip with text under it. Swapping the
+glyph for better art fixes the second row of that table and not the first.
+
+Also worth recording: their card images are served from `/videos/*/` as
+`blade-ball`, `rivals`, `mm2`, `jailbreak` — real Roblox games by other studios.
+
+`scripts/card-shots.mjs` was added to capture each card individually at its
+real rendered size, so a reviewer judges one card at a time rather than
+squinting at a page thumbnail.
 
 ---
 
