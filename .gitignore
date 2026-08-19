@@ -62,3 +62,10 @@ public/demos/*.png
 # repositories inside this one and make lint scan three extra copies of the
 # tree — 54,000 problems on the first attempt.
 .claude/worktrees/
+
+# The benchmark holdout must never enter training data, and this repository is
+# public. Nothing under a holdout directory is ever committed — only the hash
+# manifest in bench/ that proves which holdout a score was measured against.
+bench/holdout/
+holdout/
+*.holdout.jsonl
