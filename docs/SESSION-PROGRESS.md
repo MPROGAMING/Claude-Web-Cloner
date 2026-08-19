@@ -2,7 +2,7 @@
 
 Updated as work happens. Every value here is real; nothing is aspirational.
 
-**Last updated:** 19 Aug 2026, 11:35 — template banners: sourcing real CC0 art
+**Last updated:** 19 Aug 2026, 11:55 — 12 real CC0 banners shipped, critic running
 
 ---
 
@@ -195,6 +195,34 @@ Also worth recording: their card images are served from `/videos/*/` as
 `scripts/card-shots.mjs` was added to capture each card individually at its
 real rendered size, so a reviewer judges one card at a time rather than
 squinting at a page thumbnail.
+
+### Shipped
+
+All 12 cards now carry a real cartoon scene. Source: Kenney, CC0, credited per
+image in `public/templates/CREDITS.md`. Each is a crop of the pack's composed
+`sample.png` — the `preview.png` beside it is a contact sheet and reads as a
+catalogue, the same failure as the Creator Store renders.
+
+| Genre | Pack | Genre | Pack |
+|---|---|---|---|
+| Simulator | Mini Market | Tower Defense | Tower Defense Kit |
+| Obby | Platformer Kit | RPG | Fantasy Town Kit |
+| Tycoon | Factory Kit | Racing | Racing Kit |
+| Horror | Graveyard Kit | Social | Mini Arcade |
+| Survival | Survival Kit | Story | Pirate Kit |
+| PvP | Mini Arena | Strategy | Hexagon Kit |
+
+The accent wash started at 0.55 and was wrong — it recoloured the art rather
+than tinting it, and the racing circuit's red-and-white pit building came out
+green. Recolouring the picture is exactly what sourcing real art was meant to
+avoid. 0.2 unifies the row and leaves the palette alone.
+
+**Two flagged rather than hidden.** Story is Pirate Kit because Kenney has no
+pack depicting narrative; it reads "pirate" and sits close to the RPG village.
+PvP depends on noticing small armed figures in a sandy arena. Both went to the
+critic instead of being quietly accepted.
+
+`/templates` clean on a11y in dark 1440 and light 390.
 
 ---
 
