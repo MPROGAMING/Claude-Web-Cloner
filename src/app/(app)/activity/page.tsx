@@ -6,13 +6,29 @@ import { ActivityTimeline } from "@/components/app/activity-timeline";
 import { EmptyState } from "@/components/app/empty-state";
 import { NewProjectDialog } from "@/components/app/new-project-dialog";
 import { getCreditBalance, getProfile, listActivity, listProjects, requireUser } from "@/lib/data/queries";
-import { RunHistory, type RunRow } from "@/components/app/run-history";
+import {
+  RunHistory,
+  type RunIssue,
+  type RunRow,
+  type RunToolCall,
+} from "@/components/app/run-history";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export const metadata: Metadata = { title: "Activity" };
 
-export default async function ActivityPage() {
-  const { supabase, user } = await requireUser();
+/** Per-run cap, so one pathological run cannot crowd out every other run's. */
+const TOOLS_PER_RUN = 25;
+
+export default async function ActivityPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ run?: string }>;
+}) {
+  // searchParams is async in Next 16.
+  const [{ run: focusRunId }, { supabase, user }] = await Promise.all([
+    searchParams,
+    requireUser(),
+  ]);
   const [profile, balance, events, projects] = await Promise.all([
     getProfile(),
     getCreditBalance(),
@@ -28,13 +44,13 @@ export default async function ActivityPage() {
   const { data: runRows } = await supabase
     .from("agent_runs")
     .select(
-      "id, project_id, state, mode, classification, model_id, step_count, repair_attempts, tool_calls, input_tokens, output_tokens, credits_charged, retrieval_ms, generation_ms, error_category, created_at, completed_at",
+      "id, project_id, state, mode, classification, model_id, step_count, repair_attempts, tool_calls, input_tokens, output_tokens, credits_charged, retrieval_ms, generation_ms, validation_ms, error_category, created_at, completed_at",
     )
     .order("created_at", { ascending: false })
     .limit(40);
 
   const runIds = (runRows ?? []).map((r) => r.id);
-  const [{ data: changesets }, { data: steps }] = await Promise.all([
+  const [{ data: changesets }, { data: steps }, { data: toolCalls }] = await Promise.all([
     runIds.length
       ? supabase
           .from("agent_changesets")
@@ -48,9 +64,34 @@ export default async function ActivityPage() {
           .in("run_id", runIds)
           .order("step_index")
       : Promise.resolve({ data: [] as never[] }),
+    // The tool call table has existed since Step 7 and only its row *count*
+    // was ever surfaced. These rows are small by design — a name, a verdict, a
+    // duration and a one-line summary, with arguments and results deliberately
+    // never stored — so reading them alongside the runs is cheap.
+    runIds.length
+      ? supabase
+          .from("agent_tool_calls")
+          .select("run_id, tool_name, ok, duration_ms, summary, created_at")
+          .in("run_id", runIds)
+          .order("created_at")
+          .limit(600)
+      : Promise.resolve({ data: [] as never[] }),
   ]);
 
   const changesetByRun = new Map((changesets ?? []).map((c) => [c.run_id, c]));
+
+  const toolsByRun = new Map<string, RunToolCall[]>();
+  for (const call of toolCalls ?? []) {
+    const list = toolsByRun.get(call.run_id) ?? [];
+    if (list.length >= TOOLS_PER_RUN) continue;
+    list.push({
+      name: call.tool_name,
+      ok: call.ok,
+      durationMs: call.duration_ms,
+      summary: call.summary,
+    });
+    toolsByRun.set(call.run_id, list);
+  }
   const stepsByRun = new Map<string, { state: string; reason: string }[]>();
   for (const step of steps ?? []) {
     const list = stepsByRun.get(step.run_id) ?? [];
@@ -60,6 +101,7 @@ export default async function ActivityPage() {
 
   const runs: RunRow[] = (runRows ?? []).map((r) => {
     const cs = changesetByRun.get(r.id);
+    const issues = cs ? issuesOf(cs.issues) : [];
     return {
       id: r.id,
       projectId: r.project_id,
@@ -76,6 +118,7 @@ export default async function ActivityPage() {
       creditsCharged: r.credits_charged,
       retrievalMs: r.retrieval_ms,
       generationMs: r.generation_ms,
+      validationMs: r.validation_ms,
       errorCategory: r.error_category,
       createdAt: r.created_at,
       completedAt: r.completed_at,
@@ -84,12 +127,12 @@ export default async function ActivityPage() {
             id: cs.id,
             status: cs.status,
             operationCount: cs.operation_count,
-            hasErrors: ((cs.issues ?? []) as { severity?: string }[]).some(
-              (i) => i.severity === "error",
-            ),
+            hasErrors: issues.some((i) => i.severity === "error"),
+            issues,
           }
         : null,
       steps: stepsByRun.get(r.id) ?? [],
+      tools: toolsByRun.get(r.id) ?? [],
     };
   });
 
@@ -121,7 +164,7 @@ export default async function ActivityPage() {
           </TabsList>
 
           <TabsContent value="runs" className="mt-6">
-            <RunHistory runs={runs} />
+            <RunHistory runs={runs} initialOpenRunId={focusRunId} />
           </TabsContent>
 
           <TabsContent value="feed" className="mt-6">
@@ -159,4 +202,22 @@ export default async function ActivityPage() {
       </PageBody>
     </>
   );
+}
+
+/**
+ * `issues` is jsonb, so it arrives as `unknown` and has to be narrowed before
+ * anything renders it. Rows without a message are dropped rather than rendered
+ * blank.
+ */
+function issuesOf(raw: unknown): RunIssue[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .filter((item): item is Record<string, unknown> => typeof item === "object" && item !== null)
+    .filter((item) => typeof item.message === "string" && item.message.length > 0)
+    .map((item) => ({
+      severity: typeof item.severity === "string" ? item.severity : "warning",
+      rule: typeof item.rule === "string" ? item.rule : "",
+      message: String(item.message),
+      path: typeof item.path === "string" ? item.path : undefined,
+    }));
 }

@@ -143,11 +143,13 @@ src/
     (marketing)/   landing, pricing
     (auth)/        sign-in, sign-up, callback
     (app)/         dashboard, projects, templates, activity, credits, settings
-    api/           chat, studio/{pair,poll,status}, projects/[id]/files
+    api/           chat, studio/{pair,poll,status}, projects/[id]/files,
+                   notifications/{,read}
   components/      ui/ (shadcn) · app/ · marketing/ · workspace/ · brand/
   lib/
     ai/            registry, providers, tools, system-prompt, types
     credits/       pricing (pure) · service (server)
+    notifications/ events (pure) · service (server) · announced (client)
     roblox/        project-model, luau-validator
     studio/        protocol, service, liveness
     supabase/      client, server, admin, types

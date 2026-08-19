@@ -180,6 +180,61 @@ describe("row level security", () => {
     }
   });
 
+  /**
+   * The check above only looks at 0001, which means every table added since —
+   * the knowledge tables, the agent tables, blueprints, notifications — could
+   * ship without RLS and the suite would still be green.
+   *
+   * Matched against normalised statements rather than raw text: 0004 and 0008
+   * column-align their `alter table` runs, and a naive substring search finds
+   * none of them. The same trap the grant checks above already document, in a
+   * new place.
+   */
+  it("enables RLS on every table any migration creates", () => {
+    const enabled = new Set(
+      statements()
+        .map((stmt) => /^alter table public\.(\w+) enable row level security$/.exec(stmt)?.[1])
+        .filter((name): name is string => Boolean(name)),
+    );
+
+    const tables = [...sql().matchAll(/create table public\.(\w+)/g)].map((m) => m[1]);
+    expect(tables.length).toBeGreaterThan(15);
+
+    for (const table of tables) {
+      expect(enabled.has(table.toLowerCase()), `RLS not enabled on ${table}`).toBe(true);
+    }
+  });
+
+  /**
+   * A policy without `to authenticated` also applies to `anon`, which for an
+   * owner-scoped table means the whole guard rests on `auth.uid()` being null
+   * for an anonymous caller. That is true today; naming the role is the part
+   * that does not depend on it staying true.
+   */
+  it("scopes every notifications policy to signed-in owners", () => {
+    const notificationsSql = readFileSync(`${MIGRATIONS_DIR}/0010_notifications.sql`, "utf8");
+    const policies = [...notificationsSql.matchAll(/create policy[^;]+;/g)].map((m) => m[0]);
+
+    expect(policies.length).toBeGreaterThan(0);
+    for (const policy of policies) {
+      expect(policy, `policy is not restricted to authenticated: ${policy}`).toContain(
+        "to authenticated",
+      );
+      expect(policy, `policy does not scope to the owner: ${policy}`).toContain(
+        "owner_id = auth.uid()",
+      );
+    }
+  });
+
+  it("dedupes notifications in the database rather than in process", () => {
+    // Both handlers that close a run can fire, and both notify. Only a unique
+    // index makes "notify once" true.
+    const notificationsSql = readFileSync(`${MIGRATIONS_DIR}/0010_notifications.sql`, "utf8");
+    expect(notificationsSql).toMatch(
+      /create unique index[^;]+on public\.notifications \(owner_id, dedupe_key\)/,
+    );
+  });
+
   it("gives credit_balances no write policy", () => {
     const section = initSql.slice(
       initSql.indexOf("create table public.credit_balances"),

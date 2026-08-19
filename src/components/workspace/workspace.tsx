@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { playSound } from "@/lib/sound";
+import { markRunAnnounced } from "@/lib/notifications/announced";
 import { ChatMessage } from "@/components/workspace/chat-message";
 import { ChatComposer } from "@/components/workspace/chat-composer";
 import { GenerationStatus, GenerationSummary } from "@/components/workspace/generation-status";
@@ -31,6 +32,7 @@ import type { Blueprint, BlueprintIssue } from "@/lib/blueprint/schema";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { StatusDot } from "@/components/ui/status-dot";
 import { CreditBadge } from "@/components/app/credit-badge";
+import { NotificationBell } from "@/components/app/notification-bell";
 import { UserMenu } from "@/components/app/user-menu";
 import { setProjectModel } from "@/lib/actions/projects";
 import type { BlockwrightUIMessage, StatusData } from "@/lib/ai/types";
@@ -120,11 +122,15 @@ export function Workspace({
       },
       onError: (chatError) => {
         playSound("error");
+        markRunAnnounced(project.id);
         toast.error(friendlyError(chatError));
       },
       onFinish: () => {
         // Tied to the run actually ending, not to a timer.
         playSound("complete");
+        // The user heard it here, so the notification for this same run should
+        // arrive as a badge and not a second chime.
+        markRunAnnounced(project.id);
         setStatuses([]);
         // The agent wrote files server-side; pull the new tree.
         void refreshFiles();
@@ -298,6 +304,7 @@ export function Workspace({
         </button>
 
         <div className="hidden items-center gap-2 sm:flex">
+          <NotificationBell />
           <CreditBadge balance={balance} />
           <UserMenu email={email} displayName={displayName} />
         </div>

@@ -382,6 +382,26 @@ export type GameBlueprintRow = {
   approved_at: string | null;
 };
 
+/**
+ * Notifications (0010). A type alias for the same reason as everything above
+ * it: an interface has no implicit index signature and postgrest-js would
+ * resolve every query on it to `never`.
+ */
+export type NotificationRow = {
+  id: string;
+  owner_id: string;
+  project_id: string | null;
+  run_id: string | null;
+  changeset_id: string | null;
+  kind: "run_completed" | "run_failed" | "changeset_awaiting_approval" | "credits_low";
+  title: string;
+  body: string;
+  href: string | null;
+  dedupe_key: string;
+  read_at: string | null;
+  created_at: string;
+};
+
 type TableDef<Row, Insert = Partial<Row>, Update = Partial<Row>> = {
   Row: Row;
   Insert: Insert;
@@ -416,6 +436,7 @@ export type Database = {
       agent_tool_calls: TableDef<AgentToolCall, Omit<AgentToolCall, "id" | "created_at">>;
       agent_changesets: TableDef<AgentChangesetRow>;
       game_blueprints: TableDef<GameBlueprintRow, Partial<GameBlueprintRow>>;
+      notifications: TableDef<NotificationRow>;
     };
     Views: Record<never, never>;
     Functions: {

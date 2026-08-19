@@ -171,6 +171,53 @@ Postgres holds a row lock for that whole statement, so check-and-decrement
 cannot interleave. No `RETURNING` row means the `WHERE` failed → raise
 `INSUFFICIENT_CREDITS`.
 
+## Notifications
+
+A build takes minutes, and the creator is often not looking at it. The four
+agent tables recorded a run finishing, failing or stopping for approval and
+nothing ever told anyone, so `notifications` (migration `0010`) is that telling.
+
+```
+lib/notifications/events.ts     pure: copy, href, dedupe key, which sound
+lib/notifications/service.ts    server: notify / getInbox / markRead
+lib/notifications/announced.ts  client: what this tab already chimed for
+app/api/notifications{,/read}   polled by the bell
+components/app/notification-bell.tsx
+```
+
+The split is the same one the agent layer uses: decisions are pure functions
+over plain shapes, so they can be tested without a Supabase client, and the one
+module that touches the database is the only one importing `server-only`.
+
+**Events are emitted where the transition happens**, in the chat route's
+`streamText` handlers — next to `finishRun` and credit charging — not in a
+watcher that polls for state changes. There is nothing to keep in sync.
+
+**Emitting once is a database property, not a code property.** Both `onEnd` and
+`onError` can fire for the same run, so the guarantee is a unique index on
+`(owner_id, dedupe_key)`; a duplicate insert is a no-op, not an error. The
+route's existing `runClosed` boolean is about closing the run, and reusing it
+for notifications would tie two unrelated invariants to one flag.
+
+**Polling, not realtime.** One indexed read every 20 seconds needs no socket, no
+extra service and no reconnection logic, and being 20 seconds late on a
+five-minute build costs nothing. It stops entirely while the tab is hidden — the
+bell is mounted on every page, so a background tab polling forever would be a
+battery drain with no reader. Same pattern as `studio-panel.tsx`.
+
+**Why `announced.ts` exists.** The workspace already plays `complete` the
+instant its own stream ends, which is right for someone watching. The bell then
+sees the same event a poll later and would play it again. So the workspace
+records that it announced a project's run, and the bell skips the *sound* —
+never the badge — for a notification that lands inside the window. Module-level
+state is the correct scope here: one tab, ephemeral, and nothing should
+re-render when it changes.
+
+Delivery is exactly as durable as credit charging, because it happens in the
+same handler. That is a deliberate ceiling, not an oversight: making it stronger
+means a queue, and a queue is a bigger commitment than the feature warrants
+today.
+
 ## Roblox Studio bridge
 
 Studio plugins can make **outbound** HTTP requests but cannot accept inbound

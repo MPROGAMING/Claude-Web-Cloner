@@ -236,9 +236,77 @@ parts. Credit balance counts rather than snaps. All reduced-motion aware.
 | Billing | Interfaces only — deliberately not faked |
 | Agent state machine, change sets, approval gate | **Verified live** — 44/44 |
 | Server-driven repair loop | Done; exercised by the acceptance run |
-| Run history (`/activity`) | Done — reads the four Step 7 tables |
+| Run history (`/activity`) | Done — tools, timings, issues, deep links |
+| Notifications (table, bell, polling, sound) | Done, unit tested; live RLS probe not yet run |
 | Game Blueprint (questions → plan → approval) | **Verified live** — 23/24, needs a real model |
 | Real Roblox output on the landing page | Done — places built and captured in Studio |
+
+## Notifications, and a deeper run history
+
+A build takes minutes and people leave. Nothing told a creator when a run
+finished, failed, or stopped waiting on their approval.
+
+Migration `0010` adds `notifications` — owner-scoped, RLS, and no functions, the
+same shape as 0008 and 0009 for the same reason. `lib/notifications/` splits the
+decisions (copy, click-through target, dedupe key, which sound) from the server
+edge that writes them, so the decisions are testable without a Supabase client.
+A bell in the topbar and the workspace header polls `/api/notifications` every
+20s and stops entirely while the tab is hidden.
+
+Four events, emitted where the transitions actually happen — the chat route's
+`onEnd` and `onError`: run finished, run failed, a change set awaiting
+approval, and a low balance. The balance one reads the value `consume_credits`
+returns, which is the only moment it is known for certain.
+
+Three decisions worth knowing:
+
+- **Emitting once is enforced by a unique index** on `(owner_id, dedupe_key)`,
+  not by an in-process flag. Both handlers that close a run can fire, and the
+  existing `runClosed` guard is about closing the run, not about notifying.
+- **Delivery is exactly as durable as credit charging**, because it happens in
+  the same handler. If the platform kills the request on client disconnect, the
+  charge and the notification are lost together. Making it stronger means a
+  queue, which is a larger change than this was.
+- **Low-balance nudges are keyed by band *and* day.** Band alone warns once and
+  then stays silent forever, including after a top-up and a second slide down;
+  no key at all warns on every turn of a long session.
+
+`lib/notifications/announced.ts` stops the bell chiming for a build the user
+just watched finish: the workspace already sounds `complete` the instant its own
+stream ends, so it records that, and the bell skips the *sound* — never the
+badge — for the same run. Without it every build in the workspace would be
+announced twice, which is the Studio-panel bug again at a slower tempo.
+
+### Run history
+
+Deepened where the tables were already carrying more than the UI showed:
+
+- the **tool-call list** — the count was displayed, the list never was
+- the **retrieval / generation / validation split**, recorded since Step 7 and
+  never rendered, so "why did that take two minutes" had no answer
+- the validator's **actual issue messages** instead of a `hasErrors` boolean
+- the state machine's own **transition reasons**, on the state chips
+
+Model reasoning stays deliberately absent. The tool rows are a replay of the
+live status rail, and `agent_tool_calls` never stored arguments or results.
+
+`/activity?run=<id>` opens a specific run — where a failure notification links.
+
+### Verified
+
+`npm run check` — lint, typecheck, **347 tests across 16 files**, clean
+production build (32 routes — the 30 from the previous run plus the two
+notification endpoints).
+
+`npm run verify:security` gained four notification assertions (anon read, a
+forged row in another user's inbox, own-row insert, cross-tenant read) but has
+**not been run** — it needs a live project.
+
+One real defect found while writing the tests: `tests/migration-safety.test.ts`
+only checked RLS on `0001`, so every table added since could have shipped
+without it and the suite would still have been green. Now checked across all
+migrations — against normalised statements, because 0004 and 0008 column-align
+their `alter table` runs and a plain substring search matches none of them.
 
 ## QA accounts
 
@@ -271,6 +339,13 @@ Sign In / Providers → Confirm email.
   "Database error querying schema". Set them to `''` and add an
   `auth.identities` row. Prefer the signup API.
 - **Conversation history capped at 200 messages** in `/api/chat`.
+- **Notifications are never pruned.** There is no delete policy and no reaper;
+  the inbox is capped on read at 30. Volume is bounded by usage (one row per
+  run, one per band per day), so this is a deliberate deferral rather than an
+  oversight.
+- **Notification delivery inherits the chat request's lifetime.** It is emitted
+  from the same `onEnd` that charges credits, so it is exactly as durable as
+  billing and no more.
 - **No diff view yet** — `file_revisions` already stores what it needs.
 - **Composer attachments disabled** with a tooltip.
 - The `(app)` loading skeleton is dashboard-shaped and also shows for the
@@ -283,3 +358,4 @@ Sign In / Providers → Confirm email.
 3. Diff view in the code panel using `file_revisions`.
 4. Conversation summarisation past ~150 messages.
 5. Stripe checkout behind the existing `CREDIT_PACKS` interface.
+6. Run `verify:security` against a live project to cover migration `0010`.
