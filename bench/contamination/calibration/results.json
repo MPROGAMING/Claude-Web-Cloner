@@ -1,0 +1,1072 @@
+{
+  "thresholds": {
+    "jaccard": 0.35,
+    "containment": 0.6
+  },
+  "corpus": {
+    "problems": 11,
+    "solutions": 33,
+    "structural_rewrites": 11,
+    "same_problem_pairs": 33,
+    "cross_problem_pairs": 495
+  },
+  "grid": [
+    {
+      "level": "token",
+      "k": 4,
+      "at_default_thresholds": {
+        "mechanical": {
+          "n": 264,
+          "flagged": 198,
+          "rate": 0.75,
+          "worst": {
+            "label": "sum-list/b:rename_locals",
+            "jaccard": 0.0667,
+            "containment_max": 0.125
+          }
+        },
+        "structural": {
+          "n": 11,
+          "flagged": 0,
+          "rate": 0.0,
+          "worst": {
+            "label": "touch-damage/a",
+            "jaccard": 0.037,
+            "containment_max": 0.0833
+          }
+        },
+        "same_problem": {
+          "n": 33,
+          "flagged": 0,
+          "rate": 0.0,
+          "worst": {
+            "label": "leaderstats/a~c",
+            "jaccard": 0.3445,
+            "containment_max": 0.5325
+          }
+        },
+        "cross_problem": {
+          "n": 495,
+          "flagged": 0,
+          "rate": 0.0,
+          "worst": {
+            "label": "remote-validate/b~find-nearest/a",
+            "jaccard": 0.1127,
+            "containment_max": 0.2614
+          }
+        },
+        "overall": {
+          "recall": 0.72,
+          "false_positive_rate": 0.0,
+          "false_negatives": 77,
+          "false_positives": 0,
+          "n_positive": 275,
+          "n_negative": 528
+        }
+      },
+      "separation": {
+        "jaccard": {
+          "min_mechanical_positive": 0.0667,
+          "min_structural_positive": 0.037,
+          "max_same_problem_negative": 0.3445,
+          "max_cross_problem_negative": 0.1173,
+          "separable_mechanical_vs_same_problem": false,
+          "separable_structural_vs_same_problem": false
+        },
+        "containment_max": {
+          "min_mechanical_positive": 0.125,
+          "min_structural_positive": 0.0833,
+          "max_same_problem_negative": 0.5325,
+          "max_cross_problem_negative": 0.2614,
+          "separable_mechanical_vs_same_problem": false,
+          "separable_structural_vs_same_problem": false
+        },
+        "separable_structural_vs_same_problem": false
+      }
+    },
+    {
+      "level": "token",
+      "k": 5,
+      "at_default_thresholds": {
+        "mechanical": {
+          "n": 264,
+          "flagged": 198,
+          "rate": 0.75,
+          "worst": {
+            "label": "find-nearest/a:rename_locals",
+            "jaccard": 0.0357,
+            "containment_max": 0.069
+          }
+        },
+        "structural": {
+          "n": 11,
+          "flagged": 0,
+          "rate": 0.0,
+          "worst": {
+            "label": "touch-damage/a",
+            "jaccard": 0.0203,
+            "containment_max": 0.0471
+          }
+        },
+        "same_problem": {
+          "n": 33,
+          "flagged": 0,
+          "rate": 0.0,
+          "worst": {
+            "label": "leaderstats/a~c",
+            "jaccard": 0.2857,
+            "containment_max": 0.4615
+          }
+        },
+        "cross_problem": {
+          "n": 495,
+          "flagged": 0,
+          "rate": 0.0,
+          "worst": {
+            "label": "remote-validate/b~find-nearest/a",
+            "jaccard": 0.0971,
+            "containment_max": 0.2299
+          }
+        },
+        "overall": {
+          "recall": 0.72,
+          "false_positive_rate": 0.0,
+          "false_negatives": 77,
+          "false_positives": 0,
+          "n_positive": 275,
+          "n_negative": 528
+        }
+      },
+      "separation": {
+        "jaccard": {
+          "min_mechanical_positive": 0.0357,
+          "min_structural_positive": 0.0203,
+          "max_same_problem_negative": 0.2857,
+          "max_cross_problem_negative": 0.0971,
+          "separable_mechanical_vs_same_problem": false,
+          "separable_structural_vs_same_problem": false
+        },
+        "containment_max": {
+          "min_mechanical_positive": 0.069,
+          "min_structural_positive": 0.0471,
+          "max_same_problem_negative": 0.4615,
+          "max_cross_problem_negative": 0.2299,
+          "separable_mechanical_vs_same_problem": false,
+          "separable_structural_vs_same_problem": false
+        },
+        "separable_structural_vs_same_problem": false
+      }
+    },
+    {
+      "level": "token",
+      "k": 6,
+      "at_default_thresholds": {
+        "mechanical": {
+          "n": 264,
+          "flagged": 198,
+          "rate": 0.75,
+          "worst": {
+            "label": "find-nearest/c:rename_locals",
+            "jaccard": 0.0116,
+            "containment_max": 0.023
+          }
+        },
+        "structural": {
+          "n": 11,
+          "flagged": 0,
+          "rate": 0.0,
+          "worst": {
+            "label": "touch-damage/a",
+            "jaccard": 0.005,
+            "containment_max": 0.0119
+          }
+        },
+        "same_problem": {
+          "n": 33,
+          "flagged": 0,
+          "rate": 0.0,
+          "worst": {
+            "label": "leaderstats/a~c",
+            "jaccard": 0.2348,
+            "containment_max": 0.3974
+          }
+        },
+        "cross_problem": {
+          "n": 495,
+          "flagged": 0,
+          "rate": 0.0,
+          "worst": {
+            "label": "remote-validate/b~find-nearest/a",
+            "jaccard": 0.0821,
+            "containment_max": 0.1977
+          }
+        },
+        "overall": {
+          "recall": 0.72,
+          "false_positive_rate": 0.0,
+          "false_negatives": 77,
+          "false_positives": 0,
+          "n_positive": 275,
+          "n_negative": 528
+        }
+      },
+      "separation": {
+        "jaccard": {
+          "min_mechanical_positive": 0.0116,
+          "min_structural_positive": 0.005,
+          "max_same_problem_negative": 0.2348,
+          "max_cross_problem_negative": 0.0821,
+          "separable_mechanical_vs_same_problem": false,
+          "separable_structural_vs_same_problem": false
+        },
+        "containment_max": {
+          "min_mechanical_positive": 0.023,
+          "min_structural_positive": 0.0119,
+          "max_same_problem_negative": 0.3974,
+          "max_cross_problem_negative": 0.1977,
+          "separable_mechanical_vs_same_problem": false,
+          "separable_structural_vs_same_problem": false
+        },
+        "separable_structural_vs_same_problem": false
+      }
+    },
+    {
+      "level": "token",
+      "k": 7,
+      "at_default_thresholds": {
+        "mechanical": {
+          "n": 264,
+          "flagged": 198,
+          "rate": 0.75,
+          "worst": {
+            "label": "find-nearest/a:rename_locals",
+            "jaccard": 0.0,
+            "containment_max": 0.0
+          }
+        },
+        "structural": {
+          "n": 11,
+          "flagged": 0,
+          "rate": 0.0,
+          "worst": {
+            "label": "touch-damage/a",
+            "jaccard": 0.0,
+            "containment_max": 0.0
+          }
+        },
+        "same_problem": {
+          "n": 33,
+          "flagged": 0,
+          "rate": 0.0,
+          "worst": {
+            "label": "leaderstats/a~c",
+            "jaccard": 0.2015,
+            "containment_max": 0.3506
+          }
+        },
+        "cross_problem": {
+          "n": 495,
+          "flagged": 0,
+          "rate": 0.0,
+          "worst": {
+            "label": "remote-validate/b~find-nearest/a",
+            "jaccard": 0.0725,
+            "containment_max": 0.1765
+          }
+        },
+        "overall": {
+          "recall": 0.72,
+          "false_positive_rate": 0.0,
+          "false_negatives": 77,
+          "false_positives": 0,
+          "n_positive": 275,
+          "n_negative": 528
+        }
+      },
+      "separation": {
+        "jaccard": {
+          "min_mechanical_positive": 0.0,
+          "min_structural_positive": 0.0,
+          "max_same_problem_negative": 0.2015,
+          "max_cross_problem_negative": 0.0725,
+          "separable_mechanical_vs_same_problem": false,
+          "separable_structural_vs_same_problem": false
+        },
+        "containment_max": {
+          "min_mechanical_positive": 0.0,
+          "min_structural_positive": 0.0,
+          "max_same_problem_negative": 0.3506,
+          "max_cross_problem_negative": 0.1765,
+          "separable_mechanical_vs_same_problem": false,
+          "separable_structural_vs_same_problem": false
+        },
+        "separable_structural_vs_same_problem": false
+      }
+    },
+    {
+      "level": "token",
+      "k": 8,
+      "at_default_thresholds": {
+        "mechanical": {
+          "n": 264,
+          "flagged": 198,
+          "rate": 0.75,
+          "worst": {
+            "label": "leaderstats/a:rename_locals",
+            "jaccard": 0.0,
+            "containment_max": 0.0
+          }
+        },
+        "structural": {
+          "n": 11,
+          "flagged": 0,
+          "rate": 0.0,
+          "worst": {
+            "label": "touch-damage/a",
+            "jaccard": 0.0,
+            "containment_max": 0.0
+          }
+        },
+        "same_problem": {
+          "n": 33,
+          "flagged": 0,
+          "rate": 0.0,
+          "worst": {
+            "label": "leaderstats/a~c",
+            "jaccard": 0.1866,
+            "containment_max": 0.3289
+          }
+        },
+        "cross_problem": {
+          "n": 495,
+          "flagged": 0,
+          "rate": 0.0,
+          "worst": {
+            "label": "remote-validate/b~find-nearest/a",
+            "jaccard": 0.0628,
+            "containment_max": 0.1548
+          }
+        },
+        "overall": {
+          "recall": 0.72,
+          "false_positive_rate": 0.0,
+          "false_negatives": 77,
+          "false_positives": 0,
+          "n_positive": 275,
+          "n_negative": 528
+        }
+      },
+      "separation": {
+        "jaccard": {
+          "min_mechanical_positive": 0.0,
+          "min_structural_positive": 0.0,
+          "max_same_problem_negative": 0.1866,
+          "max_cross_problem_negative": 0.0628,
+          "separable_mechanical_vs_same_problem": false,
+          "separable_structural_vs_same_problem": false
+        },
+        "containment_max": {
+          "min_mechanical_positive": 0.0,
+          "min_structural_positive": 0.0,
+          "max_same_problem_negative": 0.3289,
+          "max_cross_problem_negative": 0.1548,
+          "separable_mechanical_vs_same_problem": false,
+          "separable_structural_vs_same_problem": false
+        },
+        "separable_structural_vs_same_problem": false
+      }
+    },
+    {
+      "level": "alpha",
+      "k": 4,
+      "at_default_thresholds": {
+        "mechanical": {
+          "n": 264,
+          "flagged": 264,
+          "rate": 1.0,
+          "worst": {
+            "label": "tween-part/c:rename_locals",
+            "jaccard": 0.7526,
+            "containment_max": 0.8588
+          }
+        },
+        "structural": {
+          "n": 11,
+          "flagged": 6,
+          "rate": 0.5454545454545454,
+          "worst": {
+            "label": "touch-damage/a",
+            "jaccard": 0.1313,
+            "containment_max": 0.253
+          }
+        },
+        "same_problem": {
+          "n": 33,
+          "flagged": 1,
+          "rate": 0.030303030303030304,
+          "worst": {
+            "label": "find-nearest/a~b",
+            "jaccard": 0.3203,
+            "containment_max": 0.5632
+          }
+        },
+        "cross_problem": {
+          "n": 495,
+          "flagged": 0,
+          "rate": 0.0,
+          "worst": {
+            "label": "leaderstats/a~find-nearest/b",
+            "jaccard": 0.1411,
+            "containment_max": 0.3239
+          }
+        },
+        "overall": {
+          "recall": 0.9818181818181818,
+          "false_positive_rate": 0.001893939393939394,
+          "false_negatives": 5,
+          "false_positives": 1,
+          "n_positive": 275,
+          "n_negative": 528
+        }
+      },
+      "separation": {
+        "jaccard": {
+          "min_mechanical_positive": 0.4775,
+          "min_structural_positive": 0.1313,
+          "max_same_problem_negative": 0.3714,
+          "max_cross_problem_negative": 0.1579,
+          "separable_mechanical_vs_same_problem": true,
+          "separable_structural_vs_same_problem": false
+        },
+        "containment_max": {
+          "min_mechanical_positive": 0.8588,
+          "min_structural_positive": 0.253,
+          "max_same_problem_negative": 0.5632,
+          "max_cross_problem_negative": 0.3239,
+          "separable_mechanical_vs_same_problem": true,
+          "separable_structural_vs_same_problem": false
+        },
+        "separable_structural_vs_same_problem": false
+      }
+    },
+    {
+      "level": "alpha",
+      "k": 5,
+      "at_default_thresholds": {
+        "mechanical": {
+          "n": 264,
+          "flagged": 264,
+          "rate": 1.0,
+          "worst": {
+            "label": "tween-part/c:rename_locals",
+            "jaccard": 0.7059,
+            "containment_max": 0.8276
+          }
+        },
+        "structural": {
+          "n": 11,
+          "flagged": 4,
+          "rate": 0.36363636363636365,
+          "worst": {
+            "label": "touch-damage/a",
+            "jaccard": 0.0805,
+            "containment_max": 0.1647
+          }
+        },
+        "same_problem": {
+          "n": 33,
+          "flagged": 0,
+          "rate": 0.0,
+          "worst": {
+            "label": "find-nearest/a~b",
+            "jaccard": 0.2683,
+            "containment_max": 0.5057
+          }
+        },
+        "cross_problem": {
+          "n": 495,
+          "flagged": 0,
+          "rate": 0.0,
+          "worst": {
+            "label": "leaderstats/a~find-nearest/b",
+            "jaccard": 0.1143,
+            "containment_max": 0.2703
+          }
+        },
+        "overall": {
+          "recall": 0.9745454545454545,
+          "false_positive_rate": 0.0,
+          "false_negatives": 7,
+          "false_positives": 0,
+          "n_positive": 275,
+          "n_negative": 528
+        }
+      },
+      "separation": {
+        "jaccard": {
+          "min_mechanical_positive": 0.4696,
+          "min_structural_positive": 0.0805,
+          "max_same_problem_negative": 0.2991,
+          "max_cross_problem_negative": 0.1287,
+          "separable_mechanical_vs_same_problem": true,
+          "separable_structural_vs_same_problem": false
+        },
+        "containment_max": {
+          "min_mechanical_positive": 0.8276,
+          "min_structural_positive": 0.1647,
+          "max_same_problem_negative": 0.5057,
+          "max_cross_problem_negative": 0.2703,
+          "separable_mechanical_vs_same_problem": true,
+          "separable_structural_vs_same_problem": false
+        },
+        "separable_structural_vs_same_problem": false
+      }
+    },
+    {
+      "level": "alpha",
+      "k": 6,
+      "at_default_thresholds": {
+        "mechanical": {
+          "n": 264,
+          "flagged": 264,
+          "rate": 1.0,
+          "worst": {
+            "label": "tween-part/c:rename_locals",
+            "jaccard": 0.6538,
+            "containment_max": 0.7907
+          }
+        },
+        "structural": {
+          "n": 11,
+          "flagged": 3,
+          "rate": 0.2727272727272727,
+          "worst": {
+            "label": "touch-damage/a",
+            "jaccard": 0.0442,
+            "containment_max": 0.0952
+          }
+        },
+        "same_problem": {
+          "n": 33,
+          "flagged": 0,
+          "rate": 0.0,
+          "worst": {
+            "label": "find-nearest/a~b",
+            "jaccard": 0.2294,
+            "containment_max": 0.4535
+          }
+        },
+        "cross_problem": {
+          "n": 495,
+          "flagged": 0,
+          "rate": 0.0,
+          "worst": {
+            "label": "leaderstats/a~find-nearest/b",
+            "jaccard": 0.0994,
+            "containment_max": 0.2368
+          }
+        },
+        "overall": {
+          "recall": 0.9709090909090909,
+          "false_positive_rate": 0.0,
+          "false_negatives": 8,
+          "false_positives": 0,
+          "n_positive": 275,
+          "n_negative": 528
+        }
+      },
+      "separation": {
+        "jaccard": {
+          "min_mechanical_positive": 0.453,
+          "min_structural_positive": 0.0442,
+          "max_same_problem_negative": 0.256,
+          "max_cross_problem_negative": 0.102,
+          "separable_mechanical_vs_same_problem": true,
+          "separable_structural_vs_same_problem": false
+        },
+        "containment_max": {
+          "min_mechanical_positive": 0.7907,
+          "min_structural_positive": 0.0952,
+          "max_same_problem_negative": 0.4535,
+          "max_cross_problem_negative": 0.2368,
+          "separable_mechanical_vs_same_problem": true,
+          "separable_structural_vs_same_problem": false
+        },
+        "separable_structural_vs_same_problem": false
+      }
+    },
+    {
+      "level": "alpha",
+      "k": 7,
+      "at_default_thresholds": {
+        "mechanical": {
+          "n": 264,
+          "flagged": 264,
+          "rate": 1.0,
+          "worst": {
+            "label": "tween-part/c:rename_locals",
+            "jaccard": 0.6038,
+            "containment_max": 0.7529
+          }
+        },
+        "structural": {
+          "n": 11,
+          "flagged": 3,
+          "rate": 0.2727272727272727,
+          "worst": {
+            "label": "touch-damage/a",
+            "jaccard": 0.0216,
+            "containment_max": 0.0482
+          }
+        },
+        "same_problem": {
+          "n": 33,
+          "flagged": 0,
+          "rate": 0.0,
+          "worst": {
+            "label": "find-nearest/a~b",
+            "jaccard": 0.1897,
+            "containment_max": 0.3882
+          }
+        },
+        "cross_problem": {
+          "n": 495,
+          "flagged": 0,
+          "rate": 0.0,
+          "worst": {
+            "label": "leaderstats/a~find-nearest/b",
+            "jaccard": 0.082,
+            "containment_max": 0.1974
+          }
+        },
+        "overall": {
+          "recall": 0.9709090909090909,
+          "false_positive_rate": 0.0,
+          "false_negatives": 8,
+          "false_positives": 0,
+          "n_positive": 275,
+          "n_negative": 528
+        }
+      },
+      "separation": {
+        "jaccard": {
+          "min_mechanical_positive": 0.4407,
+          "min_structural_positive": 0.0216,
+          "max_same_problem_negative": 0.2231,
+          "max_cross_problem_negative": 0.0878,
+          "separable_mechanical_vs_same_problem": true,
+          "separable_structural_vs_same_problem": false
+        },
+        "containment_max": {
+          "min_mechanical_positive": 0.7529,
+          "min_structural_positive": 0.0482,
+          "max_same_problem_negative": 0.3882,
+          "max_cross_problem_negative": 0.1974,
+          "separable_mechanical_vs_same_problem": true,
+          "separable_structural_vs_same_problem": false
+        },
+        "separable_structural_vs_same_problem": false
+      }
+    },
+    {
+      "level": "alpha",
+      "k": 8,
+      "at_default_thresholds": {
+        "mechanical": {
+          "n": 264,
+          "flagged": 264,
+          "rate": 1.0,
+          "worst": {
+            "label": "tween-part/c:rename_locals",
+            "jaccard": 0.5556,
+            "containment_max": 0.7143
+          }
+        },
+        "structural": {
+          "n": 11,
+          "flagged": 0,
+          "rate": 0.0,
+          "worst": {
+            "label": "touch-damage/a",
+            "jaccard": 0.0107,
+            "containment_max": 0.0244
+          }
+        },
+        "same_problem": {
+          "n": 33,
+          "flagged": 0,
+          "rate": 0.0,
+          "worst": {
+            "label": "leaderstats/a~c",
+            "jaccard": 0.1955,
+            "containment_max": 0.3421
+          }
+        },
+        "cross_problem": {
+          "n": 495,
+          "flagged": 0,
+          "rate": 0.0,
+          "worst": {
+            "label": "leaderstats/a~find-nearest/b",
+            "jaccard": 0.0649,
+            "containment_max": 0.1579
+          }
+        },
+        "overall": {
+          "recall": 0.96,
+          "false_positive_rate": 0.0,
+          "false_negatives": 11,
+          "false_positives": 0,
+          "n_positive": 275,
+          "n_negative": 528
+        }
+      },
+      "separation": {
+        "jaccard": {
+          "min_mechanical_positive": 0.4286,
+          "min_structural_positive": 0.0107,
+          "max_same_problem_negative": 0.1955,
+          "max_cross_problem_negative": 0.0738,
+          "separable_mechanical_vs_same_problem": true,
+          "separable_structural_vs_same_problem": false
+        },
+        "containment_max": {
+          "min_mechanical_positive": 0.7143,
+          "min_structural_positive": 0.0244,
+          "max_same_problem_negative": 0.3421,
+          "max_cross_problem_negative": 0.1579,
+          "separable_mechanical_vs_same_problem": true,
+          "separable_structural_vs_same_problem": false
+        },
+        "separable_structural_vs_same_problem": false
+      }
+    }
+  ],
+  "chosen": {
+    "level": "alpha",
+    "k": 5
+  },
+  "sweep_at_chosen": [
+    {
+      "jaccard_threshold": 0.0,
+      "recall_structural": 1.0,
+      "recall_mechanical": 1.0,
+      "fp_same_problem": 1.0,
+      "recall": 1.0,
+      "false_positive_rate": 1.0,
+      "false_negatives": 0,
+      "false_positives": 528,
+      "n_positive": 275,
+      "n_negative": 528
+    },
+    {
+      "jaccard_threshold": 0.05,
+      "recall_structural": 1.0,
+      "recall_mechanical": 1.0,
+      "fp_same_problem": 0.697,
+      "recall": 1.0,
+      "false_positive_rate": 0.18371212121212122,
+      "false_negatives": 0,
+      "false_positives": 97,
+      "n_positive": 275,
+      "n_negative": 528
+    },
+    {
+      "jaccard_threshold": 0.1,
+      "recall_structural": 0.9091,
+      "recall_mechanical": 1.0,
+      "fp_same_problem": 0.4545,
+      "recall": 0.9963636363636363,
+      "false_positive_rate": 0.04734848484848485,
+      "false_negatives": 1,
+      "false_positives": 25,
+      "n_positive": 275,
+      "n_negative": 528
+    },
+    {
+      "jaccard_threshold": 0.15,
+      "recall_structural": 0.8182,
+      "recall_mechanical": 1.0,
+      "fp_same_problem": 0.303,
+      "recall": 0.9927272727272727,
+      "false_positive_rate": 0.01893939393939394,
+      "false_negatives": 2,
+      "false_positives": 10,
+      "n_positive": 275,
+      "n_negative": 528
+    },
+    {
+      "jaccard_threshold": 0.2,
+      "recall_structural": 0.6364,
+      "recall_mechanical": 1.0,
+      "fp_same_problem": 0.1515,
+      "recall": 0.9854545454545455,
+      "false_positive_rate": 0.00946969696969697,
+      "false_negatives": 4,
+      "false_positives": 5,
+      "n_positive": 275,
+      "n_negative": 528
+    },
+    {
+      "jaccard_threshold": 0.25,
+      "recall_structural": 0.6364,
+      "recall_mechanical": 1.0,
+      "fp_same_problem": 0.1212,
+      "recall": 0.9854545454545455,
+      "false_positive_rate": 0.007575757575757576,
+      "false_negatives": 4,
+      "false_positives": 4,
+      "n_positive": 275,
+      "n_negative": 528
+    },
+    {
+      "jaccard_threshold": 0.3,
+      "recall_structural": 0.4545,
+      "recall_mechanical": 1.0,
+      "fp_same_problem": 0.0,
+      "recall": 0.9781818181818182,
+      "false_positive_rate": 0.0,
+      "false_negatives": 6,
+      "false_positives": 0,
+      "n_positive": 275,
+      "n_negative": 528
+    },
+    {
+      "jaccard_threshold": 0.35,
+      "recall_structural": 0.3636,
+      "recall_mechanical": 1.0,
+      "fp_same_problem": 0.0,
+      "recall": 0.9745454545454545,
+      "false_positive_rate": 0.0,
+      "false_negatives": 7,
+      "false_positives": 0,
+      "n_positive": 275,
+      "n_negative": 528
+    },
+    {
+      "jaccard_threshold": 0.4,
+      "recall_structural": 0.2727,
+      "recall_mechanical": 1.0,
+      "fp_same_problem": 0.0,
+      "recall": 0.9709090909090909,
+      "false_positive_rate": 0.0,
+      "false_negatives": 8,
+      "false_positives": 0,
+      "n_positive": 275,
+      "n_negative": 528
+    },
+    {
+      "jaccard_threshold": 0.45,
+      "recall_structural": 0.2727,
+      "recall_mechanical": 1.0,
+      "fp_same_problem": 0.0,
+      "recall": 0.9709090909090909,
+      "false_positive_rate": 0.0,
+      "false_negatives": 8,
+      "false_positives": 0,
+      "n_positive": 275,
+      "n_negative": 528
+    },
+    {
+      "jaccard_threshold": 0.5,
+      "recall_structural": 0.2727,
+      "recall_mechanical": 1.0,
+      "fp_same_problem": 0.0,
+      "recall": 0.9709090909090909,
+      "false_positive_rate": 0.0,
+      "false_negatives": 8,
+      "false_positives": 0,
+      "n_positive": 275,
+      "n_negative": 528
+    },
+    {
+      "jaccard_threshold": 0.55,
+      "recall_structural": 0.2727,
+      "recall_mechanical": 1.0,
+      "fp_same_problem": 0.0,
+      "recall": 0.9709090909090909,
+      "false_positive_rate": 0.0,
+      "false_negatives": 8,
+      "false_positives": 0,
+      "n_positive": 275,
+      "n_negative": 528
+    },
+    {
+      "jaccard_threshold": 0.6,
+      "recall_structural": 0.2727,
+      "recall_mechanical": 1.0,
+      "fp_same_problem": 0.0,
+      "recall": 0.9709090909090909,
+      "false_positive_rate": 0.0,
+      "false_negatives": 8,
+      "false_positives": 0,
+      "n_positive": 275,
+      "n_negative": 528
+    },
+    {
+      "jaccard_threshold": 0.65,
+      "recall_structural": 0.2727,
+      "recall_mechanical": 1.0,
+      "fp_same_problem": 0.0,
+      "recall": 0.9709090909090909,
+      "false_positive_rate": 0.0,
+      "false_negatives": 8,
+      "false_positives": 0,
+      "n_positive": 275,
+      "n_negative": 528
+    },
+    {
+      "jaccard_threshold": 0.7,
+      "recall_structural": 0.2727,
+      "recall_mechanical": 1.0,
+      "fp_same_problem": 0.0,
+      "recall": 0.9709090909090909,
+      "false_positive_rate": 0.0,
+      "false_negatives": 8,
+      "false_positives": 0,
+      "n_positive": 275,
+      "n_negative": 528
+    },
+    {
+      "jaccard_threshold": 0.75,
+      "recall_structural": 0.2727,
+      "recall_mechanical": 1.0,
+      "fp_same_problem": 0.0,
+      "recall": 0.9709090909090909,
+      "false_positive_rate": 0.0,
+      "false_negatives": 8,
+      "false_positives": 0,
+      "n_positive": 275,
+      "n_negative": 528
+    },
+    {
+      "jaccard_threshold": 0.8,
+      "recall_structural": 0.2727,
+      "recall_mechanical": 1.0,
+      "fp_same_problem": 0.0,
+      "recall": 0.9709090909090909,
+      "false_positive_rate": 0.0,
+      "false_negatives": 8,
+      "false_positives": 0,
+      "n_positive": 275,
+      "n_negative": 528
+    },
+    {
+      "jaccard_threshold": 0.85,
+      "recall_structural": 0.2727,
+      "recall_mechanical": 1.0,
+      "fp_same_problem": 0.0,
+      "recall": 0.9709090909090909,
+      "false_positive_rate": 0.0,
+      "false_negatives": 8,
+      "false_positives": 0,
+      "n_positive": 275,
+      "n_negative": 528
+    },
+    {
+      "jaccard_threshold": 0.9,
+      "recall_structural": 0.2727,
+      "recall_mechanical": 1.0,
+      "fp_same_problem": 0.0,
+      "recall": 0.9709090909090909,
+      "false_positive_rate": 0.0,
+      "false_negatives": 8,
+      "false_positives": 0,
+      "n_positive": 275,
+      "n_negative": 528
+    },
+    {
+      "jaccard_threshold": 0.95,
+      "recall_structural": 0.2727,
+      "recall_mechanical": 1.0,
+      "fp_same_problem": 0.0,
+      "recall": 0.9709090909090909,
+      "false_positive_rate": 0.0,
+      "false_negatives": 8,
+      "false_positives": 0,
+      "n_positive": 275,
+      "n_negative": 528
+    },
+    {
+      "jaccard_threshold": 1.0,
+      "recall_structural": 0.2727,
+      "recall_mechanical": 1.0,
+      "fp_same_problem": 0.0,
+      "recall": 0.9709090909090909,
+      "false_positive_rate": 0.0,
+      "false_negatives": 8,
+      "false_positives": 0,
+      "n_positive": 275,
+      "n_negative": 528
+    }
+  ],
+  "detail_at_chosen": {
+    "mechanical": {
+      "n": 264,
+      "flagged": 264,
+      "rate": 1.0,
+      "worst": {
+        "label": "tween-part/c:rename_locals",
+        "jaccard": 0.7059,
+        "containment_max": 0.8276
+      }
+    },
+    "structural": {
+      "n": 11,
+      "flagged": 4,
+      "rate": 0.36363636363636365,
+      "worst": {
+        "label": "touch-damage/a",
+        "jaccard": 0.0805,
+        "containment_max": 0.1647
+      }
+    },
+    "same_problem": {
+      "n": 33,
+      "flagged": 0,
+      "rate": 0.0,
+      "worst": {
+        "label": "find-nearest/a~b",
+        "jaccard": 0.2683,
+        "containment_max": 0.5057
+      }
+    },
+    "cross_problem": {
+      "n": 495,
+      "flagged": 0,
+      "rate": 0.0,
+      "worst": {
+        "label": "leaderstats/a~find-nearest/b",
+        "jaccard": 0.1143,
+        "containment_max": 0.2703
+      }
+    },
+    "overall": {
+      "recall": 0.9745454545454545,
+      "false_positive_rate": 0.0,
+      "false_negatives": 7,
+      "false_positives": 0,
+      "n_positive": 275,
+      "n_negative": 528
+    }
+  },
+  "separation_at_chosen": {
+    "jaccard": {
+      "min_mechanical_positive": 0.4696,
+      "min_structural_positive": 0.0805,
+      "max_same_problem_negative": 0.2991,
+      "max_cross_problem_negative": 0.1287,
+      "separable_mechanical_vs_same_problem": true,
+      "separable_structural_vs_same_problem": false
+    },
+    "containment_max": {
+      "min_mechanical_positive": 0.8276,
+      "min_structural_positive": 0.1647,
+      "max_same_problem_negative": 0.5057,
+      "max_cross_problem_negative": 0.2703,
+      "separable_mechanical_vs_same_problem": true,
+      "separable_structural_vs_same_problem": false
+    },
+    "separable_structural_vs_same_problem": false
+  }
+}

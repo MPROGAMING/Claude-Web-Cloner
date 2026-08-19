@@ -1,0 +1,50 @@
+{
+  "_comment": [
+    "A source manifest. Provenance is declared here, per source, and the loader",
+    "stamps it onto every document it produces. Nothing infers a licence from a",
+    "path, because that inference is exactly what the provenance stage exists to",
+    "refuse.",
+    "",
+    "licence_evidence must be one of: spdx-file, repo-metadata, declared-by-source.",
+    "The default, 'assumed', is refused by the provenance stage on purpose -- an",
+    "assumed licence is an unstated one, and the record is dropped rather than",
+    "guessed at.",
+    "",
+    "This file is an example. Copy it outside the repository and point --sources",
+    "at your copy; real corpus paths do not belong in a public tree."
+  ],
+  "sources": [
+    {
+      "source_id": "github:example-org/example-roblox-utils",
+      "kind": "github",
+      "url": "https://github.com/example-org/example-roblox-utils",
+      "revision": "0000000000000000000000000000000000000000",
+      "licence": "MIT",
+      "licence_url": "https://github.com/example-org/example-roblox-utils/blob/main/LICENSE",
+      "licence_evidence": "spdx-file",
+      "retrieved_on": "2026-08-19",
+      "loader": "directory",
+      "path": "~/corpus-raw/example-roblox-utils"
+    },
+    {
+      "source_id": "internal:blockwright-templates",
+      "kind": "internal",
+      "licence": "PROPRIETARY-OWNED",
+      "licence_evidence": "repo-metadata",
+      "retrieved_on": "2026-08-19",
+      "loader": "directory",
+      "path": "~/corpus-raw/blockwright-templates"
+    },
+    {
+      "source_id": "hf:example/luau-parquet-dump",
+      "kind": "github",
+      "url": "https://huggingface.co/datasets/example/luau-parquet-dump",
+      "licence": "Apache-2.0",
+      "licence_evidence": "declared-by-source",
+      "retrieved_on": "2026-08-19",
+      "loader": "hf",
+      "path": "example/luau-parquet-dump",
+      "options": { "split": "train", "text_key": "content" }
+    }
+  ]
+}

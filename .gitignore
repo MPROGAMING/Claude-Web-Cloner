@@ -69,3 +69,20 @@ public/demos/*.png
 bench/holdout/
 holdout/
 *.holdout.jsonl
+.ds-sync/
+ds-bundle/
+.design-sync/.cache/
+.design-sync/learnings/
+.design-sync/node_modules
+
+# Python bytecode from the bench tooling. The benchmark is Python and this is a
+# Node repository, so nothing here was covering it.
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Training corpora are large, derived from external material, and must never
+# land next to a benchmark that swears it never saw them. bench/factory/sinks.py
+# refuses to write here; this is the second lock.
+*.corpus.jsonl
+bench/**/corpus/

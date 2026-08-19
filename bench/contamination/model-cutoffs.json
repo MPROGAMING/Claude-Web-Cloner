@@ -1,0 +1,30 @@
+{
+  "_comment": [
+    "Model date registry, the analogue of LiveCodeBench's lm_styles.py release_date field.",
+    "",
+    "Every entry starts with \"verified\": false and the date check prints a warning when",
+    "it uses one. That is not modesty, it is the only defensible default: a benchmark",
+    "that filters on a training cutoff is only as trustworthy as the cutoff it was told,",
+    "and a number copied from memory into a config file is exactly how a contamination",
+    "claim quietly becomes false. Before citing a baseline, open the provider's model",
+    "card, paste the URL into \"source\", and flip \"verified\" to true.",
+    "",
+    "declared_cutoff: the pretraining data cutoff the provider states.",
+    "release_date:    when the model became generally available. The default basis,",
+    "                 because the gap between cutoff and release is filled with",
+    "                 post-training data that is still data.",
+    "",
+    "Either field may be null. A model with both null has no boundary, and every task",
+    "then classifies as UNDATED rather than SAFE."
+  ],
+  "schema_version": 1,
+  "models": [
+    {
+      "model": "example/model-with-known-dates",
+      "declared_cutoff": "2025-01-31",
+      "release_date": "2025-06-15",
+      "source": "<provider model card URL>",
+      "verified": false
+    }
+  ]
+}

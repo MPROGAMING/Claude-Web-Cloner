@@ -1,0 +1,71 @@
+{
+  "projectId": "64722abb-f8ae-4a64-96d0-f5376ad3451c",
+  "shape": "package",
+  "pkg": "blockwright",
+  "globalName": "Blockwright",
+  "srcDir": "src/components",
+  "tsconfig": ".design-sync/tsconfig.ds.json",
+  "cssEntry": ".design-sync/.cache/ds-tailwind.css",
+  "runtimeFontPrefixes": [
+    "Archivo",
+    "Figtree",
+    "Geist Mono"
+  ],
+  "docsDir": "docs",
+  "guidelinesGlob": [
+    "docs/DESIGN_SYSTEM.md",
+    "docs/PRODUCT_SPEC.md"
+  ],
+  "libOverrides": {
+    "source-kit.mjs": "app is a Next.js app, not a DS package: scope the synthesized entry to the browser-safe component dirs (app/, auth/, workspace/ import server actions)"
+  },
+  "extraEntries": [
+    "./.design-sync/shims/ds-preview-root.tsx"
+  ],
+  "provider": {
+    "component": "DsPreviewRoot"
+  },
+  "readmeHeader": ".design-sync/conventions.md",
+  "overrides": {
+    "Dialog": {
+      "cardMode": "single",
+      "primaryStory": "ApplyChangeSet"
+    },
+    "DropdownMenu": {
+      "cardMode": "single",
+      "primaryStory": "ProjectActions"
+    },
+    "Select": {
+      "cardMode": "single",
+      "primaryStory": "ModelPicker"
+    },
+    "SelectTrigger": {
+      "cardMode": "single",
+      "primaryStory": "Open"
+    },
+    "Progress": {
+      "cardMode": "single",
+      "primaryStory": "InACreditsCard"
+    },
+    "ProgressIndicator": {
+      "cardMode": "single",
+      "primaryStory": "InABuildCard"
+    },
+    "ProgressTrack": {
+      "cardMode": "single",
+      "primaryStory": "InsideACard"
+    },
+    "MarketingHeader": {
+      "cardMode": "column"
+    },
+    "PricingCards": {
+      "cardMode": "column"
+    },
+    "Tabs": {
+      "cardMode": "column"
+    },
+    "TabsContent": {
+      "cardMode": "column"
+    }
+  }
+}

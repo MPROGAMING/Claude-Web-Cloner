@@ -1,0 +1,4 @@
+{
+  "comment": "Which src/components subdirs are part of the synced design system. Read by .design-sync/prepare.mjs (entry barrel) and .design-sync/overrides/source-kit.mjs (discovery + enrichment) so the scope is stated once. app/, auth/ and workspace/ are excluded because they import server actions and Supabase, which transitively import \"server-only\" — that throws at import time in a browser bundle and would blank every card.",
+  "dirs": ["ui", "brand", "marketing", "blueprint"]
+}

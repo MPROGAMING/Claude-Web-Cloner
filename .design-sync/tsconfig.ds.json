@@ -1,0 +1,22 @@
+/*
+ * Used only by design-sync (cfg.tsconfig); the app still builds against the
+ * root tsconfig.json. esbuild resolves compilerOptions.paths from this file, so
+ * it is where next/* gets redirected to the browser-safe stand-ins — see
+ * .design-sync/shims/*.tsx for why the real modules cannot be bundled.
+ *
+ * Keep documentation in block comments, never in a "//" key: design-sync strips
+ * comments before JSON.parse with a regex that also eats a "//" property name,
+ * and the parse failure is swallowed — every path alias silently stops
+ * resolving, @/* included.
+ */
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "paths": {
+      "@/*": ["../src/*"],
+      "next/link": ["./shims/next-link.tsx"],
+      "next/image": ["./shims/next-image.tsx"],
+      "next/navigation": ["./shims/next-navigation.tsx"]
+    }
+  }
+}
