@@ -22,7 +22,16 @@ const PLACES = [
     alt: "A dark hotel corridor in Roblox lit by warm wall sconces, with numbered doors and wooden crates",
     title: "Horror",
     line: "Sconce-lit corridor, numbered doors, dust in the air",
-    /** Focal point for the cover crop. */
+    /**
+     * Focal point for the cover crop.
+     *
+     * This scene was relit brighter once, after a review called it too dark to
+     * read at thumbnail size. Brightening it flattened the whole frame into one
+     * amber field — the sconces stopped reading as light sources because there
+     * was no shadow left for them to be brighter than. The original is back:
+     * dark is the point, and pairing it with the daylit island scene beside it
+     * gives the row the contrast that a single dim image was missing.
+     */
     offset: "object-[50%_46%]",
   },
   {
