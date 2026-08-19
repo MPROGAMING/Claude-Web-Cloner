@@ -97,6 +97,20 @@ Fixed at three levels: the prompt now states each key appears exactly once,
 generation dedupes and logs when it has to, and review reports a duplicate as a
 blocking error.
 
+### 4. The default model could not run on this deployment
+
+`DEFAULT_MODEL_ID` was `anthropic:claude-sonnet-4-5` — a direct-provider model
+needing a key that is not configured. Every new project was created pointing at
+it, `/settings` displayed it as the account default, and the landing page's
+workspace mock advertised it in the composer.
+
+Nothing failed loudly, because the chat route falls back. The only symptom was
+the UI confidently saying the wrong thing in three places while contradicting
+the product's own positioning — the Roblox-tuned model is the entire pitch of
+the brain section further down the same page. The default is now that model,
+and a test pins it to the Brain constant, since `registry.ts` cannot import the
+module that defines it.
+
 ### Also, from the UI work
 
 - The Studio "connected" chime fired **every three seconds, forever**. The
@@ -196,6 +210,27 @@ fixed in the tool:
 
 Clean now across `/`, `/pricing`, `/dashboard`, `/templates`, `/activity`,
 `/credits` and `/settings`, in both themes, at 1440px and 390px.
+
+---
+
+## Performance
+
+Measured against a production build, not the dev server.
+
+| | |
+| --- | --- |
+| Total page weight | **442 KB** |
+| Requests | 21 |
+| JavaScript | 220 KB across 13 files |
+| Fonts | 130 KB across 3 |
+| CSS | 21.5 KB |
+| DOMContentLoaded / load | 896 ms / 1,134 ms (local) |
+
+Images are being optimised properly — the 260 KB island capture is served at
+7.2 KB, and all four demo images together come to about 21 KB. No action taken:
+220 KB of JavaScript for an app of this size is lean, and the largest single
+asset is a variable display font that already subsets to latin and loads with
+`display: swap`, so it never blocks a paint.
 
 ---
 
