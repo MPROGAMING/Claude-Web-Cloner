@@ -7,6 +7,7 @@ import {
   SECTION_LABELS,
   blueprintSchema,
   blueprintToContext,
+  dedupeSections,
   orderSections,
   questionSetSchema,
   reviewBlueprint,
@@ -240,5 +241,52 @@ describe("section ordering", () => {
     const ordered = orderSections(blueprint.sections);
     expect(ordered).toHaveLength(blueprint.sections.length);
     expect(new Set(ordered.map((s) => s.key)).size).toBe(blueprint.sections.length);
+  });
+});
+
+// ---------------------------------------------------------------------------
+describe("duplicate sections", () => {
+  /**
+   * A live run produced `… networking, persistence, economy, networking`. The
+   * schema has no way to say "keys are unique", and reviewBlueprint built a Set
+   * of keys — so the duplicate collapsed and the review reported zero issues.
+   *
+   * Every consumer keys by section.key, so this was not cosmetic: React saw
+   * duplicate keys, one expand toggle opened both panels, and "rewrite this
+   * section" mapped over the array and replaced *both* with the same new text.
+   */
+  function withDuplicate(): Blueprint {
+    const blueprint = validBlueprint();
+    const networking = blueprint.sections.find((s) => s.key === "networking");
+    if (!networking) throw new Error("fixture lost its networking section");
+    return { ...blueprint, sections: [...blueprint.sections, { ...networking, summary: "again" }] };
+  }
+
+  it("keeps the first occurrence and drops later repeats", () => {
+    const sections = dedupeSections(withDuplicate().sections);
+    const keys = sections.map((s) => s.key);
+
+    expect(new Set(keys).size).toBe(keys.length);
+    // The first one is the one the model committed to before it lost track.
+    expect(sections.find((s) => s.key === "networking")?.summary).not.toBe("again");
+  });
+
+  it("leaves a blueprint without duplicates untouched", () => {
+    const original = validBlueprint().sections;
+    expect(dedupeSections(original)).toEqual(original);
+  });
+
+  it("reports a duplicate as a blocking error rather than passing silently", () => {
+    const issues = reviewBlueprint(withDuplicate());
+    const duplicate = issues.find((i) => i.rule === "duplicate-section");
+
+    expect(duplicate).toBeDefined();
+    expect(duplicate?.severity).toBe("error");
+    expect(duplicate?.message).toContain("2 times");
+  });
+
+  it("still passes once deduped", () => {
+    const blueprint = withDuplicate();
+    expect(reviewBlueprint({ ...blueprint, sections: dedupeSections(blueprint.sections) })).toHaveLength(0);
   });
 });

@@ -8,6 +8,7 @@ import { calculateCredits } from "@/lib/credits/pricing";
 import { logger } from "@/lib/logger";
 import {
   blueprintSchema,
+  dedupeSections,
   questionSetSchema,
   reviewBlueprint,
   type Blueprint,
@@ -128,7 +129,8 @@ What makes this useful rather than decorative:
 - You get at most NINE sections and seven are already required: concept,
   core_loop, players, world, systems, networking, persistence. That leaves room
   for exactly two more, so choose the two that matter most to THIS game and drop
-  the rest. A single-player obby does not need an economy section. Padding the
+  the rest. Each section key appears exactly ONCE — never list the same key
+  twice, and never split one topic across two sections. A single-player obby does not need an economy section. Padding the
   list with sections that say nothing specific is worse than omitting them.
 - out_of_scope is not filler. Name the things a creator would reasonably expect
   that version one will not have.
@@ -174,17 +176,31 @@ export async function generateBlueprint(params: {
     maxOutputTokens: 5000,
   });
 
-  const issues = reviewBlueprint(result.object);
+  // The schema cannot express "keys are unique", so a model that loses track
+  // and lists networking twice produces a structurally valid blueprint that
+  // breaks every consumer keyed on section.key.
+  const sections = dedupeSections(result.object.sections);
+  const dropped = result.object.sections.length - sections.length;
+  if (dropped > 0) {
+    logger.warn("blueprint.duplicate_sections", {
+      dropped,
+      keys: result.object.sections.map((s) => s.key),
+    });
+  }
+  const blueprint = { ...result.object, sections };
+
+  const issues = reviewBlueprint(blueprint);
   logger.info("blueprint.generated", {
-    sections: result.object.sections.length,
-    scope: result.object.scope,
+    sections: blueprint.sections.length,
+    scope: blueprint.scope,
     issues: issues.length,
+    duplicatesDropped: dropped,
     retrievalMs: brain.latency_ms,
     latencyMs: Date.now() - startedAt,
   });
 
   return {
-    blueprint: result.object,
+    blueprint,
     cost: cost(definition, result.usage, startedAt),
     retrievalMs: brain.latency_ms,
   };

@@ -174,9 +174,49 @@ export interface BlueprintIssue {
  * still mislead the user about what they are approving — a missing section they
  * will assume was considered, or a scope claim the section count contradicts.
  */
+/**
+ * Keep the first section of each key and drop later repeats.
+ *
+ * A live run produced `… networking, persistence, economy, networking` — the
+ * model listed networking twice. Nothing caught it: `reviewBlueprint` builds a
+ * Set of keys, so duplicates collapse and the review passes with zero issues.
+ * Downstream, every consumer keys by `section.key`, so a duplicate meant
+ * duplicate React keys, one expand toggle opening two panels, and — worst —
+ * "rewrite this section" replacing *both* of them with the same new text.
+ *
+ * Dropping the later one is the right call over merging: the sections are
+ * alternative attempts at the same topic, not two halves of it, and the first
+ * is the one the model committed to before it lost track.
+ */
+export function dedupeSections(sections: Blueprint["sections"]): Blueprint["sections"] {
+  const seen = new Set<string>();
+  return sections.filter((section) => {
+    if (seen.has(section.key)) return false;
+    seen.add(section.key);
+    return true;
+  });
+}
+
 export function reviewBlueprint(blueprint: Blueprint): BlueprintIssue[] {
   const issues: BlueprintIssue[] = [];
   const present = new Set(blueprint.sections.map((s) => s.key));
+
+  // Checked here as well as deduped at generation, so a blueprint that reaches
+  // review by any other path still reports the problem instead of hiding it.
+  const counts = new Map<string, number>();
+  for (const section of blueprint.sections) {
+    counts.set(section.key, (counts.get(section.key) ?? 0) + 1);
+  }
+  for (const [key, count] of counts) {
+    if (count > 1) {
+      issues.push({
+        severity: "error",
+        rule: "duplicate-section",
+        message: `${SECTION_LABELS[key as keyof typeof SECTION_LABELS] ?? key} appears ${count} times.`,
+        section: key as BlueprintIssue["section"],
+      });
+    }
+  }
 
   for (const key of REQUIRED_SECTIONS) {
     if (!present.has(key)) {

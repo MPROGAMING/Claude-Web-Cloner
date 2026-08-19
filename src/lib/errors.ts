@@ -5,6 +5,8 @@
  * is safe to display. Internal details (stack traces, provider payloads) are
  * logged server-side and never sent to the browser.
  */
+import { logger } from "@/lib/logger";
+
 export type ErrorCode =
   | "unauthorized"
   | "forbidden"
@@ -81,6 +83,18 @@ export function toAppError(error: unknown): AppError {
     );
   }
 
+  // The model answered, but not in a shape the schema accepts. Blaming "our
+  // side" for this is both wrong and unhelpful: the fix is to retry or pick a
+  // stronger model, and only the person at the keyboard can do either. Weaker
+  // models — the free router especially — fail this way regularly.
+  if (/No object generated|NoObjectGenerated|could not parse the response/i.test(raw)) {
+    return new AppError(
+      "provider_error",
+      "The model did not return a usable plan. Try again, or switch to a stronger model.",
+      502,
+    );
+  }
+
   if (isZodError(error)) {
     const issue = error.issues[0];
     const path = issue?.path?.length ? issue.path.join(".") : "request body";
@@ -130,8 +144,41 @@ function isZodError(error: unknown): error is ZodLikeError {
 }
 
 /** JSON body for API routes. Shape is stable for the client error components. */
-export function errorResponse(error: unknown): Response {
+/**
+ * The one place every route turns a thrown error into a response.
+ *
+ * The header of this file promises internal detail is "logged server-side and
+ * never sent to the browser". The second half was true; the first was not —
+ * nothing here logged anything, so an unexpected 500 left no trace at all. A
+ * blueprint run failed with `POST /api/blueprint 500 in 57s` and an otherwise
+ * empty log, which is how the gap was found.
+ *
+ * 5xx is logged as an error with the original cause, because nobody asked for
+ * it and someone has to look. 4xx is logged at debug: those are the caller
+ * being told no, which is the system working, and logging them at error level
+ * would bury the ones that matter.
+ */
+export function errorResponse(error: unknown, context?: Record<string, unknown>): Response {
   const appError = toAppError(error);
+
+  const detail = {
+    ...context,
+    code: appError.code,
+    status: appError.status,
+    // The original throw, not the sanitised message the browser gets.
+    cause: error instanceof Error ? `${error.name}: ${error.message}` : String(error ?? ""),
+    ...(appError.details ? { details: appError.details } : {}),
+  };
+
+  if (appError.status >= 500) {
+    logger.error("request.failed", {
+      ...detail,
+      stack: error instanceof Error ? error.stack?.split("\n").slice(0, 6).join("\n") : undefined,
+    });
+  } else {
+    logger.debug("request.rejected", detail);
+  }
+
   return Response.json(
     { error: { code: appError.code, message: appError.message } },
     { status: appError.status },

@@ -1,6 +1,6 @@
 # Implementation status
 
-Last updated: 2026-08-18 · v0.2.0
+Last updated: 2026-08-19 · v0.4.0
 Supabase project: `Blockwright` (`joqttyltdbbwebtwbabh`, ap-southeast-2, Postgres 17)
 
 ## Model catalog verification (2026-08-18)
@@ -33,16 +33,17 @@ product decision in `registry.ts`, not a consequence of the provider being free
 
 Not assumed — executed:
 
-- `npm run check` — lint, typecheck, **166 tests across 11 files**, production build (21 routes)
-- `npm run verify:security` — **24/24 passing** against the real Supabase project
+- `npm run check` — lint, typecheck, **312 tests across 15 files**, production build (30 routes)
+- `npm run verify:security` — **37/37 passing** against the real Supabase project
+- `npm run agent:verify` — **44/44 passing** end to end through the real pipeline
 - Signup trigger fires: profile row + 2,000 credits + a `signup_bonus` ledger entry
 - Sign-in through the real UI; dashboard, credits, settings and the workspace all
   render live data
 - Project creation from a template → workspace opens with the template prompt
   seeded into the composer
 - Studio pairing code generates and displays (`3FMPSV`, 10-minute expiry)
-- Model selector correctly shows every model as unavailable, naming the missing
-  provider key for each
+- Model selector resolves availability from the keys actually configured:
+  OpenRouter models are usable, direct-provider models name the key they need
 - API error handling: malformed bodies → `400 invalid_request`; unconfigured
   subsystem → `503 provider_unconfigured`; no internal detail leaked
 
@@ -60,23 +61,64 @@ and attempts every cross-tenant access the schema should refuse:
 - a signed-in user cannot call `grant_credits`
 - a signed-in user *can* spend their own credits, and overdraw is refused
 
-## Not yet verified — external configuration required
+## Generation, verified end to end (2026-08-19)
 
-**No AI provider key is configured** (`ANTHROPIC_API_KEY`, `OPENAI_API_KEY`,
-`GOOGLE_GENERATIVE_AI_API_KEY`, `OPENROUTER_API_KEY` are all empty), so no real
-generation has run. The chat route, streaming, tool-calling and credit charging
-are implemented against AI SDK v7's current API and unit-tested against fakes,
-but have not made a live provider call. This is a credential gap, not an
-implementation gap.
+`npm run agent:verify` runs the section-24 acceptance scenario — "Create a
+simple Roblox round system…" — against the running application, with a real
+provider, a real database and a real user session. **44 assertions, 0 failures.**
 
-The OpenRouter **catalog** path *is* verified live — that endpoint is public, and
-14 free models were fetched and merged into the running selector.
+What it proves, in the order the run does it:
 
-**No service-role key is configured**, so the Studio plugin's pair → poll →
-execute → report cycle has not run inside Roblox Studio. Everything up to it —
-pairing-code generation, the panel UI, command queueing — is verified.
+| Stage | Proven |
+| ----- | ------ |
+| Classification | `multi_file_implementation`, plan required |
+| State walk | ANALYZING → RETRIEVING_KNOWLEDGE → GENERATING → VALIDATING → COMPLETED, unbroken |
+| Retrieval | a knowledge step occurred before generation |
+| **Preview** | **0 files written** — staged only |
+| Change set | 3 operations, `pending_approval`, no blocking issues |
+| **Apply, unapproved** | **refused, 403 `changeset_not_approved`** |
+| **Apply, anonymous** | **refused, 401** |
+| **Approve, other user** | **refused, 404** |
+| Apply, approved | 3/3 applied, audited, second apply refused |
+| Output | uses `game:GetService`, server owns round state, a RemoteEvent joins the halves |
+| Undo | all 3 reverted |
+| Telemetry | tokens, credits and retrieval time recorded; no secret in the stream |
 
-Add either key to `.env.local` and restart; nothing else needs changing.
+The negative assertions are the point. Preview writing nothing and apply being
+refused until an explicit approval exists are the two invariants the whole
+approval design rests on, and both are now checked against the live system
+rather than argued from the code.
+
+`--model` pins the run to one model, so the acceptance is reproducible on an
+account with no balance — it is a test of the state machine, the approval gate
+and the write barrier, none of which depend on which model wrote the Luau.
+
+**The free router cannot be substituted everywhere.** The agent path tolerates
+it because tool calls are validated and repaired; the blueprint path does not,
+because `generateObject` needs the model to hold a strict schema across a long
+response, and the free router fails it with `AI_NoObjectGeneratedError` roughly
+as often as it succeeds. Blueprint acceptance therefore needs a real model.
+That failure now reports as "the model did not return a usable plan", not as an
+internal error, because it is not one.
+
+### Provider errors close the run
+
+Found while running the above against an account with $0.09 of OpenRouter
+credit left: a provider that rejects the call outright fails *before* the
+stream starts, so `onEnd` never fires. The route's `onError` only logged, which
+left the row in `GENERATING` with a null `completed_at` — a spinner in the run
+history that never resolves, and an `agent_runs` table accumulating rows
+nothing would ever close. `onError` now closes the run itself. Verified live in
+both directions: exhausted balance ends `… → GENERATING → FAILED`.
+
+## Still requiring external configuration
+
+- **The Studio plugin cycle has not run inside Roblox Studio.** The service-role
+  key is configured and pairing, polling and command queueing are verified from
+  the web side; what has not happened is a real plugin in a real place
+  completing pair → poll → execute → report.
+- **Leaked password protection** is still off — a Supabase dashboard toggle
+  (Authentication → Policies) with no Management API behind it.
 
 ## Security work done during setup
 
@@ -181,17 +223,22 @@ parts. Credit balance counts rather than snaps. All reduced-motion aware.
 | Project CRUD, duplicate, archive | Done (create verified live) |
 | Workspace (3-pane, collapsible, mobile sheets) | **Verified live** |
 | Model registry + selector | **Verified live** — sections, search, logos, live free tier |
-| OpenRouter provider | Code complete; catalog verified live, generation needs a key |
+| OpenRouter provider | **Verified live** — catalog and generation both |
 | Dynamic free discovery | **Verified live** — 14 models fetched and merged |
-| Chat streaming, tool rows, plans, retry/stop | Code complete, no provider key |
-| Agent tools + server-side validation | Done, unit tested |
+| Chat streaming, tool rows, plans, retry/stop | **Verified live** — 44/44 acceptance |
+| Agent tools + server-side validation | **Verified live** — staged, validated, repaired |
 | Luau validator | Done, unit tested |
 | Credits: schema, atomic RPC, ledger, UI | **Verified live** |
-| RLS / tenant isolation | **Verified live, 24 assertions** |
+| RLS / tenant isolation | **Verified live, 37 assertions** |
 | Studio pairing UI + code generation | **Verified live** |
-| Studio plugin bridge (pair/poll/dispatch) | Needs service-role key |
+| Studio plugin bridge (pair/poll/dispatch) | Key configured; not yet run inside Studio |
 | Rate limiting, logging, error taxonomy | Done, unit tested |
 | Billing | Interfaces only — deliberately not faked |
+| Agent state machine, change sets, approval gate | **Verified live** — 44/44 |
+| Server-driven repair loop | Done; exercised by the acceptance run |
+| Run history (`/activity`) | Done — reads the four Step 7 tables |
+| Game Blueprint (questions → plan → approval) | **Verified live** — 23/24, needs a real model |
+| Real Roblox output on the landing page | Done — places built and captured in Studio |
 
 ## QA accounts
 
@@ -231,63 +278,8 @@ Sign In / Providers → Confirm email.
 
 ## Next work, in priority order
 
-1. Add a provider key and exercise a real generation end to end.
-2. Add the service-role key and run the Studio plugin cycle in Studio.
-3. Enable leaked-password protection in the Supabase dashboard.
-4. Diff view in the code panel using `file_revisions`.
-5. Conversation summarisation past ~150 messages.
-6. Stripe checkout behind the existing `CREDIT_PACKS` interface.
-
-## Step 6 — Real generation model (verified)
-
-Roblox Brain generates through OpenRouter `openai/gpt-5.6-sol`
-(`ROBLOX_BRAIN_MODEL` overrides). Retrieval runs before generation; citations
-reach the UI. Verified by a real authenticated request through `/api/chat`:
-21/21 end-to-end checks, 212 unit tests, 31 live security checks, clean build.
-
-Three defects were found by that verification and fixed — an unintended
-`authenticated` EXECUTE grant from Supabase default privileges (migration 0006),
-the Brain model never reaching the route (0007 + `resolveChatModelId`), and a
-highlighter that leaked CSS class names into displayed code. Full detail in
-`docs/roblox-brain/reports/STEP-6-REPORT.md`.
-
-Verification commands:
-- `npm run brain:verify-generation` — pipeline, one real request
-- `node scripts/roblox-brain/verify-chat-route.mjs [--keep]` — authenticated end-to-end
-
-## Step 7 — Production agent + Studio execution layer (verified)
-
-The Brain is now an agent: classify → plan → retrieve → generate → validate →
-propose change set → **human approval** → apply → verify → undo.
-
-Preview is the default mode and writes nothing. Apply replays the exact approved
-operation list; the model is not consulted at apply time and cannot approve its
-own work — chat assent ("do it", "looks good") is explicitly refused.
-
-Acceptance 44/44, unit tests 284, live security 37/37. Five real defects were
-found by running the acceptance test; all fixed and pinned. Detail and the one
-partial requirement (§12 repair loop is model-driven, not server-driven) in
-`docs/roblox-brain/reports/STEP-7-REPORT.md`.
-
-Commands:
-- `npm run agent:verify` — full agent acceptance against a running dev server
-- `npm run verify:security` — live RLS/grants, now including the agent tables
-
-## Overnight session — 18/19 Aug 2026
-
-Game Blueprint shipped: idea -> 4-6 clarifying questions -> sectioned plan ->
-explicit approval, verified 24/24 against real model calls. An approved plan is
-binding context on every later build turn.
-
-Landing page won a blind A/B against live lemonade.gg after a real hero composer
-was added. Command palette (Cmd/Ctrl+K) added. Studio integration proven against
-a real place (607,544 terrain cells written and verified by query).
-
-Fixed: the output-token budget was declared but never passed to streamText;
-provider credit exhaustion reported as an internal fault; an icon-only button
-with no accessible name.
-
-304 tests, 37 live security checks, clean build.
-Full detail: `docs/OVERNIGHT-BUILD-REPORT.md`.
-
-Commands added: `npm run blueprint:verify`.
+1. Run the Studio plugin cycle inside a real place — the last unverified path.
+2. Enable leaked-password protection in the Supabase dashboard.
+3. Diff view in the code panel using `file_revisions`.
+4. Conversation summarisation past ~150 messages.
+5. Stripe checkout behind the existing `CREDIT_PACKS` interface.
