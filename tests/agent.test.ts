@@ -10,6 +10,7 @@ import {
   canTransition,
   isTerminal,
 } from "@/lib/agent/state-machine";
+import type { AgentState } from "@/lib/agent/state-machine";
 import {
   ChangesetBuilder,
   finalState,
@@ -1093,5 +1094,74 @@ describe("server-driven repair", () => {
     const route = readFileSync("src/app/api/chat/route.ts", "utf8");
     expect(route).toMatch(/runRepairLoop\(/);
     expect(route).toMatch(/maxAttempts:\s*budget\.maxRepairAttempts/);
+  });
+});
+
+// ---------------------------------------------------------------------------
+describe("runs always reach a terminal state", () => {
+  /**
+   * A provider that rejects the call outright — exhausted balance, dead key,
+   * withdrawn model — fails before the stream starts, so `onEnd` never runs.
+   * The route's `onError` only logged, which left the row in GENERATING with a
+   * null completed_at: a spinner in the run history that never resolves, and a
+   * table that accumulates rows nothing will ever close.
+   *
+   * Found by running the acceptance script against an account with $0.09 of
+   * credit left. The symptom read like an agent bug; it was a lifecycle hole
+   * that any provider error would have opened.
+   */
+  it("fails from anywhere the run can still be, including mid-generation", () => {
+    // Every non-terminal state a run can be sitting in when the provider dies,
+    // reached by a legal walk rather than a jump.
+    const walks: AgentState[][] = [
+      ["ANALYZING"],
+      ["ANALYZING", "PLANNING"],
+      ["ANALYZING", "RETRIEVING_KNOWLEDGE"],
+      ["ANALYZING", "GENERATING"],
+      ["ANALYZING", "PLANNING", "RETRIEVING_KNOWLEDGE", "GENERATING"],
+    ];
+
+    for (const walk of walks) {
+      const machine = new AgentStateMachine({ runId: RUN, userId: OWNER, projectId: PROJECT });
+      for (const state of walk) machine.transition(state, "reached");
+
+      expect(machine.fail("provider error")).not.toBeNull();
+      expect(machine.state).toBe("FAILED");
+      expect(isTerminal(machine.state)).toBe(true);
+    }
+  });
+
+  it("a second close cannot undo or duplicate the first", () => {
+    const machine = new AgentStateMachine({ runId: RUN, userId: OWNER, projectId: PROJECT });
+    machine.transition("ANALYZING", "classify");
+    machine.transition("GENERATING", "write");
+    machine.fail("provider error");
+
+    const stepsAfterFirst = machine.steps;
+
+    // onEnd may still fire after onError for a mid-stream failure. Every
+    // transition it attempts has to be refused rather than reviving the run.
+    expect(machine.tryTransition("VALIDATING", "checking generated output")).toBe(false);
+    expect(machine.tryTransition("COMPLETED", "run finished")).toBe(false);
+    expect(machine.fail("again")).toBeNull();
+
+    expect(machine.state).toBe("FAILED");
+    expect(machine.steps).toBe(stepsAfterFirst);
+  });
+
+  it("the route closes the run on provider error rather than only logging", () => {
+    const route = readFileSync("src/app/api/chat/route.ts", "utf8");
+
+    const onError = route.slice(route.indexOf("onError: async ({ error })"));
+    expect(onError).not.toHaveLength(0);
+
+    // The close must happen in onError itself, before onEnd is reached.
+    const body = onError.slice(0, onError.indexOf("onEnd:"));
+    expect(body).toMatch(/machine\.fail\(/);
+    expect(body).toMatch(/finishRun\(/);
+    expect(body).toMatch(/errorCategory:\s*"provider"/);
+    // And it must be guarded, or a mid-stream error double-writes the row.
+    expect(body).toMatch(/if \(runClosed\) return;/);
+    expect(route).toMatch(/let runClosed = false;/);
   });
 });

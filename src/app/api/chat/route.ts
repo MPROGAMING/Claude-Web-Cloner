@@ -401,6 +401,10 @@ export async function POST(request: Request) {
           writer.write({ type: "data-citations", id: "citations", data: { citations } });
         }
 
+        // Whichever of onError/onEnd gets there first closes the run; the
+        // other must not re-close it.
+        let runClosed = false;
+
         const result = streamText({
           model,
           instructions: buildSystemPrompt({
@@ -429,10 +433,51 @@ export async function POST(request: Request) {
           // the cost-control gap section 19 asked for and a hard failure on any
           // account whose remaining balance cannot cover the reservation.
           maxOutputTokens: budget.maxOutputTokens,
-          onError: ({ error }) => {
+          // When the provider rejects the call outright — an exhausted balance,
+          // a bad key, a model that has gone away — the stream never starts and
+          // onEnd never fires. This used to only log, which left the run row
+          // stranded in GENERATING with no completed_at: a permanent spinner in
+          // the run history and an agent_runs table that slowly filled with
+          // rows that could never resolve. Close it here instead.
+          //
+          // If the failure happens mid-stream, both this and onEnd run. That is
+          // safe: FAILED is terminal, so onEnd's transitions are refused and its
+          // later write only corrects the token and credit numbers.
+          onError: async ({ error }) => {
             logger.error("ai.stream.error", { requestId, error: String(error) });
+            if (runClosed) return;
+            runClosed = true;
+
+            machine.fail("provider error");
+
+            await finishRun(supabase, {
+              runId,
+              state: machine.state,
+              repairAttempts: 0,
+              toolCalls: toolCallCount,
+              retrievalMs: brain.latency_ms,
+              generationMs: Math.max(0, Date.now() - startedAt - brain.latency_ms),
+              validationMs: 0,
+              inputTokens: 0,
+              outputTokens: 0,
+              credits: 0,
+              errorCategory: "provider",
+            });
+
+            if (requestId) {
+              await supabase
+                .from("ai_requests")
+                .update({
+                  status: "failed",
+                  latency_ms: Date.now() - startedAt,
+                  tool_calls: toolCallCount,
+                  completed_at: new Date().toISOString(),
+                })
+                .eq("id", requestId);
+            }
           },
           onEnd: async ({ usage, finishReason }) => {
+            runClosed = true;
             const inputTokens = usage.inputTokens ?? 0;
             const outputTokens = usage.outputTokens ?? 0;
             const credits = calculateCredits(definition, { inputTokens, outputTokens });

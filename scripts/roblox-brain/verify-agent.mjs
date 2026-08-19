@@ -10,6 +10,13 @@
  * nothing, and that apply was refused until an explicit approval existed.
  *
  * Usage: node scripts/roblox-brain/verify-agent.mjs [--base http://localhost:3000] [--keep]
+ *                                                   [--model openrouter:openrouter/free]
+ *
+ * --model pins the run to one model. Without it the route picks the project's
+ * model, then the Brain default. Pass the free router to prove the pipeline on
+ * an account with no balance left: the acceptance is about the state machine,
+ * the approval gate and the write barrier, none of which care which model wrote
+ * the Luau.
  */
 
 import { readFileSync, existsSync } from "node:fs";
@@ -23,6 +30,7 @@ for (const line of existsSync(".env.local") ? readFileSync(".env.local", "utf8")
 const args = process.argv.slice(2);
 const BASE = args.includes("--base") ? args[args.indexOf("--base") + 1] : "http://localhost:3000";
 const KEEP = args.includes("--keep");
+const MODEL = args.includes("--model") ? args[args.indexOf("--model") + 1] : null;
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const ANON = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -142,6 +150,7 @@ const response = await fetch(`${BASE}/api/chat`, {
     id: conversationId,
     projectId: project.id,
     mode: "preview",
+    ...(MODEL ? { modelId: MODEL } : {}),
     message: { id: randomUUID(), role: "user", parts: [{ type: "text", text: REQUEST }] },
   }),
 });
