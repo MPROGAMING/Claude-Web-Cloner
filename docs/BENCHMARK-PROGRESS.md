@@ -1,6 +1,6 @@
 # Blockwright benchmark — live progress
 
-**Updated:** 19 Aug 2026, 12:20 · no model has been trained and none will be in
+**Updated:** 19 Aug 2026, 14:05 · no model has been trained and none will be in
 this workstream.
 
 ## The bars, read rather than remembered
@@ -20,17 +20,39 @@ Both cloned to `~/bw-bench-refs` and read before anything was designed.
 | Sandboxed Luau execution | **done** — `bench/harness/execute.py` |
 | Test-gated grader | **done** — `bench/harness/grade.py`, 14 tests passing |
 | Holdout privacy | **done** — outside the repo, gitignored 3 ways, probe-verified |
-| Roblox API stub runtime | not started |
-| Private holdout tasks | builder running |
-| Contamination + dataset factory | builder running |
+| Contamination detection | **done** — 178 tests |
+| Dataset factory | **done** — provenance → quality → leak gate → dedup |
+| Private holdout tasks | **41 authored**, 25 fully gate-verified |
+| Roblox API stub runtime | builder running — blocks the other 16 |
 | Baselines | blocked, see below |
+| Per-piece critics | not run |
 
 ## Coverage
 
-Eight categories in the schema: `code_generation`, `debugging`,
-`api_correctness`, `security`, `multi_file`, `project_reasoning`,
-`studio_runtime`, `agent_tool_use`. **0 tasks authored so far** — the builder is
-mid-flight. Counts land here when it reports.
+**41 tasks, all eight categories.** 166 fail-to-pass tests, 96 pass-to-pass,
+82 visible / 180 hidden, 89 project files.
+
+| Category | Tasks | Category | Tasks |
+|---|---|---|---|
+| code_generation | 6 | security | 6 |
+| debugging | 6 | api_correctness | 5 |
+| multi_file | 4 | studio_runtime | 5 |
+| project_reasoning | 4 | agent_tool_use | 5 |
+
+By scenario: 19 `project_patch`, 11 `code_generation`, 6 `self_repair`,
+5 `tool_use`. By difficulty: 10 easy, 26 medium, 5 hard.
+
+### Gate verification — the check that decides whether any of this measures anything
+
+    holdout: 41 tasks
+      needs the Roblox stub, not yet runnable  16
+      gate verified AND reference resolves      25
+      broken                                    0
+
+"Gate verified" is three separate claims per task, all executed: the
+fail-to-pass tests genuinely FAIL on the untouched project, the pass-to-pass
+tests genuinely PASS on it, and the reference solution resolves the task to
+FULL. A task that misses any of those is refused rather than scored.
 
 ## Contamination status
 
@@ -72,3 +94,6 @@ should be read as a harness smoke test rather than a capability measurement.
 | `execute.py` | `preexec_fn` raised on macOS because `RLIMIT_AS` is unsupported, killing the subprocess launch with an opaque error. Limits are best-effort now. |
 | `execute.py` | The limits probe could not fail, so it claimed isolation the host does not provide. |
 | `grade.py` | The reference `compute_fail_to_pass` returns 1.0 on an empty set — correct for their averaging, a free pass here. Empty `fail_to_pass` is now refused at validation. |
+| `detector.py` | Assumed `files` is a list of `{path, content}` — what a Task serialises to — and raised on the `{path: content}` mapping an exported SOLUTION uses. That aborted the repository leak scan entirely, so the check protecting the benchmark had never completed, and the artefact it choked on is the answer key. |
+| `execute.py` | No `.luaurc` was written, so `require("@proj/...")` never resolved. **All 25 runnable holdout tasks reported "a pass_to_pass test fails on the UNMODIFIED project" and not one of them was broken** — the harness could not import the code it was scoring. A benchmark that cannot load a task reports zero and it looks like a finding. |
+| `quality.py` (factory) | `luau file.luau` EXECUTES rather than parses, and exits 1 on any Roblox script because plain Luau has no `game`. A syntax gate built on it would have dropped the entire Roblox corpus. Uses `luau-compile --only-parse`. |

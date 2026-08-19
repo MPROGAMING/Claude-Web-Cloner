@@ -135,3 +135,50 @@ class TestTaskGate:
         verdict = verify_task_gate(bad_guard)
         assert verdict["ok"] is False
         assert "regression" in verdict["reason"]
+
+
+# ---------------------------------------------------------------------------
+class TestRequireAliases:
+    """
+    Holdout tasks import their own modules through a Luau require alias —
+    `require("@proj/shared/Inventory")` against files laid out under `src/`,
+    which is how a Roblox project is actually organised.
+
+    Luau resolves that through a `.luaurc` in the working directory. The harness
+    did not write one, so every such require failed and **all 25 runnable
+    holdout tasks reported "a pass_to_pass test fails on the UNMODIFIED
+    project"**. Twenty-five tasks looked broken and none of them were: the
+    harness could not load them. A benchmark that cannot import the code it is
+    scoring reports zero and looks like a finding.
+    """
+
+    PROJECT = {"src/shared/Inventory.luau": "return { size = 4 }"}
+
+    def test_project_alias_resolves_by_default(self):
+        from harness.execute import run_luau
+        r = run_luau(
+            {**self.PROJECT,
+             "t.luau": 'local I = require("@proj/shared/Inventory") assert(I.size == 4) print("ok")'},
+            "t.luau",
+        )
+        assert r.ok, r.stderr
+
+    def test_an_unaliased_require_still_fails(self):
+        # The alias must not accidentally make every path resolve; a genuinely
+        # missing module has to stay a failure.
+        from harness.execute import run_luau
+        r = run_luau(
+            {**self.PROJECT, "t.luau": 'require("@proj/shared/DoesNotExist")'},
+            "t.luau",
+        )
+        assert not r.ok
+
+    def test_caller_supplied_aliases_replace_the_default(self):
+        from harness.execute import run_luau
+        r = run_luau(
+            {"lib/M.luau": "return 7",
+             "t.luau": 'assert(require("@x/M") == 7) print("ok")'},
+            "t.luau",
+            aliases={"x": "./lib"},
+        )
+        assert r.ok, r.stderr

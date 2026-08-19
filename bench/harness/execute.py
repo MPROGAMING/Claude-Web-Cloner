@@ -23,6 +23,7 @@ putting a real sandbox underneath it first.
 
 from __future__ import annotations
 
+import json
 import os
 import resource
 import shutil
@@ -130,17 +131,30 @@ def luau_available() -> bool:
     return Path(LUAU_BIN).exists() or shutil.which(LUAU_BIN) is not None
 
 
+# Where a task's own modules live, and the alias its tests import them through.
+# Holdout tasks are written as `require("@proj/shared/Inventory")` against files
+# laid out under `src/`, mirroring how a Roblox project is actually organised.
+# Luau resolves that through a `.luaurc` in the working directory — without one
+# every such require fails and the task looks broken when it is not. That is
+# exactly what happened: all 25 runnable holdout tasks reported "a pass_to_pass
+# test fails on the UNMODIFIED project" and every one of them was this.
+PROJECT_ALIASES = {"proj": "./src"}
+
+
 def run_luau(
     files: dict[str, str],
     entry: str,
     timeout_s: float = 5.0,
+    aliases: dict[str, str] | None = None,
 ) -> ExecResult:
     """
     Write `files` into a throwaway directory and run `entry` under `luau`.
 
     `files` maps relative path to content, so a task can lay out a small project
     and have `require` resolve between its modules the way it would in a real
-    tree.
+    tree. `aliases` becomes the `.luaurc` require-alias map; pass None for the
+    project default, or an explicit dict to add more (the Roblox stub runtime
+    mounts itself this way).
     """
     if not luau_available():
         return ExecResult(
@@ -151,6 +165,14 @@ def run_luau(
     workdir = None
     try:
         workdir = tempfile.mkdtemp(prefix="bwbench-")
+
+        alias_map = dict(PROJECT_ALIASES if aliases is None else aliases)
+        # Written before the task files so a task that ships its own .luaurc
+        # overwrites ours rather than being silently overridden by it.
+        (Path(workdir) / ".luaurc").write_text(
+            json.dumps({"aliases": alias_map}), encoding="utf-8"
+        )
+
         for rel, content in files.items():
             target = Path(workdir) / rel
             # A task path must not escape the sandbox directory. This is the same
