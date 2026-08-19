@@ -112,6 +112,49 @@ preview card does not have, and every one of them was a visible defect first:
    left-aligned content clips (a left-aligned `SectionHeading` lost the stem of
    its first letter). In the app that gutter comes from `Section`'s `px-5 sm:px-8`.
 
+## How the previews are organised
+
+Compound components are the bulk of this DS (Dialog has 10 parts, DropdownMenu 15,
+Select 10). A sub-part like `DialogTitle` or `SelectItem` renders nothing outside
+its parent, so its preview **is** the parent composition — that is the only render
+that is true. Rather than duplicating the composition into every sub-part file,
+each sub-part re-exports selected cells from its parent's preview and renames them
+for what that part contributes:
+
+```tsx
+// DialogFooter.tsx
+export { ApplyChangeSet as ConfirmAndCancel, DeleteProject as DestructiveAction } from "./Dialog";
+```
+
+Relative imports between preview files compile fine (the preview compiler bundles
+them from source and their own `blockwright` imports still resolve to the shipped
+global). Editing a parent's cells therefore changes every sub-part card that
+re-exports them — intended, but worth knowing before renaming a parent export,
+which breaks its dependents' compile.
+
+Base UI API notes that cost time to find:
+
+- Overlays need their **uncontrolled** open prop to be visible in a capture:
+  `<Dialog defaultOpen>`, `<Select defaultOpen>`, `<DropdownMenu defaultOpen>`.
+  `Tooltip` needs `open` — `defaultOpen` is not enough for it.
+- `DialogPortal container={ref}` is what keeps a dialog inside its card. **Sheet
+  exports no Portal part**, so `SheetContent` (which is `fixed`) always escapes to
+  the viewport — hence `cardMode: "single"` for it.
+- Triggers compose via `render={<Button/>}`, never `asChild`.
+- `Select` needs `items={{value: label}}` on the root for a *closed* trigger to
+  show a label, because Base UI unmounts the popup when closed.
+- `SelectContent align="start" alignItemWithTrigger={false}` is what makes the
+  popup sit under the trigger instead of over it.
+
+`cfg.overrides` carries `cardMode` for 11 components, all applied on
+`[GRID_OVERFLOW]` warns: `single` for portal/fixed overlays (Dialog, DropdownMenu,
+Select, SelectTrigger, Progress, ProgressIndicator, ProgressTrack) and `column`
+for genuinely wide sections (MarketingHeader, PricingCards, Tabs, TabsContent).
+
+**Editors will flag `Cannot find module 'blockwright'` in every preview file.**
+That is expected and not fixable from the repo's tsconfig: the specifier only
+resolves inside the preview compiler, which maps it to `window.Blockwright`.
+
 ## The source-kit fork
 
 `.design-sync/overrides/source-kit.mjs` carries three changes, all forced by the
@@ -137,6 +180,11 @@ upstream changes.
   pins 1234, so it launches with **no browser download**. A different playwright
   version will try to fetch ~200MB; check `browsers.json` before upgrading.
 - `.ds-sync/` needs its own deps: `esbuild ts-morph @types/react playwright@1.62.0`.
+- **A full `package-build.mjs` run takes well over 10 minutes** with all 118
+  previews authored — the ts-morph `[DTS]` pass is the slow part. Run it as a
+  background task, not in a foreground shell with a 10-minute cap. For
+  preview-only edits use `lib/preview-rebuild.mjs --components <names>`, which is
+  seconds.
 
 ## Known render warns
 

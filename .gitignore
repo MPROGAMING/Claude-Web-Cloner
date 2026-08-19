@@ -86,3 +86,9 @@ __pycache__/
 # refuses to write here; this is the second lock.
 *.corpus.jsonl
 bench/**/corpus/
+
+# PAUSED, UNRESOLVED: the contamination detector flags bench/runtime/roblox.luau
+# at near_jaccard 0.598 against holdout content. Until that is shown to be a
+# false positive, it must not reach this public repository. See
+# docs/BENCHMARK-PROGRESS.md, "Paused".
+bench/runtime/

@@ -1,7 +1,42 @@
 # Blockwright benchmark — live progress
 
-**Updated:** 19 Aug 2026, 14:05 · no model has been trained and none will be in
+**Updated:** 19 Aug 2026, 14:40 — PAUSED · no model has been trained and none will be in
 this workstream.
+
+## Paused — read this first on resume
+
+Work stopped deliberately, not because of a failure. Everything green is
+committed; one thing is deliberately NOT.
+
+**The blocker to resolve first.** The contamination detector flags the new
+Roblox stub runtime:
+
+    holdout content appears in 1 repository file(s):
+      runtime/roblox.luau (near_jaccard, 0.598)
+
+`bench/runtime/` is therefore **gitignored and uncommitted**, so it cannot reach
+this public repository until the flag is understood. Two possibilities, and they
+need different actions:
+
+1. **True positive** — holdout source was pasted into the stub while deriving
+   its API surface. Then the stub must be rewritten from the audit's extracted
+   member list alone, never from task bodies.
+2. **False positive** — a Roblox API stub necessarily shares identifiers with
+   every task that calls that API (`WaitForChild`, `FireServer`, `ChildAdded`).
+   This is precisely the weakness the detector's author predicted: "real Roblox
+   corpora are full of genuine boilerplate". If so, the fix is the genericity
+   score they recommended, not a change to the stub.
+
+Do not commit `bench/runtime/` until this is decided. Do not resolve it by
+raising the threshold — that would disarm the check protecting the benchmark.
+
+The stub builder reported "All 16 pass" for the stub-dependent tasks just before
+it was stopped, but that was its own claim and has not been independently
+verified; `verify_holdout.py` still reports those 16 as not runnable because it
+does not yet mount the runtime.
+
+**Also unfinished:** baselines (0 models, OpenRouter at $0.20), and the
+per-piece critics against the two bars have never run.
 
 ## The bars, read rather than remembered
 
