@@ -31,6 +31,14 @@ import { budgetFor } from "@/lib/agent/budgets";
 import { resolveMode } from "@/lib/agent/authorization";
 import { finishRun, persistChangeset, recordToolCall, recordTransition, startRun } from "@/lib/agent/audit";
 import { runRepairLoop, describeRepair } from "@/lib/agent/repair-loop";
+import { notify } from "@/lib/notifications/service";
+import {
+  changesetAwaitingApproval,
+  creditsLow,
+  lowBalanceBand,
+  runCompleted,
+  runFailed,
+} from "@/lib/notifications/events";
 import { rateLimit } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
 
@@ -485,6 +493,20 @@ export async function POST(request: Request) {
                 })
                 .eq("id", requestId);
             }
+
+            // The stream never opened, so the client has nothing to show and
+            // may not even be on the page any more. This is the only thing that
+            // will tell them.
+            await notify(
+              supabase,
+              user.id,
+              runFailed({
+                runId,
+                projectId: project.id,
+                projectName: project.name,
+                errorCategory: "provider",
+              }),
+            );
           },
           onEnd: async ({ usage, finishReason }) => {
             runClosed = true;
@@ -499,6 +521,10 @@ export async function POST(request: Request) {
 
             let changesetPreview: ReturnType<typeof toChangesetPreview> | null = null;
             let repairAttempts = 0;
+            // Hoisted because the notification decision below needs them and
+            // they are only knowable inside the changeset branch.
+            let operationCount = 0;
+            let awaitingChangesetId: string | null = null;
 
             if (changesetBuilder && changesetBuilder.size > 0) {
               // Server-driven repair, before the user ever sees the change set.
@@ -536,6 +562,10 @@ export async function POST(request: Request) {
 
               const persisted = await persistChangeset(supabase, changeset);
               changesetPreview = toChangesetPreview(changeset);
+              operationCount = changeset.operations.length;
+              if (persisted && changeset.status === "pending_approval") {
+                awaitingChangesetId = changeset.changesetId;
+              }
 
               if (persisted && writerRef) {
                 // The approval card. Persisted with the message so a reloaded
@@ -574,17 +604,68 @@ export async function POST(request: Request) {
               errorCategory: finishReason === "error" ? "generation" : blocked ? "validation" : undefined,
             });
 
+            // The run is closed. Whether anyone is still looking at the page is
+            // not something we get to assume — builds take minutes and people
+            // leave — so the outcome goes to the inbox either way. One
+            // notification per run: a change set waiting on a human is the more
+            // actionable fact than the build having ended, so it wins.
+            const runContext = {
+              runId,
+              projectId: project.id,
+              projectName: project.name,
+            };
+
+            if (machine.state === "FAILED") {
+              await notify(
+                supabase,
+                user.id,
+                runFailed({
+                  ...runContext,
+                  errorCategory:
+                    finishReason === "error" ? "generation" : blocked ? "validation" : null,
+                }),
+              );
+            } else if (awaitingChangesetId) {
+              await notify(
+                supabase,
+                user.id,
+                changesetAwaitingApproval({
+                  ...runContext,
+                  changesetId: awaitingChangesetId,
+                  operationCount,
+                }),
+              );
+            } else {
+              await notify(supabase, user.id, runCompleted({ ...runContext, operationCount }));
+            }
+
             try {
               if (credits > 0) {
-                await chargeCredits(supabase, {
+                const remaining = await chargeCredits(supabase, {
                   amount: credits,
                   description: `${definition.name} · ${project.name}`,
                   referenceId: requestId,
                 });
+
+                // Charging is the only moment the new balance is known for
+                // certain, so it is also the only honest place to warn about it.
+                const band = remaining === null ? null : lowBalanceBand(remaining);
+                if (remaining !== null && band !== null) {
+                  await notify(supabase, user.id, creditsLow({ balance: remaining, band }));
+                }
               }
             } catch (chargeError) {
               // The generation already happened — log rather than fail the response.
               logger.error("ai.charge.failed", { requestId, error: String(chargeError) });
+
+              // An exhausted balance is exactly when someone needs telling. A
+              // database blip is our problem, not theirs, so it stays quiet.
+              if (
+                chargeError instanceof AppError &&
+                chargeError.code === "insufficient_credits"
+              ) {
+                await notify(supabase, user.id, creditsLow({ balance: 0, band: 0 }));
+              }
             }
 
             if (requestId) {

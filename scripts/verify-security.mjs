@@ -360,8 +360,58 @@ const run = async () => {
     JSON.stringify(crossProjectMemory.body).slice(0, 80),
   );
 
+  // --- notifications -------------------------------------------------------
+  // A notification renders as a clickable row with a title and a link, so an
+  // inbox someone else can write into is a way to put arbitrary text and an
+  // arbitrary destination in front of a user.
+  const anonNotifications = await rest("GET", "notifications?select=id", ANON);
+  check(
+    "anon cannot read notifications",
+    Array.isArray(anonNotifications.body) && anonNotifications.body.length === 0,
+    JSON.stringify(anonNotifications.body).slice(0, 60),
+  );
+
+  const forgedNotification = await rest("POST", "notifications", b.token, {
+    owner_id: a.id,
+    kind: "run_completed",
+    title: "Click here",
+    href: "/credits",
+    dedupe_key: `forged:${crypto.randomUUID()}`,
+  });
+  check(
+    "user B cannot put a notification in A's inbox",
+    isRefusal(forgedNotification),
+    JSON.stringify(forgedNotification.body).slice(0, 80),
+  );
+
+  const ownNotification = await rest("POST", "notifications", a.token, {
+    owner_id: a.id,
+    kind: "credits_low",
+    title: "Credits running low",
+    body: "verification probe",
+    href: "/credits",
+    dedupe_key: `probe:${crypto.randomUUID()}`,
+  });
+  check(
+    "user A can create their own notification",
+    !isRefusal(ownNotification),
+    JSON.stringify(ownNotification.body).slice(0, 80),
+  );
+
+  const bReadsA = await rest("GET", "notifications?select=id", b.token);
+  check(
+    "user B cannot read A's notifications",
+    Array.isArray(bReadsA.body) && bReadsA.body.length === 0,
+    JSON.stringify(bReadsA.body).slice(0, 60),
+  );
+
   // --- cleanup -------------------------------------------------------------
   if (projectId) await rest("DELETE", `projects?id=eq.${projectId}`, a.token);
+  // notifications has no delete policy by design, so the probe row is marked
+  // read rather than removed; it is scoped to user A's own inbox either way.
+  await rest("PATCH", "notifications?kind=eq.credits_low", a.token, {
+    read_at: new Date().toISOString(),
+  });
 
   console.log(`\n${passed} passed, ${failed} failed\n`);
   process.exit(failed === 0 ? 0 : 1);

@@ -87,6 +87,7 @@ src/
       agent/changesets/[id]/{approve,apply,undo}
       agent/runs/[id]/cancel
       knowledge/status
+      notifications, notifications/read
       projects/[id]/files
       studio/{pair,poll,status}
   components/
@@ -104,6 +105,7 @@ src/
     knowledge/  retriever, chunker, embeddings, symbols, context-builder,
                 pre-retrieval, generation-config, tool
     credits/    pricing (pure), service (server)
+    notifications/ events (pure), service (server), announced (client-only)
     roblox/     project-model, luau-validator
     studio/     protocol, service, liveness
     supabase/   client, server, admin, types
@@ -111,7 +113,7 @@ src/
     data/       server-component queries
   proxy.ts      (Next.js 16 renamed middleware.ts -> proxy.ts)
 
-supabase/migrations/   0001 … 0009
+supabase/migrations/   0001 … 0011
 scripts/roblox-brain/  ingest, evaluate, validate, verify-* acceptance scripts
 roblox-plugin/         the Roblox Studio plugin (Luau)
 docs/                  ARCHITECTURE, DESIGN_SYSTEM, PRODUCT_SPEC,
@@ -200,7 +202,7 @@ cannot be edited while approved.
 
 ## 5. Data model
 
-24 tables, all RLS. Owner-scoped unless stated.
+25 tables, all RLS. Owner-scoped unless stated.
 
 - **Identity/billing:** `profiles`, `credit_balances`, `credit_transactions`
 - **Work:** `projects`, `project_files`, `file_revisions`, `conversations`,
@@ -208,11 +210,14 @@ cannot be edited while approved.
 - **Studio:** `studio_connections`, `studio_commands`
 - **Agent:** `agent_runs`, `agent_steps`, `agent_tool_calls`, `agent_changesets`
 - **Blueprint:** `game_blueprints`
+- **Notifications:** `notifications` — one row per real-world event, deduped by
+  a unique index on `(owner_id, dedupe_key)` because the chat route can close a
+  run from either `onEnd` or `onError` and both may fire
 - **Knowledge (global, read-only reference):** `knowledge_sources`,
   `knowledge_documents`, `knowledge_chunks`, `knowledge_embeddings`,
   `knowledge_api_symbols`, `knowledge_code_examples`, `knowledge_retrieval_logs`
 
-Migrations `0001`–`0009`. `0006` and `0007` exist because of real bugs — see §7.
+Migrations `0001`–`0011`. `0006` and `0007` exist because of real bugs — see §7.
 
 ---
 
@@ -341,10 +346,12 @@ callback that learns the news.
 - Agent acceptance: **44/44** — classify → plan → stage → refuse apply →
   approve → apply → verify → undo.
 - Blueprint acceptance: **24/24** with real model calls.
-- Live security: **37/37** RLS and grant probes.
+- Live security: **37/37** RLS and grant probes. Four more were added for
+  migration `0011` (`notifications`) and have not been run against a live
+  project yet.
 - Studio *scripting* proven against a real place (607,544 terrain cells written
   and verified by query).
-- 304 unit tests, clean lint/typecheck/build.
+- 347 unit tests, clean lint/typecheck/build.
 
 ### Known gaps — do not describe these as done
 1. **Visual identity** still reads closer to a generic dev tool than to a Roblox
@@ -362,8 +369,11 @@ callback that learns the news.
 6. **Cost per multi-file build is high** — ~70k–500k input tokens, 90–160 credits,
    because an agentic loop re-sends context every step.
 7. **No payment provider.** Credits are real and metered; packs are not purchasable.
-8. Not built yet: notifications, agent run-history UI, project memory, world
-   builder, asset registry, onboarding beyond the blueprint flow.
+8. **Notification delivery is only as durable as the chat request.** It is
+   emitted from the same `onEnd` that charges credits, so a request killed on
+   client disconnect loses both. A queue would fix it; there isn't one.
+9. Not built yet: project memory, world builder, asset registry, onboarding
+   beyond the blueprint flow.
 
 ---
 
