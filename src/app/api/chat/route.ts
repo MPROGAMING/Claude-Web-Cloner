@@ -20,6 +20,8 @@ import { calculateCredits, estimateCredits } from "@/lib/credits/pricing";
 import { assertCanStartGeneration, chargeCredits } from "@/lib/credits/service";
 import { getConnection } from "@/lib/studio/service";
 import { preRetrieveForTurn, toPublicCitations } from "@/lib/knowledge/pre-retrieval";
+import { buildMemoryContext, summariseMemory } from "@/lib/memory/facts";
+import { listMemory } from "@/lib/memory/service";
 import { getBrainGenerationConfig, resolveChatModelId } from "@/lib/knowledge/generation-config";
 import { classifyRequest } from "@/lib/agent/classifier";
 import { blueprintSchema, blueprintToContext } from "@/lib/blueprint/schema";
@@ -164,14 +166,20 @@ export async function POST(request: Request) {
     }
 
     // --- context for the system prompt
-    const [{ data: files }, studioConnection] = await Promise.all([
+    const [{ data: files }, studioConnection, memoryFacts] = await Promise.all([
       supabase
         .from("project_files")
         .select("path, kind, size_bytes")
         .eq("project_id", project.id)
         .order("path"),
       getConnection(supabase, project.id, user.id),
+      // Durable context from earlier conversations. This is the whole point of
+      // the feature: without it every turn re-derives the project from the file
+      // tree, and a decision made last week is simply gone.
+      listMemory(supabase, project.id),
     ]);
+
+    const memoryContext = buildMemoryContext(memoryFacts);
 
     const studioConnected = studioConnection?.status === "connected";
 
@@ -294,6 +302,7 @@ export async function POST(request: Request) {
       confidence: classification.confidence,
       signals: classification.signals,
       maxSteps: budget.maxSteps,
+      memory: summariseMemory(memoryFacts),
     });
 
     logger.info("ai.request.start", {
@@ -414,6 +423,7 @@ export async function POST(request: Request) {
             placeName: studioConnection?.place_name,
             knowledgeContext: brain.context,
             knowledgeReason: brain.reason,
+            memoryContext,
             mode,
             classification: classification.kind,
             requiresPlan: classification.requiresPlan,

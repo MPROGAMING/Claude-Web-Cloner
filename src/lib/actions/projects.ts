@@ -8,6 +8,8 @@ import { AppError, toAppError } from "@/lib/errors";
 import { getTemplate } from "@/lib/templates";
 import { DEFAULT_MODEL_ID, getModel } from "@/lib/ai/registry";
 import { createPairingCode, disconnectStudio, enqueueStudioCommand, getConnection } from "@/lib/studio/service";
+import { MAX_CONTENT_CHARS, MEMORY_KINDS, type MemoryKind } from "@/lib/memory/facts";
+import { forgetMemory, recordMemory } from "@/lib/memory/service";
 import { logger } from "@/lib/logger";
 
 /**
@@ -363,6 +365,81 @@ export async function syncProjectToStudio(projectId: string): Promise<ActionResu
       payload: { action: "sync_files" },
     });
 
+    return { ok: true };
+  } catch (error) {
+    return { ok: false, error: toAppError(error).message };
+  }
+}
+
+// --- Project memory -------------------------------------------------------
+
+/**
+ * Delete one remembered fact.
+ *
+ * Ownership is checked twice — once here for a useful message, once by RLS for
+ * real. The correction history behind the fact goes with it (the FK cascades),
+ * so deleting a fact cannot resurrect the older one it replaced.
+ */
+export async function forgetProjectMemory(
+  projectId: string,
+  factId: string,
+): Promise<ActionResult> {
+  try {
+    const { supabase, user } = await requireUser();
+
+    const parsed = z.string().uuid().safeParse(factId);
+    if (!parsed.success) return { ok: false, error: "That is not a memory id." };
+
+    const removed = await forgetMemory(supabase, parsed.data, user.id);
+    if (!removed) return { ok: false, error: "That memory no longer exists." };
+
+    revalidatePath(`/projects/${projectId}`);
+    return { ok: true };
+  } catch (error) {
+    return { ok: false, error: toAppError(error).message };
+  }
+}
+
+/**
+ * Add a fact by hand.
+ *
+ * The agent writes most of these, but a creator who has just been contradicted
+ * needs a way to state the rule directly rather than hoping the next turn picks
+ * it up. Recorded as `user`, which outranks `agent` in the prompt.
+ */
+export async function rememberProjectFact(
+  projectId: string,
+  input: { kind: MemoryKind; content: string },
+): Promise<ActionResult> {
+  try {
+    const { supabase, user } = await requireUser();
+
+    const parsed = z
+      .object({ kind: z.enum(MEMORY_KINDS), content: z.string().max(MAX_CONTENT_CHARS) })
+      .safeParse(input);
+    if (!parsed.success) return { ok: false, error: "Check the fact and try again." };
+
+    const { data: project } = await supabase
+      .from("projects")
+      .select("id")
+      .eq("id", projectId)
+      .eq("owner_id", user.id)
+      .maybeSingle();
+
+    if (!project) return { ok: false, error: "That project does not exist." };
+
+    const result = await recordMemory(supabase, {
+      projectId,
+      userId: user.id,
+      kind: parsed.data.kind,
+      content: parsed.data.content,
+      source: "user",
+    });
+
+    if (!result.ok) return { ok: false, error: result.error };
+    if (result.deduped) return { ok: false, error: "That is already remembered." };
+
+    revalidatePath(`/projects/${projectId}`);
     return { ok: true };
   } catch (error) {
     return { ok: false, error: toAppError(error).message };

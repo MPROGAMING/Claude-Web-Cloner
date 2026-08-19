@@ -291,3 +291,24 @@ with no accessible name.
 Full detail: `docs/OVERNIGHT-BUILD-REPORT.md`.
 
 Commands added: `npm run blueprint:verify`.
+
+## Project Memory (written, not yet verified live)
+
+Durable per-project context that survives between conversations, so a decision
+made last week ("the currency is called Sparks") is not contradicted this week.
+
+Shipped: migration `0010_project_memory.sql`, `src/lib/memory/`, a
+`remember_fact` tool, the memory block in the system prompt, `GET
+/api/projects/[id]/memory`, and a Memory tab in the workspace where a creator
+can read every fact and delete any of it.
+
+**Verified:** `npm run check` — lint, typecheck, **336 tests across 16 files**
+(32 new in `tests/memory.test.ts`), production build with 24 routes.
+
+**Not yet verified:** the migration has not been applied to the live project and
+`npm run verify:security` has not been run against it — this session had no
+credentials for the live database. Three new probes are staged in
+`scripts/verify-security.mjs` (anon read of `project_memory`, a forged insert,
+and a cross-project write being unreadable by the project's owner). Run them
+before trusting the RLS, per the standing rule that the live probe outranks the
+SQL.
